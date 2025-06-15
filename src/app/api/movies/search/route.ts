@@ -4,8 +4,6 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
 
 if (!TMDB_API_KEY) {
-  // In a real app, you'd want to handle this more gracefully,
-  // but for our purposes, failing early is fine.
   throw new Error("Missing TMDb API key. Please add TMDB_API_KEY to your .env file.");
 }
 
@@ -31,13 +29,17 @@ export async function GET(request: Request) {
     const movies = await movieRes.json();
     const tvShows = await tvRes.json();
 
+    interface MediaItem {
+        id: number;
+        popularity: number;
+    }
+
     const combinedResults = [
-        ...movies.results.map((m: any) => ({ ...m, media_type: 'movie' })),
-        ...tvShows.results.map((t: any) => ({ ...t, media_type: 'tv' }))
+        ...movies.results.map((m: MediaItem) => ({ ...m, media_type: 'movie' })),
+        ...tvShows.results.map((t: MediaItem) => ({ ...t, media_type: 'tv' }))
     ];
 
-    // Simple sort to bring more popular items to the top
-    combinedResults.sort((a, b) => b.popularity - a.popularity);
+    combinedResults.sort((a: MediaItem, b: MediaItem) => b.popularity - a.popularity);
 
     return NextResponse.json(combinedResults);
   } catch (error) {

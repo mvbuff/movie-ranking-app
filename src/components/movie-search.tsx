@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import type { Category } from './filter-controls';
 
 // Combined type for movies and TV shows from TMDb
@@ -16,7 +17,7 @@ interface SearchResult {
 }
 
 // Map TMDb genre IDs to our categories
-const DOCUMENTARY_GENRE_ID = 99;
+// const DOCUMENTARY_GENRE_ID = 99;
 
 // No longer need this automatic categorization logic
 // function getCategory(...) { ... }
@@ -24,6 +25,9 @@ const DOCUMENTARY_GENRE_ID = 99;
 interface MovieSearchProps {
   onItemAdded: () => void;
 }
+
+const TMDB_API_URL = 'https://api.themoviedb.org/3';
+const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
 export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
   const [query, setQuery] = useState('');
@@ -52,8 +56,12 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
       if (validResults.length === 0) {
         setMessage('No relevant movies or series found.');
       }
-    } catch (error: any) {
-      setMessage(`Error: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setMessage(`Error: ${error.message}`);
+      } else {
+        setMessage('An unknown error occurred.');
+      }
       console.error(error);
     } finally {
       setLoading(false);
@@ -90,8 +98,12 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
       setSelectedForCategorization(null); // Reset the selection view
       setResults([]); // Clear search results from the UI
       onItemAdded(); // Trigger the main movie list to refresh
-    } catch (error: any) {
-      setMessage(`Error: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setMessage(`Error: ${error.message}`);
+      } else {
+        setMessage('An unknown error occurred while adding the item.');
+      }
       console.error(error);
     }
   };
@@ -120,9 +132,11 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
             return (
               <div key={item.id} className="bg-white border rounded-lg shadow-md overflow-hidden flex flex-col justify-between">
                 <div>
-                  <img 
-                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`} 
-                    alt={title} 
+                  <Image
+                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                    alt={title ?? 'Movie Poster'}
+                    width={500}
+                    height={750}
                     className="w-full h-64 object-cover"
                   />
                   <div className="p-4">
