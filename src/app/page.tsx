@@ -10,13 +10,74 @@ import type { Category } from '@/components/filter-controls';
 
 type FilterCategory = Category | 'ALL';
 
+function AddUserForm({ onUserAdded }: { onUserAdded: () => void }) {
+  const [name, setName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add user.');
+      }
+      
+      onUserAdded(); // Trigger a refresh
+      setName(''); // Clear input
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-4 p-4 border rounded-lg bg-gray-50">
+      <h3 className="font-semibold text-lg mb-2">Add New User</h3>
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter new user's name"
+          className="flex-grow p-2 border rounded-md"
+          disabled={isSubmitting}
+        />
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+        >
+          {isSubmitting ? 'Adding...' : 'Add User'}
+        </button>
+      </div>
+      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+    </form>
+  );
+}
+
 export default function Home() {
   const [refreshTimestamp, setRefreshTimestamp] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('ALL');
   const [scoreThreshold, setScoreThreshold] = useState<number>(0);
+  const [isAddingUser, setIsAddingUser] = useState(false);
 
   const triggerDataRefresh = () => {
     setRefreshTimestamp(new Date().getTime());
+    // Also close the add user form on refresh
+    setIsAddingUser(false);
   };
 
   return (
@@ -30,7 +91,16 @@ export default function Home() {
             Your personalized movie and series leaderboard.
           </p>
         </div>
-        <UserSwitcher />
+        <div className="flex justify-between items-center">
+          <UserSwitcher />
+          <button
+            onClick={() => setIsAddingUser(!isAddingUser)}
+            className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700"
+          >
+            {isAddingUser ? 'Cancel' : 'Add User'}
+          </button>
+        </div>
+        {isAddingUser && <AddUserForm onUserAdded={triggerDataRefresh} />}
         <FriendList onCalculationComplete={triggerDataRefresh} />
         <MovieSearch onItemAdded={triggerDataRefresh} />
       </div>
