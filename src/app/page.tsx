@@ -107,7 +107,7 @@ export default function Home() {
         </div>
         <UserSwitcher refreshTimestamp={refreshTimestamp} />
         {isAddingUser && <AddUserForm onUserAdded={triggerDataRefresh} />}
-        <FriendList />
+        <FriendList onCalculationComplete={triggerDataRefresh} />
         <MovieSearch onItemAdded={triggerDataRefresh} />
       </div>
       <FilterControls 

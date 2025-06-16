@@ -7,12 +7,16 @@ import { useDebounce } from 'use-debounce';
 import { CalculateScoresButton } from './score-components';
 import { ChevronDown } from 'lucide-react';
 
+interface FriendListProps {
+  onCalculationComplete: () => void;
+}
+
 interface FriendWithPreference extends User {
   isFriend: boolean;
   weight: number;
 }
 
-export default function FriendList() {
+export default function FriendList({ onCalculationComplete }: FriendListProps) {
   const { currentUser } = useUser();
   const [friends, setFriends] = useState<FriendWithPreference[]>([]);
   const [loading, setLoading] = useState(true);
@@ -210,7 +214,7 @@ export default function FriendList() {
               </ul>
             </>
           )}
-          <CalculateScoresButton />
+          <CalculateScoresButton onCalculationComplete={onCalculationComplete} />
         </div>
       </div>
     </div>
