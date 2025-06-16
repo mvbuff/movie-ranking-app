@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import MovieSearch from "@/components/movie-search";
 import MovieList from "@/components/movie-list";
 import UserSwitcher from "@/components/user-switcher";
@@ -80,11 +80,11 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<SortKey>('aggregateScore');
   const [isAddingUser, setIsAddingUser] = useState(false);
 
-  const triggerDataRefresh = () => {
+  const triggerDataRefresh = useCallback(() => {
     setRefreshTimestamp(new Date().getTime());
     // Also close the add user form on refresh
     setIsAddingUser(false);
-  };
+  }, []);
 
   return (
     <main className="flex min-h-screen flex-col items-center p-8 sm:p-12">

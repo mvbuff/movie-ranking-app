@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import type { User, WeightPreference } from '@prisma/client';
 import { useUser } from '@/context/user-context';
 import { useDebounce } from 'use-debounce';
@@ -16,7 +16,7 @@ interface FriendWithPreference extends User {
   weight: number;
 }
 
-export default function FriendList({ onCalculationComplete }: FriendListProps) {
+function FriendList({ onCalculationComplete }: FriendListProps) {
   const { currentUser } = useUser();
   const [friends, setFriends] = useState<FriendWithPreference[]>([]);
   const [loading, setLoading] = useState(true);
@@ -219,4 +219,6 @@ export default function FriendList({ onCalculationComplete }: FriendListProps) {
       </div>
     </div>
   );
-} 
+}
+
+export default memo(FriendList); 
