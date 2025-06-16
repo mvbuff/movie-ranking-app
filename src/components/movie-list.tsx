@@ -220,7 +220,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                       href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-base text-slate-100 flex-grow hover:text-cyan-400 transition-colors" 
+                      className="font-bold text-base text-slate-100 flex-grow hover:text-cyan-400 transition-colors bg-transparent" 
                       title={movie.title}
                     >
                       {movie.title} ({movie.year})
