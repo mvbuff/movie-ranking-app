@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import prisma, { Prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { UserRole } from '@prisma/client';
 
 // Helper to check for admin session
 async function isAdmin() {
   const session = await getServerSession(authOptions);
-  return session?.user?.role === Prisma.UserRole.ADMIN;
+  return session?.user?.role === UserRole.ADMIN;
 }
 
 // GET all users (for admin panel)
@@ -20,7 +21,7 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(users);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
 }
@@ -43,7 +44,7 @@ export async function PATCH(request: Request) {
     });
 
     return NextResponse.json(updatedUser);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to update user status' }, { status: 500 });
   }
 }
@@ -65,7 +66,7 @@ export async function DELETE(request: Request) {
         });
 
         return NextResponse.json({ message: 'User deleted successfully' }, { status: 200 });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
     }
 } 
