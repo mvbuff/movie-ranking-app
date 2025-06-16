@@ -23,7 +23,7 @@ export function Scorecard({ score }: { score: number | null }) {
 }
 
 
-export function CalculateScoresButton({ onCalculationComplete }: { onCalculationComplete: () => void }) {
+export function CalculateScoresButton({ onCalculationComplete }: { onCalculationComplete?: () => void }) {
   const { currentUser } = useUser();
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -35,7 +35,7 @@ export function CalculateScoresButton({ onCalculationComplete }: { onCalculation
     }
     startTransition(async () => {
       const result = await calculateUserAggregateScores(currentUser.id);
-      onCalculationComplete();
+      onCalculationComplete?.();
       showToast(result.message, 'success');
     });
   };

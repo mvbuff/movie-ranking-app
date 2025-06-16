@@ -16,7 +16,7 @@ interface FriendWithPreference extends User {
   weight: number;
 }
 
-export default function FriendList({ onCalculationComplete }: FriendListProps) {
+export default function FriendList() {
   const { currentUser } = useUser();
   const [friends, setFriends] = useState<FriendWithPreference[]>([]);
   const [loading, setLoading] = useState(true);
@@ -214,7 +214,7 @@ export default function FriendList({ onCalculationComplete }: FriendListProps) {
               </ul>
             </>
           )}
-          <CalculateScoresButton onCalculationComplete={onCalculationComplete} />
+          <CalculateScoresButton />
         </div>
       </div>
     </div>
