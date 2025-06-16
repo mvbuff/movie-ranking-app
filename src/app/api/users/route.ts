@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
     // Check if the error is a Prisma unique constraint violation
-    if (error instanceof Error && 'code' in error && (error as any).code === 'P2002') {
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
       return NextResponse.json({ error: 'A user with this name already exists.' }, { status: 409 });
     }
     // For all other errors
