@@ -13,22 +13,34 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
   const [selectedGrade, setSelectedGrade] = useState<LetterGrade | null>(null);
   const [selectedModifier, setSelectedModifier] = useState<Modifier | null>(null);
 
+  // Set initial state from score
   useEffect(() => {
-    // This is a simple reverse-lookup to set the initial state.
-    // In a real app, this might be more complex if scores can be floats.
-    // For now, we find the first match.
-    if (initialScore > 0) {
-        // This part would need to be built out if we need to pre-load ratings
-    }
+    // This logic would need to be built out to show the initial selected buttons
+    // based on the initialScore prop. For now, it's a placeholder.
   }, [initialScore]);
 
-  const handleSelect = (grade: LetterGrade, modifier: Modifier) => {
-    if (disabled) return;
-    const newScore = getScore(grade, modifier);
+  const handleRatingUpdate = (grade: LetterGrade | null, modifier: Modifier | null) => {
+    if (!grade) {
+      // If no grade is selected, there's no rating. Score is 0.
+      onRatingSubmit(0);
+      return;
+    }
+    // If a grade is selected but no modifier, default the modifier to '+' for calculation.
+    const effectiveModifier = modifier || '+';
+    const newScore = getScore(grade, effectiveModifier);
     onRatingSubmit(newScore);
-    // Note: The parent component's optimistic update will handle the visual feedback.
-    setSelectedGrade(grade);
-    setSelectedModifier(modifier);
+  };
+  
+  const handleGradeSelect = (grade: LetterGrade) => {
+    const newGrade = selectedGrade === grade ? null : grade;
+    setSelectedGrade(newGrade);
+    handleRatingUpdate(newGrade, selectedModifier);
+  };
+
+  const handleModifierSelect = (modifier: Modifier) => {
+    const newModifier = selectedModifier === modifier ? null : modifier;
+    setSelectedModifier(newModifier);
+    handleRatingUpdate(selectedGrade, newModifier);
   };
 
   const getButtonClass = (isActive: boolean) => 
@@ -44,11 +56,7 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
         {letterGrades.map(grade => (
             <button 
               key={grade} 
-              onClick={() => {
-                const modifier = selectedModifier || '+'; // Default to '+' if no modifier is selected
-                setSelectedGrade(grade);
-                handleSelect(grade, modifier);
-              }}
+              onClick={() => handleGradeSelect(grade)}
               className={getButtonClass(selectedGrade === grade)}
               disabled={disabled}
             >
@@ -60,11 +68,7 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
         {modifiers.map(modifier => (
             <button 
               key={modifier}
-              onClick={() => {
-                  const grade = selectedGrade || 'BB'; // Default to 'BB' if no grade is selected
-                  setSelectedModifier(modifier);
-                  handleSelect(grade, modifier);
-              }}
+              onClick={() => handleModifierSelect(modifier)}
               className={getButtonClass(selectedModifier === modifier)}
               disabled={disabled}
             >
