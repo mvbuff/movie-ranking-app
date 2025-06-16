@@ -14,21 +14,17 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
 
-    try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        name,
-        password,
-      });
+    const result = await signIn('credentials', {
+      redirect: false,
+      name,
+      password,
+    });
 
-      if (result?.error) {
-        setError(result.error);
-      } else if (result?.ok) {
-        // Redirect to home page on successful login
-        router.push('/');
-      }
-    } catch (error) {
-      setError('An unexpected error occurred. Please try again.');
+    if (result?.error) {
+      setError(result.error);
+    } else if (result?.ok) {
+      // Redirect to home page on successful login
+      router.push('/');
     }
   };
 

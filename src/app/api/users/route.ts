@@ -35,8 +35,8 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(newUser, { status: 201 });
-  } catch (error: any) {
-    if (error.code === 'P2002') {
+  } catch (error) {
+    if (error instanceof Error && (error as any).code === 'P2002') {
       return NextResponse.json({ error: 'A user with this name already exists.' }, { status: 409 });
     }
     console.error("Failed to create user:", error);

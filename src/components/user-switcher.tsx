@@ -40,7 +40,7 @@ export default function UserSwitcher({ refreshTimestamp }: UserSwitcherProps) {
       }
     }
     fetchUsers();
-  }, [refreshTimestamp]); // Removed currentUser and users from deps to be more targeted
+  }, [refreshTimestamp, users.length, currentUser, setCurrentUser]); // Removed currentUser and users from deps to be more targeted
 
   const handleUserChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedUserId = event.target.value;

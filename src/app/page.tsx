@@ -39,8 +39,12 @@ function AddUserForm({ onUserAdded }: { onUserAdded: () => void }) {
       onUserAdded(); // Trigger a refresh
       setName(''); // Clear input
       setPassword('');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred.");
+      }
     } finally {
       setIsSubmitting(false);
     }
