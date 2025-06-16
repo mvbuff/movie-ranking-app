@@ -8,7 +8,6 @@ import { Scorecard } from './score-components';
 import { Info, MessageSquarePlus } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
 import { useToast } from '@/context/toast-context';
-import { getRatingDisplay } from '@/lib/rating-system';
 
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
