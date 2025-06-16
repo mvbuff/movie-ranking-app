@@ -205,12 +205,9 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <p className="text-sm text-gray-500">
-                        Your Rating: <span className="font-bold text-gray-700">{getRatingDisplay(movie.currentUserRating)}</span>
-                      </p>
                       <button 
                         onClick={() => setIsReviewing(isReviewing === movie.id ? null : movie.id)}
-                        className="p-1 text-gray-400 hover:text-indigo-600"
+                        className="ml-auto p-1 text-gray-400 hover:text-indigo-600"
                         title="Add a review"
                       >
                         <MessageSquarePlus size={18} />

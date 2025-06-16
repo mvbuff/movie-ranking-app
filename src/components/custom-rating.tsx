@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { letterGrades, modifiers, getScore, LetterGrade, Modifier } from '@/lib/rating-system';
+import { letterGrades, modifiers, getScore, getGradeFromScore, LetterGrade, Modifier } from '@/lib/rating-system';
 
 interface CustomRatingInputProps {
   initialScore: number;
@@ -15,8 +15,9 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
 
   // Set initial state from score
   useEffect(() => {
-    // This logic would need to be built out to show the initial selected buttons
-    // based on the initialScore prop. For now, it's a placeholder.
+    const { grade, modifier } = getGradeFromScore(initialScore);
+    setSelectedGrade(grade);
+    setSelectedModifier(modifier);
   }, [initialScore]);
 
   const handleRatingUpdate = (grade: LetterGrade | null, modifier: Modifier | null) => {
@@ -50,8 +51,17 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
     }`;
   
+  const displayRating = () => {
+    if (!selectedGrade) return 'Not Rated';
+    return `${selectedGrade}${selectedModifier || ''}`;
+  };
+
   return (
     <div className="space-y-2">
+      <div className="flex justify-between items-center mb-2">
+         <p className="text-sm text-gray-500">Your Rating:</p>
+         <span className="font-bold text-gray-700 text-sm">{displayRating()}</span>
+      </div>
       <div className="flex justify-around">
         {letterGrades.map(grade => (
             <button 
