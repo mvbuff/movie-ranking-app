@@ -5,7 +5,7 @@ import { useUser } from '@/context/user-context';
 import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
-import { Info, MessageSquarePlus } from 'lucide-react';
+import { Info, MessageSquarePlus, Star } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
 import { useToast } from '@/context/toast-context';
 
@@ -20,6 +20,8 @@ interface Movie {
   year: number;
   posterUrl: string | null;
   tmdbId: string;
+  tmdbRating: number | null;
+  tmdbVoteCount: number | null;
   category: Category;
 }
 interface Rating { movieId: string; score: number; }
@@ -204,13 +206,28 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                     height={750}
                     className="w-full h-auto object-cover"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                  {movie.tmdbRating && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
+                      <Star size={12} className="text-yellow-400" />
+                      <span>{movie.tmdbRating.toFixed(1)}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="p-4">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-lg flex-grow mb-4 pr-2" title={movie.title}>{movie.title} ({movie.year})</h3>
+                  <div className="flex justify-between items-start gap-2">
+                    <a 
+                      href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-base text-slate-100 flex-grow hover:text-cyan-400 transition-colors" 
+                      title={movie.title}
+                    >
+                      {movie.title} ({movie.year})
+                    </a>
                     <button 
                       onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
-                      className="p-1 text-gray-400 hover:text-indigo-600"
+                      className="p-1 text-slate-400 hover:text-cyan-400 transition-colors flex-shrink-0"
                       title="Show user reviews"
                     >
                       <Info size={20} />
@@ -254,7 +271,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                   )}
                 </div>
               </div>
-              <div className="p-4 bg-gray-50 border-t">
+              <div className="p-4 bg-black/30 border-t border-slate-800">
                 <Scorecard score={movie.aggregateScore} />
               </div>
             </div>

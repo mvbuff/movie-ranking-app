@@ -17,7 +17,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { tmdbId, title, year, posterUrl, category } = await request.json();
+    const { tmdbId, title, year, posterUrl, category, tmdbRating, tmdbVoteCount } = await request.json();
 
     if (!tmdbId || !title || !year || !category) {
       return NextResponse.json({ error: 'Missing required movie fields' }, { status: 400 });
@@ -38,6 +38,8 @@ export async function POST(request: Request) {
         year: parseInt(String(year), 10),
         posterUrl,
         category,
+        tmdbRating,
+        tmdbVoteCount,
       },
     });
 

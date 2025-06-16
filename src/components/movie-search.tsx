@@ -15,6 +15,8 @@ interface SearchResult {
   first_air_date?: string; // For TV shows
   poster_path: string | null;
   media_type: 'movie' | 'tv' | 'person';
+  vote_average?: number;
+  vote_count?: number;
   // TMDb 'multi' search can also return 'person'. We'll filter them out.
 }
 
@@ -91,6 +93,8 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
           year: releaseDate ? parseInt(releaseDate.substring(0, 4), 10) : 0,
           posterUrl: itemToReview.poster_path ? `https://image.tmdb.org/t/p/w500${itemToReview.poster_path}` : null,
           category: category,
+          tmdbRating: itemToReview.vote_average,
+          tmdbVoteCount: itemToReview.vote_count,
         }),
       });
 

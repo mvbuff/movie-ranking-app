@@ -39,6 +39,8 @@ model Movie {
   year            Int
   posterUrl       String?
   tmdbId          String           @unique
+  tmdbRating      Float?
+  tmdbVoteCount   Int?
   category        Category         @default(MOVIE)
   ratings         Rating[]
   aggregateScores AggregateScore[]
