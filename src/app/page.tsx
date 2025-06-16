@@ -100,7 +100,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('aggregateScore');
   const [isAddingUser, setIsAddingUser] = useState(false);
-  const { isAdmin, currentUser, sessionStatus } = useUser();
+  const { isAdmin, currentUser } = useUser();
 
   const triggerDataRefresh = useCallback(() => {
     setRefreshTimestamp(new Date().getTime());
