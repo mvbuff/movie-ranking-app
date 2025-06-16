@@ -26,9 +26,7 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
       onRatingSubmit(0);
       return;
     }
-    // If a grade is selected but no modifier, default the modifier to '+' for calculation.
-    const effectiveModifier = modifier || '+';
-    const newScore = getScore(grade, effectiveModifier);
+    const newScore = getScore(grade, modifier);
     onRatingSubmit(newScore);
   };
   
