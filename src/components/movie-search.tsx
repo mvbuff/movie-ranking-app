@@ -40,7 +40,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
   // State for the two-step add process
   const [itemToReview, setItemToReview] = useState<SearchResult | null>(null);
   const [reviewText, setReviewText] = useState('');
-  
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query) return;
@@ -75,7 +75,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
   const handleSubmitReview = async (category: Category) => {
     if (!itemToReview || !currentUser) {
       showToast('Something went wrong, please try again.', 'error');
-      return;
+        return;
     }
     
     const title = itemToReview.title || itemToReview.name;
@@ -160,7 +160,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
               <div key={item.id} className="bg-white border rounded-lg shadow-md overflow-hidden flex flex-col justify-between">
                 <div>
                   <Image
-                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`} 
                     alt={title ?? 'Movie Poster'}
                     width={500}
                     height={750}

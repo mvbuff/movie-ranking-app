@@ -111,7 +111,7 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
       fetchFriendData();
     }
   };
-
+  
   useEffect(() => {
     if (!debouncedWeightChange || !currentUser) return;
     const updateWeight = async () => {
@@ -181,37 +181,37 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
                   Unselect All
                 </button>
               </div>
-              <ul className="divide-y divide-gray-200">
-                {friends.map(friend => (
-                  <li key={friend.id} className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                    <div className="flex items-center mb-2 sm:mb-0">
+            <ul className="divide-y divide-gray-200">
+              {friends.map(friend => (
+                <li key={friend.id} className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                  <div className="flex items-center mb-2 sm:mb-0">
+                    <input
+                      type="checkbox"
+                      checked={friend.isFriend}
+                      onChange={() => handleToggleFriend(friend.id, friend.isFriend)}
+                      className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-4"
+                    />
+                    <span className={`text-lg ${friend.isFriend ? 'text-gray-800' : 'text-gray-400'}`}>{friend.name}</span>
+                  </div>
+                  {friend.isFriend && (
+                    <div className="flex items-center w-full sm:w-1/2">
                       <input
-                        type="checkbox"
-                        checked={friend.isFriend}
-                        onChange={() => handleToggleFriend(friend.id, friend.isFriend)}
-                        className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-4"
+                        type="range"
+                        min="0"
+                        max="2"
+                        step="0.05"
+                        value={friend.weight}
+                        onChange={(e) => handleWeightChange(friend.id, parseFloat(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                       />
-                      <span className={`text-lg ${friend.isFriend ? 'text-gray-800' : 'text-gray-400'}`}>{friend.name}</span>
+                      <span className="ml-4 w-16 text-right font-medium text-indigo-600">
+                        {Math.round(friend.weight * 100)}%
+                      </span>
                     </div>
-                    {friend.isFriend && (
-                      <div className="flex items-center w-full sm:w-1/2">
-                        <input
-                          type="range"
-                          min="0"
-                          max="2"
-                          step="0.05"
-                          value={friend.weight}
-                          onChange={(e) => handleWeightChange(friend.id, parseFloat(e.target.value))}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        />
-                        <span className="ml-4 w-16 text-right font-medium text-indigo-600">
-                          {Math.round(friend.weight * 100)}%
-                        </span>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
             </>
           )}
           <CalculateScoresButton onCalculationComplete={onCalculationComplete} />
@@ -219,6 +219,6 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
       </div>
     </div>
   );
-}
+} 
 
 export default memo(FriendList); 

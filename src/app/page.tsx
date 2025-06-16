@@ -12,12 +12,13 @@ type FilterCategory = Category | 'ALL';
 
 function AddUserForm({ onUserAdded }: { onUserAdded: () => void }) {
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !password.trim()) return;
 
     setIsSubmitting(true);
     setError(null);
@@ -26,7 +27,7 @@ function AddUserForm({ onUserAdded }: { onUserAdded: () => void }) {
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, password }),
       });
       const data = await response.json();
 
@@ -34,14 +35,12 @@ function AddUserForm({ onUserAdded }: { onUserAdded: () => void }) {
         throw new Error(data.error || 'Failed to add user.');
       }
       
+      alert('Registration successful! An admin will review your request shortly.');
       onUserAdded(); // Trigger a refresh
       setName(''); // Clear input
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred.");
-      }
+      setPassword('');
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -49,25 +48,41 @@ function AddUserForm({ onUserAdded }: { onUserAdded: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="mt-4 p-4 border rounded-lg bg-gray-50">
-      <h3 className="font-semibold text-lg mb-2">Add New User</h3>
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Enter new user's name"
-          className="flex-grow p-2 border rounded-md"
-          disabled={isSubmitting}
-        />
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-        >
-          {isSubmitting ? 'Adding...' : 'Add User'}
-        </button>
+      <h3 className="font-semibold text-lg mb-2">Register New User</h3>
+      <div className="space-y-2">
+        <div>
+          <label htmlFor="reg-username">Username</label>
+          <input
+            id="reg-username"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter a username"
+            className="w-full p-2 border rounded-md"
+            disabled={isSubmitting}
+          />
+        </div>
+        <div>
+          <label htmlFor="reg-password">Password</label>
+           <input
+            id="reg-password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter a password"
+            className="w-full p-2 border rounded-md"
+            disabled={isSubmitting}
+          />
+        </div>
       </div>
       {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+       <button
+          type="submit"
+          disabled={isSubmitting}
+          className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+        >
+          {isSubmitting ? 'Registering...' : 'Register'}
+        </button>
     </form>
   );
 }
