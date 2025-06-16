@@ -5,8 +5,9 @@ import { useUser } from '@/context/user-context';
 import StarRating from './star-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
-import { Info } from 'lucide-react';
+import { Info, MessageSquarePlus } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
+import { useToast } from '@/context/toast-context';
 
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
@@ -36,9 +37,12 @@ interface MovieListProps {
 
 export default function MovieList({ calculationTimestamp, categoryFilter, scoreThreshold }: MovieListProps) {
   const { currentUser } = useUser();
+  const { showToast } = useToast();
   const [movies, setMovies] = useState<MovieWithRatingsAndScores[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeReviews, setActiveReviews] = useState<{ movieId: string; movieTitle: string; } | null>(null);
+  const [isReviewing, setIsReviewing] = useState<string | null>(null);
+  const [reviewText, setReviewText] = useState('');
 
   const fetchMovieData = useCallback(async () => {
     if (!currentUser) {
@@ -120,6 +124,36 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     }
   };
 
+  const handleReviewSubmit = async (movieId: string) => {
+    if (!currentUser || !reviewText.trim()) return;
+
+    try {
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          movieId: movieId,
+          userId: currentUser.id,
+          text: reviewText,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit review');
+      }
+
+      showToast('Review added successfully!', 'success');
+      setReviewText('');
+      setIsReviewing(null);
+    } catch (error) {
+      if (error instanceof Error) {
+        showToast(error.message, 'error');
+      }
+      console.error('Failed to submit review:', error);
+    }
+  };
+
   if (!currentUser) return null;
   
   if (loading) return <p className="mt-12 text-center text-gray-500">Loading movie collection...</p>;
@@ -169,13 +203,42 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                     </button>
                   </div>
                   <div className="space-y-3">
-                    <p className="text-sm text-gray-500">Your Rating:</p>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-gray-500">Your Rating:</p>
+                      <button 
+                        onClick={() => setIsReviewing(isReviewing === movie.id ? null : movie.id)}
+                        className="p-1 text-gray-400 hover:text-indigo-600"
+                        title="Add a review"
+                      >
+                        <MessageSquarePlus size={18} />
+                      </button>
+                    </div>
                     <StarRating
                       initialRating={movie.currentUserRating}
                       onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
                       disabled={!currentUser}
                     />
                   </div>
+                  {isReviewing === movie.id && (
+                    <div className="mt-4 space-y-2">
+                      <textarea
+                        value={reviewText}
+                        onChange={(e) => setReviewText(e.target.value)}
+                        placeholder="Write a short review..."
+                        maxLength={100}
+                        className="w-full p-2 border rounded-md text-sm"
+                      />
+                      <div className="flex justify-between items-center">
+                        <p className="text-xs text-gray-400">{reviewText.length}/100</p>
+                        <button 
+                          onClick={() => handleReviewSubmit(movie.id)}
+                          className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                        >
+                          Submit
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="p-4 bg-gray-50 border-t">
