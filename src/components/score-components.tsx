@@ -2,6 +2,7 @@
 
 import { useTransition } from 'react';
 import { useUser } from '@/context/user-context';
+import { useToast } from '@/context/toast-context';
 import { calculateUserAggregateScores } from '@/app/actions';
 
 export function Scorecard({ score }: { score: number | null }) {
@@ -26,17 +27,18 @@ export function Scorecard({ score }: { score: number | null }) {
 
 export function CalculateScoresButton({ onCalculationComplete }: { onCalculationComplete: () => void }) {
   const { currentUser } = useUser();
+  const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
 
   const handleCalculate = () => {
     if (!currentUser) {
-      alert("Please select a user first.");
+      showToast("Please select a user first.", 'error');
       return;
     }
     startTransition(async () => {
       const result = await calculateUserAggregateScores(currentUser.id);
       onCalculationComplete();
-      alert(result.message);
+      showToast(result.message, 'success');
     });
   };
 
