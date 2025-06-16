@@ -4,24 +4,35 @@ import { useState, useEffect } from 'react';
 import type { User } from '@prisma/client';
 import { useUser } from '@/context/user-context';
 
-export default function UserSwitcher() {
+interface UserSwitcherProps {
+  refreshTimestamp: number | null;
+}
+
+export default function UserSwitcher({ refreshTimestamp }: UserSwitcherProps) {
   const [users, setUsers] = useState<User[]>([]);
   const { currentUser, setCurrentUser } = useUser();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchUsers() {
+      setLoading(true);
       try {
         const response = await fetch('/api/users');
         if (!response.ok) {
           throw new Error('Failed to fetch users');
         }
-        const data = await response.json();
+        const data: User[] = await response.json();
         setUsers(data);
-        // Set a default user on initial load
-        if (data.length > 0 && !currentUser) {
-          setCurrentUser(data[0]);
+        
+        // If there's no current user or the refresh was triggered, select a user.
+        // Prioritize the last user in the list, which will be the newest one.
+        if (data.length > 0) {
+          if (!currentUser || refreshTimestamp) {
+            const newUser = data[data.length - 1];
+            setCurrentUser(newUser);
+          }
         }
+
       } catch (error) {
         console.error(error);
       } finally {
@@ -29,7 +40,7 @@ export default function UserSwitcher() {
       }
     }
     fetchUsers();
-  }, [setCurrentUser, currentUser]);
+  }, [setCurrentUser, refreshTimestamp]);
 
   const handleUserChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedUserId = event.target.value;

@@ -96,7 +96,6 @@ export default function Home() {
           </p>
         </div>
         <div className="flex justify-between items-center">
-          <UserSwitcher />
           <button
             onClick={() => setIsAddingUser(!isAddingUser)}
             className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700"
@@ -104,6 +103,7 @@ export default function Home() {
             {isAddingUser ? 'Cancel' : 'Add User'}
           </button>
         </div>
+        <UserSwitcher refreshTimestamp={refreshTimestamp} />
         {isAddingUser && <AddUserForm onUserAdded={triggerDataRefresh} />}
         <FriendList onCalculationComplete={triggerDataRefresh} />
         <MovieSearch onItemAdded={triggerDataRefresh} />
