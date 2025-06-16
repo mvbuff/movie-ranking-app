@@ -24,6 +24,7 @@ model User {
   ownedFriendGroups  FriendGroup[]
   groupMemberships   FriendGroupMember[]
   aggregateScores    AggregateScore[]
+  reviews            Review[]
 }
 
 enum Category {
@@ -41,6 +42,7 @@ model Movie {
   category        Category         @default(MOVIE)
   ratings         Rating[]
   aggregateScores AggregateScore[]
+  reviews         Review[]
 }
 
 model Rating {
@@ -93,4 +95,14 @@ model AggregateScore {
   movieId    String
 
   @@unique([userId, movieId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  text      String   @db.VarChar(100)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId   String
 }

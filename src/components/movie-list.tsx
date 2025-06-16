@@ -5,6 +5,8 @@ import { useUser } from '@/context/user-context';
 import StarRating from './star-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
+import { Info } from 'lucide-react';
+import ReviewsModal from './reviews-modal';
 
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
@@ -36,6 +38,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
   const { currentUser } = useUser();
   const [movies, setMovies] = useState<MovieWithRatingsAndScores[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeReviews, setActiveReviews] = useState<{ movieId: string; movieTitle: string; } | null>(null);
 
   const fetchMovieData = useCallback(async () => {
     if (!currentUser) {
@@ -131,45 +134,63 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
   }
 
   return (
-    <section className="w-full max-w-7xl mx-auto mt-6">
-       <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
-       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
-        {filteredMovies.map((movie) => (
-          <div key={movie.id} className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col justify-between">
-            <div>
-              <div className="relative">
-                <Image
-                  src={movie.posterUrl || '/placeholder.png'}
-                  alt={`Poster for ${movie.title}`}
-                  width={500}
-                  height={750}
-                  className="w-full h-auto object-cover"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="font-bold text-lg truncate flex-grow mb-4" title={movie.title}>{movie.title} ({movie.year})</h3>
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-500">Your Rating:</p>
-                  <StarRating
-                    initialRating={movie.currentUserRating}
-                    onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
-                    disabled={!currentUser}
+    <>
+      {activeReviews && (
+        <ReviewsModal
+          movieId={activeReviews.movieId}
+          movieTitle={activeReviews.movieTitle}
+          onClose={() => setActiveReviews(null)}
+        />
+      )}
+      <section className="w-full max-w-7xl mx-auto mt-6">
+        <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+          {filteredMovies.map((movie) => (
+            <div key={movie.id} className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col justify-between">
+              <div>
+                <div className="relative">
+                  <Image
+                    src={movie.posterUrl || '/placeholder.png'}
+                    alt={`Poster for ${movie.title}`}
+                    width={500}
+                    height={750}
+                    className="w-full h-auto object-cover"
                   />
                 </div>
+                <div className="p-4">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-bold text-lg flex-grow mb-4 pr-2" title={movie.title}>{movie.title} ({movie.year})</h3>
+                    <button 
+                      onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
+                      className="p-1 text-gray-400 hover:text-indigo-600"
+                      title="Show user reviews"
+                    >
+                      <Info size={20} />
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-500">Your Rating:</p>
+                    <StarRating
+                      initialRating={movie.currentUserRating}
+                      onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
+                      disabled={!currentUser}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 bg-gray-50 border-t">
+                <Scorecard score={movie.aggregateScore} />
               </div>
             </div>
-            <div className="p-4 bg-gray-50 border-t">
-              <Scorecard score={movie.aggregateScore} />
-            </div>
+          ))}
+        </div>
+        {filteredMovies.length === 0 && movies.length > 0 && (
+          <div className="text-center p-8 my-10 bg-gray-50 rounded-lg border-dashed border-2 border-gray-300">
+            <p className="text-gray-500">No movies match your current filters.</p>
+            <p className="text-sm text-gray-400 mt-2">Try adjusting the category or score threshold.</p>
           </div>
-        ))}
-       </div>
-       {filteredMovies.length === 0 && movies.length > 0 && (
-         <div className="text-center p-8 my-10 bg-gray-50 rounded-lg border-dashed border-2 border-gray-300">
-           <p className="text-gray-500">No movies match your current filters.</p>
-           <p className="text-sm text-gray-400 mt-2">Try adjusting the category or score threshold.</p>
-         </div>
-       )}
-    </section>
+        )}
+      </section>
+    </>
   );
 }

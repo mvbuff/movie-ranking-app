@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 
 interface ToastProps {
   message: string;
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'info';
   onClose: () => void;
 }
 
@@ -13,6 +13,7 @@ export default function Toast({ message, type, onClose }: ToastProps) {
   const typeClasses = {
     success: 'bg-green-500',
     error: 'bg-red-500',
+    info: 'bg-blue-500',
   };
 
   return (
