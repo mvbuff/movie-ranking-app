@@ -7,6 +7,8 @@ import UserSwitcher from "@/components/user-switcher";
 import FriendList from "@/components/friend-list";
 import FilterControls from '@/components/filter-controls';
 import type { Category, SortKey } from '@/components/filter-controls';
+import { useUser } from '@/context/user-context';
+import { signOut } from 'next-auth/react';
 
 type FilterCategory = Category | 'ALL';
 
@@ -98,6 +100,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('aggregateScore');
   const [isAddingUser, setIsAddingUser] = useState(false);
+  const { isAdmin, currentUser, sessionStatus } = useUser();
 
   const triggerDataRefresh = useCallback(() => {
     setRefreshTimestamp(new Date().getTime());
@@ -116,18 +119,35 @@ export default function Home() {
             Your personalized movie and series leaderboard.
           </p>
         </div>
-        <div className="flex justify-between items-center">
-          <button
-            onClick={() => setIsAddingUser(!isAddingUser)}
-            className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700"
-          >
-            {isAddingUser ? 'Cancel' : 'Add User'}
-          </button>
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex-grow">
+            {isAdmin && <UserSwitcher refreshTimestamp={refreshTimestamp} />}
+            {currentUser && <p className="text-sm text-gray-500 mt-2">Now acting as: <span className="font-bold">{currentUser.name}</span></p>}
+          </div>
+          <div className="flex items-center gap-4">
+            {isAdmin && (
+              <button
+                onClick={() => setIsAddingUser(!isAddingUser)}
+                className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700"
+              >
+                {isAddingUser ? 'Cancel' : 'Add User'}
+              </button>
+            )}
+             <button
+                onClick={() => signOut()}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+              >
+                Logout
+              </button>
+          </div>
         </div>
-        <UserSwitcher refreshTimestamp={refreshTimestamp} />
-        {isAddingUser && <AddUserForm onUserAdded={triggerDataRefresh} />}
-        <FriendList onCalculationComplete={triggerDataRefresh} />
-        <MovieSearch onItemAdded={triggerDataRefresh} />
+        {isAdmin && isAddingUser && <AddUserForm onUserAdded={triggerDataRefresh} />}
+        {currentUser && (
+          <>
+            <FriendList onCalculationComplete={triggerDataRefresh} />
+            <MovieSearch onItemAdded={triggerDataRefresh} />
+          </>
+        )}
       </div>
       <FilterControls 
         activeCategory={activeCategory}

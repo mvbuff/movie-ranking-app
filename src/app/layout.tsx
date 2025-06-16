@@ -22,7 +22,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <SessionProvider>
           <ToastProvider>
-            <UserProvider>{children}</UserProvider>
+        <UserProvider>{children}</UserProvider>
           </ToastProvider>
         </SessionProvider>
       </body>

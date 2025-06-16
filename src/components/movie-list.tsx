@@ -91,8 +91,8 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
   const filteredAndSortedMovies = useMemo(() => {
     return movies
       .filter(movie => {
-        const categoryMatch = categoryFilter === 'ALL' || movie.category === categoryFilter;
-        const scoreMatch = movie.aggregateScore === null || movie.aggregateScore >= scoreThreshold;
+      const categoryMatch = categoryFilter === 'ALL' || movie.category === categoryFilter;
+      const scoreMatch = movie.aggregateScore === null || movie.aggregateScore >= scoreThreshold;
         const searchMatch = searchTerm === '' || movie.title.toLowerCase().includes(searchTerm.toLowerCase());
         return categoryMatch && scoreMatch && searchMatch;
       })
@@ -104,7 +104,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         const scoreA = sortBy === 'aggregateScore' ? a.aggregateScore ?? -1 : a.currentUserRating;
         const scoreB = sortBy === 'aggregateScore' ? b.aggregateScore ?? -1 : b.currentUserRating;
         return scoreB - scoreA;
-      });
+    });
   }, [movies, categoryFilter, scoreThreshold, searchTerm, sortBy]);
 
   const handleRatingSubmit = async (movieId: string, score: number) => {
@@ -192,20 +192,20 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
           onClose={() => setActiveReviews(null)}
         />
       )}
-      <section className="w-full max-w-7xl mx-auto mt-6">
-        <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
+    <section className="w-full max-w-7xl mx-auto mt-6">
+       <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-10">
           {filteredAndSortedMovies.map((movie) => (
-            <div key={movie.id} className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col justify-between">
-              <div>
-                <div className="relative">
-                  <Image
-                    src={movie.posterUrl || '/placeholder.png'}
-                    alt={`Poster for ${movie.title}`}
-                    width={500}
-                    height={750}
-                    className="w-full h-auto object-cover"
-                  />
+          <div key={movie.id} className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col justify-between">
+            <div>
+              <div className="relative">
+                <Image
+                  src={movie.posterUrl || '/placeholder.png'}
+                  alt={`Poster for ${movie.title}`}
+                  width={500}
+                  height={750}
+                  className="w-full h-auto object-cover"
+                />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                   {movie.tmdbRating && (
                     <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
@@ -213,8 +213,8 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                       <span>{movie.tmdbRating.toFixed(1)}</span>
                     </div>
                   )}
-                </div>
-                <div className="p-4">
+              </div>
+              <div className="p-4">
                   <div className="flex justify-between items-start gap-2">
                     <a 
                       href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
@@ -233,7 +233,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                       <Info size={20} />
                     </button>
                   </div>
-                  <div className="space-y-3">
+                <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <button 
                         onClick={() => setIsReviewing(isReviewing === movie.id ? null : movie.id)}
@@ -245,9 +245,9 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                     </div>
                     <CustomRatingInput
                       initialScore={movie.currentUserRating}
-                      onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
-                      disabled={!currentUser}
-                    />
+                    onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
+                    disabled={!currentUser}
+                  />
                   </div>
                   {isReviewing === movie.id && (
                     <div className="mt-4 space-y-2">
@@ -272,18 +272,18 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                 </div>
               </div>
               <div className="p-4 bg-black/30 border-t border-slate-800">
-                <Scorecard score={movie.aggregateScore} />
-              </div>
+              <Scorecard score={movie.aggregateScore} />
             </div>
-          ))}
-        </div>
-        {filteredAndSortedMovies.length === 0 && movies.length > 0 && (
-          <div className="text-center p-8 my-10 bg-gray-50 rounded-lg border-dashed border-2 border-gray-300">
-            <p className="text-gray-500">No movies match your current filters.</p>
-            <p className="text-sm text-gray-400 mt-2">Try adjusting the category or score threshold.</p>
           </div>
-        )}
-      </section>
+        ))}
+       </div>
+        {filteredAndSortedMovies.length === 0 && movies.length > 0 && (
+         <div className="text-center p-8 my-10 bg-gray-50 rounded-lg border-dashed border-2 border-gray-300">
+           <p className="text-gray-500">No movies match your current filters.</p>
+           <p className="text-sm text-gray-400 mt-2">Try adjusting the category or score threshold.</p>
+         </div>
+       )}
+    </section>
     </>
   );
 }
