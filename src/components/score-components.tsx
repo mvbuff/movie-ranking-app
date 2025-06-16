@@ -4,22 +4,20 @@ import { useTransition } from 'react';
 import { useUser } from '@/context/user-context';
 import { useToast } from '@/context/toast-context';
 import { calculateUserAggregateScores } from '@/app/actions';
+import { getRatingDisplay } from '@/lib/rating-system';
 
 export function Scorecard({ score }: { score: number | null }) {
-  if (score === null) {
-    return (
-      <div className="p-2 text-center bg-gray-100 rounded-md">
-        <p className="text-sm font-medium text-gray-400">Not Calculated</p>
-      </div>
-    );
-  }
-
-  const colorClass = score > 7.5 ? 'bg-green-100 text-green-800' : score > 5 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
+  const displayValue = getRatingDisplay(score);
+  
+  const colorClass = score === null ? 'bg-gray-100 text-gray-400' 
+    : score > 7.5 ? 'bg-green-100 text-green-800' 
+    : score > 4 ? 'bg-yellow-100 text-yellow-800' 
+    : 'bg-red-100 text-red-800';
   
   return (
     <div className={`p-2 text-center rounded-md ${colorClass}`}>
       <p className="text-xs font-bold uppercase tracking-wider">Friend Score</p>
-      <p className="text-2xl font-bold">{score.toFixed(2)}</p>
+      <p className="text-2xl font-bold">{displayValue}</p>
     </div>
   );
 }

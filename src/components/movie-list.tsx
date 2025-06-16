@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@/context/user-context';
-import StarRating from './star-rating';
+import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
 import { Info, MessageSquarePlus } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
 import { useToast } from '@/context/toast-context';
+import { getRatingDisplay } from '@/lib/rating-system';
 
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
@@ -204,7 +205,9 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <p className="text-sm text-gray-500">Your Rating:</p>
+                      <p className="text-sm text-gray-500">
+                        Your Rating: <span className="font-bold text-gray-700">{getRatingDisplay(movie.currentUserRating)}</span>
+                      </p>
                       <button 
                         onClick={() => setIsReviewing(isReviewing === movie.id ? null : movie.id)}
                         className="p-1 text-gray-400 hover:text-indigo-600"
@@ -213,8 +216,8 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                         <MessageSquarePlus size={18} />
                       </button>
                     </div>
-                    <StarRating
-                      initialRating={movie.currentUserRating}
+                    <CustomRatingInput
+                      initialScore={movie.currentUserRating}
                       onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
                       disabled={!currentUser}
                     />
