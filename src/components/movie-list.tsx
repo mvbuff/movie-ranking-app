@@ -13,6 +13,7 @@ import { getRatingDisplay } from '@/lib/rating-system';
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
 type FilterCategory = Category | 'ALL';
+type SortKey = 'aggregateScore' | 'currentUserRating' | 'title';
 
 interface Movie {
   id: string;
@@ -34,9 +35,11 @@ interface MovieListProps {
   calculationTimestamp: number | null;
   categoryFilter: FilterCategory;
   scoreThreshold: number;
+  searchTerm: string;
+  sortBy: SortKey;
 }
 
-export default function MovieList({ calculationTimestamp, categoryFilter, scoreThreshold }: MovieListProps) {
+export default function MovieList({ calculationTimestamp, categoryFilter, scoreThreshold, searchTerm, sortBy }: MovieListProps) {
   const { currentUser } = useUser();
   const { showToast } = useToast();
   const [movies, setMovies] = useState<MovieWithRatingsAndScores[]>([]);
@@ -84,13 +87,24 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     fetchMovieData();
   }, [fetchMovieData, calculationTimestamp]);
 
-  const filteredMovies = useMemo(() => {
-    return movies.filter(movie => {
-      const categoryMatch = categoryFilter === 'ALL' || movie.category === categoryFilter;
-      const scoreMatch = movie.aggregateScore === null || movie.aggregateScore >= scoreThreshold;
-      return categoryMatch && scoreMatch;
-    });
-  }, [movies, categoryFilter, scoreThreshold]);
+  const filteredAndSortedMovies = useMemo(() => {
+    return movies
+      .filter(movie => {
+        const categoryMatch = categoryFilter === 'ALL' || movie.category === categoryFilter;
+        const scoreMatch = movie.aggregateScore === null || movie.aggregateScore >= scoreThreshold;
+        const searchMatch = searchTerm === '' || movie.title.toLowerCase().includes(searchTerm.toLowerCase());
+        return categoryMatch && scoreMatch && searchMatch;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'title') {
+          return a.title.localeCompare(b.title);
+        }
+        // For scores, nulls are treated as -1 to sort them at the end.
+        const scoreA = sortBy === 'aggregateScore' ? a.aggregateScore ?? -1 : a.currentUserRating;
+        const scoreB = sortBy === 'aggregateScore' ? b.aggregateScore ?? -1 : b.currentUserRating;
+        return scoreB - scoreA;
+      });
+  }, [movies, categoryFilter, scoreThreshold, searchTerm, sortBy]);
 
   const handleRatingSubmit = async (movieId: string, score: number) => {
     if (!currentUser) return;
@@ -179,8 +193,8 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       )}
       <section className="w-full max-w-7xl mx-auto mt-6">
         <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
-          {filteredMovies.map((movie) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-10">
+          {filteredAndSortedMovies.map((movie) => (
             <div key={movie.id} className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col justify-between">
               <div>
                 <div className="relative">
@@ -247,7 +261,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
             </div>
           ))}
         </div>
-        {filteredMovies.length === 0 && movies.length > 0 && (
+        {filteredAndSortedMovies.length === 0 && movies.length > 0 && (
           <div className="text-center p-8 my-10 bg-gray-50 rounded-lg border-dashed border-2 border-gray-300">
             <p className="text-gray-500">No movies match your current filters.</p>
             <p className="text-sm text-gray-400 mt-2">Try adjusting the category or score threshold.</p>

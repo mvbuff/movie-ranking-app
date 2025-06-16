@@ -6,7 +6,7 @@ import MovieList from "@/components/movie-list";
 import UserSwitcher from "@/components/user-switcher";
 import FriendList from "@/components/friend-list";
 import FilterControls from '@/components/filter-controls';
-import type { Category } from '@/components/filter-controls';
+import type { Category, SortKey } from '@/components/filter-controls';
 
 type FilterCategory = Category | 'ALL';
 
@@ -76,6 +76,8 @@ export default function Home() {
   const [refreshTimestamp, setRefreshTimestamp] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('ALL');
   const [scoreThreshold, setScoreThreshold] = useState<number>(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<SortKey>('aggregateScore');
   const [isAddingUser, setIsAddingUser] = useState(false);
 
   const triggerDataRefresh = () => {
@@ -113,11 +115,17 @@ export default function Home() {
         onCategoryChange={setActiveCategory}
         scoreThreshold={scoreThreshold}
         onScoreThresholdChange={setScoreThreshold}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
       />
       <MovieList
         calculationTimestamp={refreshTimestamp}
         categoryFilter={activeCategory}
         scoreThreshold={scoreThreshold}
+        searchTerm={searchTerm}
+        sortBy={sortBy}
       />
     </main>
   );

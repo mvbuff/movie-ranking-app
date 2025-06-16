@@ -40,7 +40,7 @@ export default function UserSwitcher({ refreshTimestamp }: UserSwitcherProps) {
       }
     }
     fetchUsers();
-  }, [setCurrentUser, refreshTimestamp]);
+  }, [setCurrentUser, refreshTimestamp, currentUser]);
 
   const handleUserChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedUserId = event.target.value;
