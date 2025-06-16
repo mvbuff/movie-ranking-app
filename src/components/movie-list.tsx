@@ -220,14 +220,14 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                       href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-base text-slate-100 flex-grow hover:text-cyan-400 transition-colors bg-transparent" 
+                      className="font-bold text-lg text-gray-900 flex-grow hover:text-indigo-600 transition-colors"
                       title={movie.title}
                     >
                       {movie.title} ({movie.year})
                     </a>
                     <button 
                       onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
-                      className="p-1 text-slate-400 hover:text-cyan-400 transition-colors flex-shrink-0"
+                      className="p-1 text-gray-400 hover:text-indigo-600 transition-colors flex-shrink-0"
                       title="Show user reviews"
                     >
                       <Info size={20} />
