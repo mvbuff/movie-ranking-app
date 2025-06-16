@@ -22,15 +22,15 @@ export default function UserSwitcher({ refreshTimestamp }: UserSwitcherProps) {
           throw new Error('Failed to fetch users');
         }
         const data: User[] = await response.json();
+
+        const newUserAdded = data.length > users.length;
         setUsers(data);
         
-        // If there's no current user or the refresh was triggered, select a user.
-        // Prioritize the last user in the list, which will be the newest one.
-        if (data.length > 0) {
-          if (!currentUser || refreshTimestamp) {
-            const newUser = data[data.length - 1];
-            setCurrentUser(newUser);
-          }
+        // Only auto-select a user if one isn't already selected,
+        // OR if a new user was just added to the list.
+        if (data.length > 0 && (!currentUser || newUserAdded)) {
+          const userToSelect = data[data.length - 1];
+          setCurrentUser(userToSelect);
         }
 
       } catch (error) {
@@ -40,7 +40,7 @@ export default function UserSwitcher({ refreshTimestamp }: UserSwitcherProps) {
       }
     }
     fetchUsers();
-  }, [setCurrentUser, refreshTimestamp, currentUser]);
+  }, [refreshTimestamp]); // Removed currentUser and users from deps to be more targeted
 
   const handleUserChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedUserId = event.target.value;
