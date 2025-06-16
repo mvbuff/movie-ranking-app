@@ -31,6 +31,7 @@ model User {
   status             UserStatus          @default(PENDING)
   email              String?             @unique
   image              String?
+  createdAt          DateTime            @default(now())
   ratings            Rating[]
   weightPreferences  WeightPreference[]  @relation("WeightSetter")
   weightsAboutMe     WeightPreference[]  @relation("WeightedFriend")
