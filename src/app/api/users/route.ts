@@ -36,9 +36,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && (error as any).code === 'P2002') {
+    // Check if the error is a Prisma unique constraint violation
+    if (error instanceof Error && 'code' in error && (error as any).code === 'P2002') {
       return NextResponse.json({ error: 'A user with this name already exists.' }, { status: 409 });
     }
+    // For all other errors
     console.error("Failed to create user:", error);
     return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
   }
