@@ -194,7 +194,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       )}
       <section className="w-full mx-auto mt-6">
         <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredAndSortedMovies.map((movie) => (
             <div 
               key={movie.id} 
@@ -222,7 +222,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                     href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-bold text-base text-slate-100 flex-grow hover:text-cyan-400 transition-colors" 
+                    className="font-bold text-lg text-gray-900 flex-grow hover:text-indigo-600 transition-colors"
                     title={movie.title}
                   >
                     {movie.title} ({movie.year})

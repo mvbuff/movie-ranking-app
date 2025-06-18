@@ -57,8 +57,8 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center mb-2">
-         <p className="text-sm text-slate-400">Your Rating:</p>
-         <span className="font-bold text-slate-100 text-sm">{displayRating()}</span>
+         <p className="text-sm text-gray-500">Your Rating:</p>
+         <span className="font-bold text-gray-700 text-sm">{displayRating()}</span>
       </div>
       <div className="flex justify-around">
         {letterGrades.map(grade => (

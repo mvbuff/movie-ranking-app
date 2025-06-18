@@ -138,7 +138,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full mx-auto">
       <form onSubmit={handleSearch} className="flex gap-2 mb-4">
         <input
           type="text"

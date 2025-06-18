@@ -145,7 +145,7 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
   if (loading) return <p className="mt-8 text-center text-gray-500">Loading friends...</p>;
 
   return (
-    <div className="mt-8 w-full">
+    <div className="w-full">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"

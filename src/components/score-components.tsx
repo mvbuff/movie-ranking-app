@@ -9,15 +9,15 @@ import { getRatingDisplay } from '@/lib/rating-system';
 export function Scorecard({ score }: { score: number | null }) {
   const displayValue = getRatingDisplay(score);
   
-  const colorClass = score === null ? 'text-slate-500' 
-    : score > 7.5 ? 'text-green-400' 
-    : score > 4 ? 'text-yellow-400' 
-    : 'text-red-400';
+  const colorClass = score === null ? 'bg-gray-100 text-gray-400' 
+    : score > 7.5 ? 'bg-green-100 text-green-800' 
+    : score > 4 ? 'bg-yellow-100 text-yellow-800' 
+    : 'bg-red-100 text-red-800';
   
   return (
-    <div>
-      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Friend Score</p>
-      <p className={`text-2xl font-bold ${colorClass}`}>{displayValue}</p>
+    <div className={`p-2 text-center rounded-md ${colorClass}`}>
+      <p className="text-xs font-bold uppercase tracking-wider">Friend Score</p>
+      <p className="text-2xl font-bold">{displayValue}</p>
     </div>
   );
 }
@@ -40,11 +40,15 @@ export function CalculateScoresButton({ onCalculationComplete }: { onCalculation
     });
   };
 
+  const buttonColor = isPending ? 'bg-yellow-500 hover:bg-yellow-600' 
+    : !currentUser ? 'bg-gray-400' 
+    : 'bg-indigo-600 hover:bg-indigo-700';
+
   return (
     <button
       onClick={handleCalculate}
       disabled={isPending || !currentUser}
-      className="w-full px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-300"
+      className={`w-full px-6 py-3 text-white font-semibold rounded-lg shadow-md disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 ${buttonColor}`}
     >
       {isPending ? 'Calculating...' : 'Calculate My Friend Scores'}
     </button>
