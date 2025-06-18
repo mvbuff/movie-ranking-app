@@ -12,100 +12,16 @@ import { signOut } from 'next-auth/react';
 
 type FilterCategory = Category | 'ALL';
 
-function AddUserForm({ onUserAdded }: { onUserAdded: () => void }) {
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !password.trim()) return;
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, password }),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to add user.');
-      }
-      
-      alert('Registration successful! An admin will review your request shortly.');
-      onUserAdded(); // Trigger a refresh
-      setName(''); // Clear input
-      setPassword('');
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="mt-4 p-4 border rounded-lg bg-gray-50">
-      <h3 className="font-semibold text-lg mb-2">Register New User</h3>
-      <div className="space-y-2">
-        <div>
-          <label htmlFor="reg-username">Username</label>
-          <input
-            id="reg-username"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter a username"
-            className="w-full p-2 border rounded-md"
-            disabled={isSubmitting}
-          />
-        </div>
-        <div>
-          <label htmlFor="reg-password">Password</label>
-           <input
-            id="reg-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter a password"
-            className="w-full p-2 border rounded-md"
-            disabled={isSubmitting}
-          />
-        </div>
-      </div>
-      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-       <button
-          type="submit"
-          disabled={isSubmitting}
-          className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-        >
-          {isSubmitting ? 'Registering...' : 'Register'}
-        </button>
-    </form>
-  );
-}
-
 export default function Home() {
   const [refreshTimestamp, setRefreshTimestamp] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('ALL');
   const [scoreThreshold, setScoreThreshold] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('aggregateScore');
-  const [isAddingUser, setIsAddingUser] = useState(false);
   const { isAdmin, currentUser } = useUser();
 
   const triggerDataRefresh = useCallback(() => {
     setRefreshTimestamp(new Date().getTime());
-    // Also close the add user form on refresh
-    setIsAddingUser(false);
   }, []);
 
   return (
@@ -125,14 +41,6 @@ export default function Home() {
             {currentUser && <p className="text-sm text-gray-500 mt-2">Now acting as: <span className="font-bold">{currentUser.name}</span></p>}
           </div>
           <div className="flex items-center gap-4">
-            {isAdmin && (
-              <button
-                onClick={() => setIsAddingUser(!isAddingUser)}
-                className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700"
-              >
-                {isAddingUser ? 'Cancel' : 'Add User'}
-              </button>
-            )}
              <button
                 onClick={() => signOut()}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
@@ -141,31 +49,30 @@ export default function Home() {
               </button>
           </div>
         </div>
-        {isAdmin && isAddingUser && <AddUserForm onUserAdded={triggerDataRefresh} />}
         {currentUser && (
           <>
             <FriendList onCalculationComplete={triggerDataRefresh} />
             <MovieSearch onItemAdded={triggerDataRefresh} />
+            <FilterControls 
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
+              scoreThreshold={scoreThreshold}
+              onScoreThresholdChange={setScoreThreshold}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+            />
+            <MovieList
+              calculationTimestamp={refreshTimestamp}
+              categoryFilter={activeCategory}
+              scoreThreshold={scoreThreshold}
+              searchTerm={searchTerm}
+              sortBy={sortBy}
+            />
           </>
         )}
       </div>
-      <FilterControls 
-        activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
-        scoreThreshold={scoreThreshold}
-        onScoreThresholdChange={setScoreThreshold}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-      />
-      <MovieList
-        calculationTimestamp={refreshTimestamp}
-        categoryFilter={activeCategory}
-        scoreThreshold={scoreThreshold}
-        searchTerm={searchTerm}
-        sortBy={sortBy}
-      />
     </main>
   );
 }
