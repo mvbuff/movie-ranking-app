@@ -10,7 +10,6 @@ export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const isForcedReset = session?.user?.passwordResetRequired;
 
@@ -53,8 +52,12 @@ export default function ChangePasswordPage() {
         router.push('/login');
       }
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred.');
+      }
     }
   };
 

@@ -5,7 +5,7 @@ import { useUser } from '@/context/user-context';
 import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
-import { Info, MessageSquarePlus, Star } from 'lucide-react';
+import { Info, Star } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
 import { useToast } from '@/context/toast-context';
 
@@ -217,16 +217,8 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
               )}
             </div>
             <div className="p-4 flex flex-col flex-grow">
-              <div className="flex justify-between items-start gap-2">
-                <a 
-                  href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-bold text-lg text-gray-900 flex-grow hover:text-indigo-600 transition-colors"
-                  title={movie.title}
-                >
-                  {movie.title} ({movie.year})
-                </a>
+              <div className="flex justify-between items-start">
+                <h3 className="font-bold text-lg flex-grow mb-4 pr-2" title={movie.title}>{movie.title} ({movie.year})</h3>
                 <button 
                   onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
                   className="p-1 text-gray-400 hover:text-indigo-600 transition-colors flex-shrink-0"
@@ -235,7 +227,10 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                   <Info size={18} />
                 </button>
               </div>
-              <div className="mt-4 flex-grow flex flex-col justify-end">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-gray-500">Your Rating:</p>
+                </div>
                 <CustomRatingInput
                   initialScore={movie.currentUserRating}
                   onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
