@@ -81,7 +81,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
   const handleSubmit = async (category: Category) => {
     if (!itemToReview || !currentUser) {
       showToast('Something went wrong, please try again.', 'error');
-      return;
+        return;
     }
     
     const title = itemToReview.title || itemToReview.name;
@@ -266,16 +266,16 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
               <div key={item.id} className="bg-white border rounded-lg shadow-md overflow-hidden flex flex-col">
                 <div className="relative h-80">
                   <Image
-                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`} 
                     alt={title ?? 'Movie Poster'}
                     layout="fill"
                     objectFit="cover"
                   />
                 </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-lg truncate" title={title}>{title}</h3>
-                  <p className="text-gray-500">{year?.substring(0, 4)}</p>
-                </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-lg truncate" title={title}>{title}</h3>
+                    <p className="text-gray-500">{year?.substring(0, 4)}</p>
+                  </div>
 
                 <div className="p-4 border-t mt-auto">
                   {itemToReview?.id === item.id ? (
@@ -296,7 +296,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
                           disabled={false}
                           initialScore={0} // Start with no rating
                         />
-                      </div>
+                </div>
 
                       <button onClick={() => handleSubmit('MOVIE')} className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Add as Movie</button>
                       <button onClick={() => handleSubmit('SERIES')} className="px-3 py-2 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-700">Add as Series</button>

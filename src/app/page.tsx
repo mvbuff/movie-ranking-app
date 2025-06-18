@@ -27,25 +27,25 @@ export default function Home() {
 
   return (
     <main className="min-h-screen p-4 sm:p-8">
-      <div className="text-center mb-10">
+        <div className="text-center mb-10">
         <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900">
-          Movie Ranking
-        </h1>
+            Movie Ranking
+          </h1>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
-          Your personalized movie and series leaderboard.
-        </p>
-      </div>
+            Your personalized movie and series leaderboard.
+          </p>
+        </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-8">
-          <FriendList onCalculationComplete={triggerDataRefresh} />
-          <MovieSearch onItemAdded={triggerDataRefresh} />
-          <FilterControls 
-            activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-            scoreThreshold={scoreThreshold}
-            onScoreThresholdChange={setScoreThreshold}
+        <FriendList onCalculationComplete={triggerDataRefresh} />
+        <MovieSearch onItemAdded={triggerDataRefresh} />
+      <FilterControls 
+        activeCategory={activeCategory}
+        onCategoryChange={setActiveCategory}
+        scoreThreshold={scoreThreshold}
+        onScoreThresholdChange={setScoreThreshold}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             sortBy={sortBy}
@@ -80,13 +80,13 @@ export default function Home() {
       </div>
 
       {currentUser && (
-          <MovieList
-            calculationTimestamp={refreshTimestamp}
-            categoryFilter={activeCategory}
-            scoreThreshold={scoreThreshold}
+      <MovieList
+        calculationTimestamp={refreshTimestamp}
+        categoryFilter={activeCategory}
+        scoreThreshold={scoreThreshold}
             searchTerm={searchTerm}
             sortBy={sortBy}
-          />
+      />
         )}
     </main>
   );

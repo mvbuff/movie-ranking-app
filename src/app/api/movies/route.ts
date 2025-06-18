@@ -26,10 +26,10 @@ export async function POST(request: Request) {
 
     // Only check for duplicates if a tmdbId is provided
     if (tmdbId) {
-      const existingMovie = await prisma.movie.findUnique({
-        where: { tmdbId: String(tmdbId) },
-      });
-      if (existingMovie) {
+    const existingMovie = await prisma.movie.findUnique({
+      where: { tmdbId: String(tmdbId) },
+    });
+    if (existingMovie) {
         // Return existing movie data but indicate it's a duplicate.
         return NextResponse.json(existingMovie, { status: 200 });
       }

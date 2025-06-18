@@ -165,9 +165,9 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
             className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col"
           >
             <div className="relative h-80"> 
-              <Image
-                src={movie.posterUrl || '/placeholder.png'}
-                alt={`Poster for ${movie.title}`}
+                <Image
+                  src={movie.posterUrl || '/placeholder.png'}
+                  alt={`Poster for ${movie.title}`}
                 layout="fill"
                 objectFit="cover"
                 className="transition-transform duration-300"
@@ -201,14 +201,14 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
               <div className="mt-auto pt-4">
                 <CustomRatingInput
                   initialScore={movie.currentUserRating}
-                  onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
-                  disabled={!currentUser}
-                />
-              </div>
+                    onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
+                    disabled={!currentUser}
+                  />
+                </div>
               {activeReviews && activeReviews.movieId === movie.id && (
                 <div className="mt-4 space-y-2">
                   {/* Add any additional review content here */}
-                </div>
+              </div>
               )}
             </div>
             <div className="p-2 bg-gray-50 border-t">
