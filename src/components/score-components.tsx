@@ -13,7 +13,7 @@ export function Scorecard({ score }: { score: number | null }) {
     : score > 7.5 ? 'bg-green-100 text-green-800' 
     : score > 5 ? 'bg-yellow-100 text-yellow-800' 
     : 'bg-red-100 text-red-800';
-
+  
   return (
     <div className={`p-1 text-center rounded-md ${colorClass}`}>
         <p className="text-[10px] font-bold uppercase tracking-wider">Friend Score</p>

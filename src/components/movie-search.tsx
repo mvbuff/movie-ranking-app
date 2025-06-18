@@ -6,7 +6,7 @@ import { useUser } from '@/context/user-context';
 import type { Category } from './filter-controls';
 import { useToast } from '@/context/toast-context';
 import CustomRatingInput from './custom-rating';
-import { getScore, LetterGrade, Modifier } from '@/lib/rating-system';
+import { getScore, getGradeFromScore, LetterGrade, Modifier } from '@/lib/rating-system';
 
 // Combined type for movies and TV shows from TMDb
 interface SearchResult {
@@ -292,11 +292,15 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
                       <div className="my-4">
                         <p className="text-sm font-medium text-gray-700 mb-2 text-center">Rate it (optional):</p>
                         <CustomRatingInput 
-                          onRatingChange={(g, m) => { setSelectedGrade(g); setSelectedModifier(m); }} 
+                          onRatingSubmit={(score) => {
+                            const { grade, modifier } = getGradeFromScore(score);
+                            setSelectedGrade(grade);
+                            setSelectedModifier(modifier);
+                          }} 
                           disabled={false}
-                          initialScore={0} // Start with no rating
+                          initialScore={selectedGrade ? getScore(selectedGrade, selectedModifier) : 0}
                         />
-                </div>
+                      </div>
 
                       <button onClick={() => handleSubmit('MOVIE')} className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Add as Movie</button>
                       <button onClick={() => handleSubmit('SERIES')} className="px-3 py-2 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-700">Add as Series</button>
