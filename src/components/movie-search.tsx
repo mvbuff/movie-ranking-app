@@ -37,7 +37,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
   const { currentUser } = useUser();
   const { showToast } = useToast();
 
-  // State for the two-step add process
+  // State for the two-step add process //
   const [itemToReview, setItemToReview] = useState<SearchResult | null>(null);
   const [reviewText, setReviewText] = useState('');
   const [showManualForm, setShowManualForm] = useState(false);
