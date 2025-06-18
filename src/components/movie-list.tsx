@@ -113,7 +113,6 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       setMovies(movies.map(m => m.id === movieId ? { ...m, currentUserRating: score } : m));
     } catch (error) {
       console.error('Failed to submit rating:', error);
-      // Optional: Revert optimistic update on error
       fetchMovieData(); 
     }
   };
@@ -160,7 +159,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       )}
       <section className="w-full mx-auto mt-6">
        <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
-       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-6">
         {filteredAndSortedMovies.map((movie) => (
           <div 
             key={movie.id} 
@@ -201,8 +200,17 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                 </button>
               </div>
               <div className="mt-auto pt-4">
-                <MovieRatingDisplay score={movie.currentUserRating} />
+                <CustomRatingInput
+                  initialScore={movie.currentUserRating}
+                  onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
+                  disabled={!currentUser}
+                />
               </div>
+              {activeReviews && activeReviews.movieId === movie.id && (
+                <div className="mt-4 space-y-2">
+                  {/* Add any additional review content here */}
+                </div>
+              )}
             </div>
             <div className="p-2 bg-gray-50 border-t">
               <Scorecard score={movie.aggregateScore} />

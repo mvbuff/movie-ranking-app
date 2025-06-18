@@ -74,4 +74,16 @@ export function getRatingDisplay(score: number | null): string {
     }
   }
   return 'AB';
-} 
+}
+
+// New array to define the labels and their corresponding score for the filter slider
+export const SLIDER_RATING_SCALE = [
+  { display: 'AB', score: 3 },
+  { display: 'BB-', score: 4 },
+  { display: 'BB', score: 5 },
+  { display: 'BB+', score: 6 },
+  { display: 'BB++', score: 7 },
+  { display: 'CB-', score: 8 },
+  { display: 'CB', score: 9 },
+  { display: 'CB+', score: 10 },
+]; 

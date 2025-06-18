@@ -4,19 +4,29 @@ import { useState, useEffect } from 'react';
 import { letterGrades, modifiers, getScore, getGradeFromScore, LetterGrade, Modifier } from '@/lib/rating-system';
 
 interface CustomRatingInputProps {
-  // A callback to inform the parent of the current selection
-  onRatingChange: (grade: LetterGrade | null, modifier: Modifier | null) => void;
+  initialScore: number;
+  onRatingSubmit: (score: number) => void;
   disabled: boolean;
 }
 
-export default function CustomRatingInput({ onRatingChange, disabled }: CustomRatingInputProps) {
+export default function CustomRatingInput({ initialScore, onRatingSubmit, disabled }: CustomRatingInputProps) {
   const [selectedGrade, setSelectedGrade] = useState<LetterGrade | null>(null);
   const [selectedModifier, setSelectedModifier] = useState<Modifier | null>(null);
 
   useEffect(() => {
-    // Inform the parent component whenever the selection changes.
-    onRatingChange(selectedGrade, selectedModifier);
-  }, [selectedGrade, selectedModifier, onRatingChange]);
+    const { grade, modifier } = getGradeFromScore(initialScore);
+    setSelectedGrade(grade);
+    setSelectedModifier(modifier);
+  }, [initialScore]);
+
+  const handleRatingUpdate = (grade: LetterGrade | null, modifier: Modifier | null) => {
+    if (!grade) {
+      onRatingSubmit(0);
+      return;
+    }
+    const newScore = getScore(grade, modifier);
+    onRatingSubmit(newScore);
+  };
   
   const handleGradeSelect = (grade: LetterGrade) => {
     const newGrade = selectedGrade === grade ? null : grade;
@@ -24,11 +34,13 @@ export default function CustomRatingInput({ onRatingChange, disabled }: CustomRa
     
     setSelectedGrade(newGrade);
     setSelectedModifier(newModifier);
+    handleRatingUpdate(newGrade, newModifier);
   };
 
   const handleModifierSelect = (modifier: Modifier) => {
     const newModifier = selectedModifier === modifier ? null : modifier;
     setSelectedModifier(newModifier);
+    handleRatingUpdate(selectedGrade, newModifier);
   };
 
   const getButtonClass = (isActive: boolean, isDisabled: boolean = false) => 

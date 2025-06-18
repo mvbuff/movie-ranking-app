@@ -1,4 +1,5 @@
 'use client';
+import { SLIDER_RATING_SCALE } from '@/lib/rating-system';
 
 // Manually define the Category type for client-side use
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
@@ -61,14 +62,14 @@ export default function FilterControls({
         {/* Score Threshold Filter */}
         <div className="space-y-2">
           <label htmlFor="score-threshold" className="block text-sm font-medium text-gray-700">
-            Min. Friend Score ({scoreThreshold.toFixed(1)})
+            Min. Friend Score ({SLIDER_RATING_SCALE.find(s => s.score === scoreThreshold)?.display || 'N/A'})
           </label>
           <input
             id="score-threshold"
             type="range"
-            min="0"
+            min="3"
             max="10"
-            step="0.5"
+            step="1"
             value={scoreThreshold}
             onChange={(e) => onScoreThresholdChange(parseFloat(e.target.value))}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
