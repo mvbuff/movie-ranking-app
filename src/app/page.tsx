@@ -9,6 +9,7 @@ import FilterControls from '@/components/filter-controls';
 import type { Category, SortKey } from '@/components/filter-controls';
 import { useUser } from '@/context/user-context';
 import { signOut } from 'next-auth/react';
+import Link from 'next/link';
 
 type FilterCategory = Category | 'ALL';
 
@@ -41,6 +42,11 @@ export default function Home() {
             {currentUser && <p className="text-sm text-gray-500 mt-2">Now acting as: <span className="font-bold">{currentUser.name}</span></p>}
           </div>
           <div className="flex items-center gap-4">
+            {isAdmin && (
+                <Link href="/admin" className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700">
+                    Admin Panel
+                </Link>
+            )}
              <button
                 onClick={() => signOut()}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
