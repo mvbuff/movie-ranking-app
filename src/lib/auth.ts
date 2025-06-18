@@ -24,7 +24,7 @@ export const authOptions: AuthOptions = {
           return null;
         }
 
-        if (user.status !== 'ACTIVE') {
+        if (user.status !== 'ACTIVE' && !user.passwordResetRequired) {
           throw new Error('Your account is pending approval.');
         }
 
@@ -38,6 +38,7 @@ export const authOptions: AuthOptions = {
           id: user.id,
           name: user.name,
           role: user.role,
+          passwordResetRequired: user.passwordResetRequired,
         };
       }
     })
@@ -50,6 +51,7 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.passwordResetRequired = user.passwordResetRequired;
       }
       return token;
     },
@@ -57,6 +59,7 @@ export const authOptions: AuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.passwordResetRequired = token.passwordResetRequired as boolean;
       }
       return session;
     },

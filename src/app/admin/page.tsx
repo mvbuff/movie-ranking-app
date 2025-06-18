@@ -55,6 +55,20 @@ export default function AdminPage() {
     }
   };
 
+  const handleResetPassword = async (userId: string) => {
+    const response = await fetch('/api/account/password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userIdForAdminReset: userId }),
+    });
+    const data = await response.json();
+    if (response.ok) {
+      alert(`Password reset successfully. Temporary password is: ${data.temporaryPassword}`);
+    } else {
+      alert(`Failed to reset password: ${data.error}`);
+    }
+  };
+
   if (loading || status === 'loading') {
     return <main className="p-8"><p>Loading...</p></main>;
   }
@@ -88,6 +102,7 @@ export default function AdminPage() {
                   {user.status === 'PENDING' && (
                     <button onClick={() => handleUpdateStatus(user.id, 'ACTIVE')} className="text-indigo-600 hover:text-indigo-900 mr-4">Approve</button>
                   )}
+                  <button onClick={() => handleResetPassword(user.id)} className="text-indigo-600 hover:text-indigo-900 mr-4">Reset Password</button>
                   <button onClick={() => handleDeleteUser(user.id)} className="text-red-600 hover:text-red-900">Delete</button>
                 </td>
               </tr>
