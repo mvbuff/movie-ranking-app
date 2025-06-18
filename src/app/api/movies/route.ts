@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { hash } from 'bcrypt';
+import { randomBytes } from 'crypto';
 
 export async function GET() {
   try {
@@ -34,9 +36,12 @@ export async function POST(request: Request) {
       }
     }
 
+    // If tmdbId is not provided, generate a unique one for the manual entry.
+    const finalTmdbId = tmdbId ? String(tmdbId) : `manual_${randomBytes(8).toString('hex')}`;
+
     const movie = await prisma.movie.create({
       data: {
-        tmdbId: tmdbId ? String(tmdbId) : null,
+        tmdbId: finalTmdbId,
         title,
         year: year ? parseInt(String(year), 10) : 0,
         posterUrl,

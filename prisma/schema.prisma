@@ -53,7 +53,7 @@ model Movie {
   title           String
   year            Int
   posterUrl       String?
-  tmdbId          String?          @unique
+  tmdbId          String           @unique
   tmdbRating      Float?
   tmdbVoteCount   Int?
   category        Category         @default(MOVIE)
