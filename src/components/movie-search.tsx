@@ -184,8 +184,12 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
       setShowManualForm(false);
       onItemAdded(); // Trigger the main movie list to refresh
 
-    } catch (error: any) {
-      showToast(error.message, 'error');
+    } catch (error) {
+      if (error instanceof Error) {
+        showToast(error.message, 'error');
+      } else {
+        showToast('An unknown error occurred.', 'error');
+      }
     }
   };
 
