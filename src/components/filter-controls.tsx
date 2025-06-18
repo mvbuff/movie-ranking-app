@@ -35,10 +35,10 @@ export default function FilterControls({
 }: FilterControlsProps) {
   return (
     <div className="w-full max-w-7xl mx-auto my-8 p-4 bg-white rounded-lg shadow-sm border">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Category Filters */}
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
             Filter by Category
           </label>
           <div className="flex items-center gap-2 flex-wrap">
@@ -59,8 +59,8 @@ export default function FilterControls({
         </div>
 
         {/* Score Threshold Filter */}
-        <div className="flex-1">
-          <label htmlFor="score-threshold" className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="space-y-2">
+          <label htmlFor="score-threshold" className="block text-sm font-medium text-gray-700">
             Min. Friend Score ({scoreThreshold.toFixed(1)})
           </label>
           <input
@@ -75,9 +75,9 @@ export default function FilterControls({
           />
         </div>
       </div>
-      <div className="flex flex-col sm:flex-row items-center gap-6 mt-4 pt-4 border-t">
+      <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-6 mt-4 pt-4 border-t">
         {/* Search within database */}
-        <div className="flex-1 w-full">
+        <div className="w-full">
             <label htmlFor="search-db" className="block text-sm font-medium text-gray-700 mb-2">
                 Search Your Rated Movies
             </label>
@@ -91,7 +91,7 @@ export default function FilterControls({
             />
         </div>
         {/* Sort by */}
-        <div className="flex-1 w-full">
+        <div className="w-full">
             <label htmlFor="sort-by" className="block text-sm font-medium text-gray-700 mb-2">
                 Sort By
             </label>
