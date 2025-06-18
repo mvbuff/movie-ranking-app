@@ -4,45 +4,31 @@ import { useState, useEffect } from 'react';
 import { letterGrades, modifiers, getScore, getGradeFromScore, LetterGrade, Modifier } from '@/lib/rating-system';
 
 interface CustomRatingInputProps {
-  initialScore: number;
-  onRatingSubmit: (score: number) => void;
+  // A callback to inform the parent of the current selection
+  onRatingChange: (grade: LetterGrade | null, modifier: Modifier | null) => void;
   disabled: boolean;
 }
 
-export default function CustomRatingInput({ initialScore, onRatingSubmit, disabled }: CustomRatingInputProps) {
+export default function CustomRatingInput({ onRatingChange, disabled }: CustomRatingInputProps) {
   const [selectedGrade, setSelectedGrade] = useState<LetterGrade | null>(null);
   const [selectedModifier, setSelectedModifier] = useState<Modifier | null>(null);
 
   useEffect(() => {
-    const { grade, modifier } = getGradeFromScore(initialScore);
-    setSelectedGrade(grade);
-    setSelectedModifier(modifier);
-  }, [initialScore]);
+    // Inform the parent component whenever the selection changes.
+    onRatingChange(selectedGrade, selectedModifier);
+  }, [selectedGrade, selectedModifier, onRatingChange]);
   
-  const handleRatingUpdate = (grade: LetterGrade | null, modifier: Modifier | null) => {
-    if (!grade) {
-      onRatingSubmit(0);
-      return;
-    }
-    const newScore = getScore(grade, modifier);
-    onRatingSubmit(newScore);
-  };
-
   const handleGradeSelect = (grade: LetterGrade) => {
     const newGrade = selectedGrade === grade ? null : grade;
-    
-    // If selecting AB, or deselecting the current grade, clear modifier
     const newModifier = (newGrade === 'AB' || !newGrade) ? null : selectedModifier;
-
+    
     setSelectedGrade(newGrade);
     setSelectedModifier(newModifier);
-    handleRatingUpdate(newGrade, newModifier);
   };
 
   const handleModifierSelect = (modifier: Modifier) => {
     const newModifier = selectedModifier === modifier ? null : modifier;
     setSelectedModifier(newModifier);
-    handleRatingUpdate(selectedGrade, newModifier);
   };
 
   const getButtonClass = (isActive: boolean, isDisabled: boolean = false) => 
@@ -53,8 +39,11 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
   
   const displayRating = () => {
     if (!selectedGrade) return 'Not Rated';
+    if (selectedGrade === 'AB') return 'AB';
     return `${selectedGrade}${selectedModifier || ''}`;
   };
+
+  const areModifiersDisabled = disabled || selectedGrade === 'AB';
 
   return (
     <div className="space-y-2">

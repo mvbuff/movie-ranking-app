@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { useUser } from '@/context/user-context';
 import type { Category } from './filter-controls';
 import { useToast } from '@/context/toast-context';
+import CustomRatingInput from './custom-rating';
+import { getScore, LetterGrade, Modifier } from '@/lib/rating-system';
 
 // Combined type for movies and TV shows from TMDb
 interface SearchResult {
@@ -41,6 +43,9 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
   const [itemToReview, setItemToReview] = useState<SearchResult | null>(null);
   const [reviewText, setReviewText] = useState('');
   const [showManualForm, setShowManualForm] = useState(false);
+  // New state for the integrated rating
+  const [selectedGrade, setSelectedGrade] = useState<LetterGrade | null>(null);
+  const [selectedModifier, setSelectedModifier] = useState<Modifier | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,18 +78,18 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
     }
   };
 
-  const handleSubmitReview = async (category: Category) => {
+  const handleSubmit = async (category: Category) => {
     if (!itemToReview || !currentUser) {
       showToast('Something went wrong, please try again.', 'error');
-        return;
+      return;
     }
     
     const title = itemToReview.title || itemToReview.name;
     const releaseDate = itemToReview.release_date || itemToReview.first_air_date;
+    const ratingScore = selectedGrade ? getScore(selectedGrade, selectedModifier) : 0;
 
     try {
       // Step 1: Add the movie to the global database.
-      // The API handles cases where the movie already exists.
       const movieResponse = await fetch('/api/movies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,13 +105,26 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
       });
 
       const movieData = await movieResponse.json();
-      if (!movieResponse.ok && movieResponse.status !== 409) { // 409 Conflict is okay, means movie exists
+      if (!movieResponse.ok && movieResponse.status !== 409) {
         throw new Error(movieData.error || 'Failed to add item');
       }
 
       const movieId = movieData.id;
 
-      // Step 2: If review text exists, submit it.
+      // Step 2: If a rating was given, submit it.
+      if (ratingScore > 0) {
+        await fetch('/api/ratings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentUser.id,
+            movieId: movieId,
+            score: ratingScore,
+          }),
+        });
+      }
+
+      // Step 3: If review text exists, submit it.
       if (reviewText.trim()) {
         const reviewResponse = await fetch('/api/reviews', {
           method: 'POST',
@@ -261,19 +279,29 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
 
                 <div className="p-4 border-t mt-auto">
                   {itemToReview?.id === item.id ? (
-                    <div className="flex flex-col space-y-2">
+                    <div className="flex flex-col space-y-2 p-2">
                        <textarea
                         value={reviewText}
                         onChange={(e) => setReviewText(e.target.value)}
-                        placeholder="Add a short note (optional)..."
+                        placeholder="Add a note (optional)..."
                         maxLength={100}
                         className="w-full p-2 border rounded-md text-sm"
                       />
                       <div className="text-right text-xs text-gray-400">{reviewText.length}/100</div>
-                      <button onClick={() => handleSubmitReview('MOVIE')} className="px-3 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">As Movie</button>
-                      <button onClick={() => handleSubmitReview('SERIES')} className="px-3 py-2 text-sm bg-purple-500 text-white rounded hover:bg-purple-600">As Series</button>
-                      <button onClick={() => handleSubmitReview('DOCUMENTARY')} className="px-3 py-2 text-sm bg-gray-500 text-white rounded hover:bg-gray-600">As Documentary</button>
-                      <button onClick={() => setItemToReview(null)} className="px-3 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600">Cancel</button>
+                      
+                      <div className="my-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2 text-center">Rate it (optional):</p>
+                        <CustomRatingInput 
+                          onRatingChange={(g, m) => { setSelectedGrade(g); setSelectedModifier(m); }} 
+                          disabled={false}
+                          initialScore={0} // Start with no rating
+                        />
+                      </div>
+
+                      <button onClick={() => handleSubmit('MOVIE')} className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Add as Movie</button>
+                      <button onClick={() => handleSubmit('SERIES')} className="px-3 py-2 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-700">Add as Series</button>
+                      <button onClick={() => handleSubmit('DOCUMENTARY')} className="px-3 py-2 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-700">Add as Documentary</button>
+                      <button onClick={() => { setItemToReview(null); setReviewText(''); }} className="px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">Cancel</button>
                     </div>
                   ) : (
                     <button

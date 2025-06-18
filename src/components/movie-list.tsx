@@ -5,9 +5,9 @@ import { useUser } from '@/context/user-context';
 import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
-import { Info, MessageSquarePlus, Star } from 'lucide-react';
+import { Info, Star } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
-import { useToast } from '@/context/toast-context';
+import MovieRatingDisplay from './movie-rating-display';
 
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
@@ -42,12 +42,9 @@ interface MovieListProps {
 
 export default function MovieList({ calculationTimestamp, categoryFilter, scoreThreshold, searchTerm, sortBy }: MovieListProps) {
   const { currentUser } = useUser();
-  const { showToast } = useToast();
   const [movies, setMovies] = useState<MovieWithRatingsAndScores[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeReviews, setActiveReviews] = useState<{ movieId: string; movieTitle: string; } | null>(null);
-  const [isReviewing, setIsReviewing] = useState<string | null>(null);
-  const [reviewText, setReviewText] = useState('');
 
   const fetchMovieData = useCallback(async () => {
     if (!currentUser) {
@@ -74,7 +71,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         ...movie,
         currentUserRating: ratingsMap.get(movie.id) || 0,
         aggregateScore: scoresMap.get(movie.id) ?? null,
-      })).sort((a, b) => (b.aggregateScore ?? -1) - (a.aggregateScore ?? -1)); // Sort by score descending
+      }));
 
       setMovies(moviesWithData);
     } catch (error) {
@@ -87,25 +84,6 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
   useEffect(() => {
     fetchMovieData();
   }, [fetchMovieData, calculationTimestamp]);
-
-  const filteredAndSortedMovies = useMemo(() => {
-    return movies
-      .filter(movie => {
-      const categoryMatch = categoryFilter === 'ALL' || movie.category === categoryFilter;
-      const scoreMatch = movie.aggregateScore === null || movie.aggregateScore >= scoreThreshold;
-        const searchMatch = searchTerm === '' || movie.title.toLowerCase().includes(searchTerm.toLowerCase());
-        return categoryMatch && scoreMatch && searchMatch;
-      })
-      .sort((a, b) => {
-        if (sortBy === 'title') {
-          return a.title.localeCompare(b.title);
-        }
-        // For scores, nulls are treated as -1 to sort them at the end.
-        const scoreA = sortBy === 'aggregateScore' ? a.aggregateScore ?? -1 : a.currentUserRating;
-        const scoreB = sortBy === 'aggregateScore' ? b.aggregateScore ?? -1 : b.currentUserRating;
-        return scoreB - scoreA;
-    });
-  }, [movies, categoryFilter, scoreThreshold, searchTerm, sortBy]);
 
   const handleRatingSubmit = async (movieId: string, score: number) => {
     if (!currentUser) return;
@@ -140,35 +118,23 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     }
   };
 
-  const handleReviewSubmit = async (movieId: string) => {
-    if (!currentUser || !reviewText.trim()) return;
-
-    try {
-      const response = await fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          movieId: movieId,
-          userId: currentUser.id,
-          text: reviewText,
-        }),
+  const filteredAndSortedMovies = useMemo(() => {
+    return movies
+      .filter(movie => {
+        const categoryMatch = categoryFilter === 'ALL' || movie.category === categoryFilter;
+        const scoreMatch = movie.aggregateScore === null || movie.aggregateScore >= scoreThreshold;
+        const searchMatch = searchTerm === '' || movie.title.toLowerCase().includes(searchTerm.toLowerCase());
+        return categoryMatch && scoreMatch && searchMatch;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'title') {
+          return a.title.localeCompare(b.title);
+        }
+        const scoreA = sortBy === 'aggregateScore' ? a.aggregateScore ?? -1 : a.currentUserRating;
+        const scoreB = sortBy === 'aggregateScore' ? b.aggregateScore ?? -1 : b.currentUserRating;
+        return scoreB - scoreA;
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit review');
-      }
-
-      showToast('Review added successfully!', 'success');
-      setReviewText('');
-      setIsReviewing(null);
-    } catch (error) {
-      if (error instanceof Error) {
-        showToast(error.message, 'error');
-      }
-      console.error('Failed to submit review:', error);
-    }
-  };
+  }, [movies, categoryFilter, scoreThreshold, searchTerm, sortBy]);
 
   if (!currentUser) return null;
   
@@ -193,98 +159,64 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         />
       )}
       <section className="w-full mx-auto mt-6">
-        <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {filteredAndSortedMovies.map((movie) => (
-            <div 
-              key={movie.id} 
-              className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col"
-            >
-              <div className="relative h-80"> 
-                <Image
-                  src={movie.posterUrl || '/placeholder.png'}
-                  alt={`Poster for ${movie.title}`}
-                  layout="fill"
-                  objectFit="cover"
-                  className="transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                {movie.tmdbRating && (
-                  <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    <Star size={12} className="text-yellow-400" />
-                    <span>{movie.tmdbRating.toFixed(1)}</span>
-                  </div>
-                )}
-              </div>
-              <div className="p-4 flex flex-col flex-1">
-                <div className="flex justify-between items-start gap-2">
-                  <a 
-                    href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-lg text-gray-900 flex-grow hover:text-indigo-600 transition-colors"
-                    title={movie.title}
-                  >
-                    {movie.title} ({movie.year > 0 ? movie.year : 'N/A'})
-                  </a>
-                  <div className="flex-shrink-0">
-                    <button 
-                      onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
-                      className="p-1 text-gray-400 hover:text-indigo-600"
-                      title="Show user reviews"
-                    >
-                      <Info size={18} />
-                    </button>
-                    <button 
-                      onClick={() => setIsReviewing(isReviewing === movie.id ? null : movie.id)}
-                      className="p-1 text-gray-400 hover:text-indigo-600"
-                      title="Add a review"
-                    >
-                      <MessageSquarePlus size={18} />
-                    </button>
-                  </div>
+       <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
+       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        {filteredAndSortedMovies.map((movie) => (
+          <div 
+            key={movie.id} 
+            className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col"
+          >
+            <div className="relative h-80"> 
+              <Image
+                src={movie.posterUrl || '/placeholder.png'}
+                alt={`Poster for ${movie.title}`}
+                layout="fill"
+                objectFit="cover"
+                className="transition-transform duration-300"
+              />
+              {movie.tmdbRating && (
+                <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  <Star size={12} className="text-yellow-400" />
+                  <span>{movie.tmdbRating.toFixed(1)}</span>
                 </div>
-                <div className="mt-auto pt-4">
-                  <CustomRatingInput
-                    initialScore={movie.currentUserRating}
-                    onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
-                    disabled={!currentUser}
-                  />
-                </div>
-                {isReviewing === movie.id && (
-                  <div className="mt-4 space-y-2">
-                    <textarea
-                      value={reviewText}
-                      onChange={(e) => setReviewText(e.target.value)}
-                      placeholder="Write a short review..."
-                      maxLength={100}
-                      className="w-full p-2 border rounded-md text-sm"
-                    />
-                    <div className="flex justify-between items-center">
-                      <p className="text-xs text-gray-400">{reviewText.length}/100</p>
-                      <button 
-                        onClick={() => handleReviewSubmit(movie.id)}
-                        className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                      >
-                        Submit
-                      </button>
-                    </div>
-                  </div>
-                )}
+              )}
+            </div>
+            <div className="p-4 flex flex-col flex-1">
+              <div className="flex justify-between items-start">
+                <a
+                  href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-lg text-gray-900 flex-grow hover:text-indigo-600 transition-colors"
+                  title={movie.title}
+                >
+                  {movie.title} ({movie.year > 0 ? movie.year : 'N/A'})
+                </a>
+                <button 
+                  onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
+                  className="p-1 text-gray-400 hover:text-indigo-600"
+                  title="Show user reviews"
+                >
+                  <Info size={18} />
+                </button>
               </div>
-              <div className="p-2 bg-gray-50 border-t">
-                <Scorecard score={movie.aggregateScore} />
+              <div className="mt-auto pt-4">
+                <MovieRatingDisplay score={movie.currentUserRating} />
               </div>
             </div>
-          ))}
-        </div>
-        {filteredAndSortedMovies.length === 0 && movies.length > 0 && (
+            <div className="p-2 bg-gray-50 border-t">
+              <Scorecard score={movie.aggregateScore} />
+            </div>
+          </div>
+        ))}
+       </div>
+       {filteredAndSortedMovies.length === 0 && movies.length > 0 && (
          <div className="text-center p-8 my-10 bg-gray-50 rounded-lg border-dashed border-2 border-gray-300">
            <p className="text-gray-500">No movies match your current filters.</p>
            <p className="text-sm text-gray-400 mt-2">Try adjusting the category or score threshold.</p>
          </div>
        )}
-      </section>
+    </section>
     </>
   );
 }
