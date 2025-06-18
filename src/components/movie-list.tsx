@@ -196,82 +196,74 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
        <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-10">
           {filteredAndSortedMovies.map((movie) => (
-          <div key={movie.id} className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col justify-between">
-            <div>
-              <div className="relative">
-                <Image
-                  src={movie.posterUrl || '/placeholder.png'}
-                  alt={`Poster for ${movie.title}`}
-                  width={500}
-                  height={750}
-                  className="w-full h-auto object-cover"
-                />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                  {movie.tmdbRating && (
-                    <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      <Star size={12} className="text-yellow-400" />
-                      <span>{movie.tmdbRating.toFixed(1)}</span>
-                    </div>
-                  )}
+          <div 
+            key={movie.id} 
+            className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col"
+          >
+            <div className="relative">
+              <Image
+                src={movie.posterUrl || '/placeholder.png'}
+                alt={`Poster for ${movie.title}`}
+                width={500}
+                height={750}
+                className="w-full h-auto object-cover aspect-[2/3]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              {movie.tmdbRating && (
+                <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  <Star size={12} className="text-yellow-400" />
+                  <span>{movie.tmdbRating.toFixed(1)}</span>
+                </div>
+              )}
+            </div>
+            <div className="p-4 flex flex-col flex-grow">
+              <div className="flex justify-between items-start gap-2">
+                <a 
+                  href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-lg text-gray-900 flex-grow hover:text-indigo-600 transition-colors"
+                  title={movie.title}
+                >
+                  {movie.title} ({movie.year})
+                </a>
+                <button 
+                  onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
+                  className="p-1 text-gray-400 hover:text-indigo-600 transition-colors flex-shrink-0"
+                  title="Show user reviews"
+                >
+                  <Info size={18} />
+                </button>
               </div>
-              <div className="p-4">
-                  <div className="flex justify-between items-start gap-2">
-                    <a 
-                      href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-bold text-lg text-gray-900 flex-grow hover:text-indigo-600 transition-colors"
-                      title={movie.title}
-                    >
-                      {movie.title} ({movie.year})
-                    </a>
+              <div className="mt-4 flex-grow flex flex-col justify-end">
+                <CustomRatingInput
+                  initialScore={movie.currentUserRating}
+                  onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
+                  disabled={!currentUser}
+                />
+              </div>
+              {isReviewing === movie.id && (
+                <div className="mt-4 space-y-2">
+                  <textarea
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    placeholder="Write a short review..."
+                    maxLength={100}
+                    className="w-full p-2 border rounded-md text-sm"
+                  />
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-gray-400">{reviewText.length}/100</p>
                     <button 
-                      onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
-                      className="p-1 text-gray-400 hover:text-indigo-600 transition-colors flex-shrink-0"
-                      title="Show user reviews"
+                      onClick={() => handleReviewSubmit(movie.id)}
+                      className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                     >
-                      <Info size={20} />
+                      Submit
                     </button>
                   </div>
-                <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <button 
-                        onClick={() => setIsReviewing(isReviewing === movie.id ? null : movie.id)}
-                        className="ml-auto p-1 text-gray-400 hover:text-indigo-600"
-                        title="Add a review"
-                      >
-                        <MessageSquarePlus size={18} />
-                      </button>
-                    </div>
-                    <CustomRatingInput
-                      initialScore={movie.currentUserRating}
-                    onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
-                    disabled={!currentUser}
-                  />
-                  </div>
-                  {isReviewing === movie.id && (
-                    <div className="mt-4 space-y-2">
-                      <textarea
-                        value={reviewText}
-                        onChange={(e) => setReviewText(e.target.value)}
-                        placeholder="Write a short review..."
-                        maxLength={100}
-                        className="w-full p-2 border rounded-md text-sm"
-                      />
-                      <div className="flex justify-between items-center">
-                        <p className="text-xs text-gray-400">{reviewText.length}/100</p>
-                        <button 
-                          onClick={() => handleReviewSubmit(movie.id)}
-                          className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                        >
-                          Submit
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </div>
-              <div className="p-4 bg-black/30 border-t border-slate-800">
+              )}
+            </div>
+            <div className="p-4 bg-gray-50 border-t">
               <Scorecard score={movie.aggregateScore} />
             </div>
           </div>

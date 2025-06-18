@@ -160,11 +160,11 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
               <div key={item.id} className="bg-white border rounded-lg shadow-md overflow-hidden flex flex-col justify-between">
                 <div>
                   <Image
-                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`} 
+                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
                     alt={title ?? 'Movie Poster'}
                     width={500}
                     height={750}
-                    className="w-full h-64 object-cover"
+                    className="w-full h-auto object-cover aspect-[2/3]"
                   />
                   <div className="p-4">
                     <h3 className="font-bold text-lg truncate" title={title}>{title}</h3>
