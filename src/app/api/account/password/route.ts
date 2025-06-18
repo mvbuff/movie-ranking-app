@@ -35,18 +35,25 @@ export async function POST(request: Request) {
   }
 
   // --- Self-Service Password Change Flow ---
-  if (!currentPassword || !newPassword) {
-    return NextResponse.json({ error: 'Current and new passwords are required' }, { status: 400 });
-  }
-
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
   if (!user || !user.password) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
+  
+  // If it's NOT a forced reset, then the current password is required and must be validated.
+  if (!user.passwordResetRequired) {
+    if (!currentPassword) {
+      return NextResponse.json({ error: 'Current password is required.' }, { status: 400 });
+    }
+    const isValid = await compare(currentPassword, user.password);
+    if (!isValid) {
+      return NextResponse.json({ error: 'Invalid current password' }, { status: 403 });
+    }
+  }
 
-  const isValid = await compare(currentPassword, user.password);
-  if (!isValid) {
-    return NextResponse.json({ error: 'Invalid current password' }, { status: 403 });
+  // A new password is always required.
+  if (!newPassword) {
+    return NextResponse.json({ error: 'New password is required.' }, { status: 400 });
   }
 
   const newHashedPassword = await hash(newPassword, 10);
