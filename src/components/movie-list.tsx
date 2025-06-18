@@ -7,7 +7,6 @@ import Image from 'next/image';
 import { Scorecard } from './score-components';
 import { Info, Star } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
-import MovieRatingDisplay from './movie-rating-display';
 
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';

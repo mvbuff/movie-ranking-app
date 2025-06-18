@@ -55,8 +55,6 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
     return `${selectedGrade}${selectedModifier || ''}`;
   };
 
-  const areModifiersDisabled = disabled || selectedGrade === 'AB';
-
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center mb-2">
