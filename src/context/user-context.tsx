@@ -33,6 +33,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         role: 'USER',
         status: 'ACTIVE',
         password: null,
+        passwordResetRequired: false,
         createdAt: new Date(),
       });
     } else if (status === 'unauthenticated') {
