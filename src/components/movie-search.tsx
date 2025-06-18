@@ -164,7 +164,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
                     alt={title ?? 'Movie Poster'}
                     width={500}
                     height={750}
-                    className="w-full h-auto object-cover aspect-[2/3]"
+                    className="w-full h-auto object-cover"
                   />
                   <div className="p-4">
                     <h3 className="font-bold text-lg truncate" title={title}>{title}</h3>

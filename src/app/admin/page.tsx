@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { User, UserStatus } from '@prisma/client';
 
 export default function AdminPage() {
@@ -46,10 +47,8 @@ export default function AdminPage() {
   
   const handleDeleteUser = async (userId: string) => {
     if (window.confirm('Are you sure you want to delete this user? This cannot be undone.')) {
-        await fetch('/api/admin/users', {
+        await fetch(`/api/admin/users?userId=${userId}`, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId }),
         });
         fetchUsers(); // Refresh user list
     }
@@ -75,7 +74,12 @@ export default function AdminPage() {
 
   return (
     <main className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Admin - User Management</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Admin - User Management</h1>
+        <Link href="/" className="text-blue-600 hover:underline">
+            &larr; Return to Dashboard
+        </Link>
+      </div>
       <div className="bg-white p-6 rounded-lg shadow-md">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">

@@ -9,15 +9,15 @@ import { getRatingDisplay } from '@/lib/rating-system';
 export function Scorecard({ score }: { score: number | null }) {
   const displayValue = getRatingDisplay(score);
   
-  const colorClass = score === null ? 'bg-gray-100 text-gray-400' 
-    : score > 7.5 ? 'bg-green-100 text-green-800' 
-    : score > 4 ? 'bg-yellow-100 text-yellow-800' 
-    : 'bg-red-100 text-red-800';
+  const colorClass = score === null ? 'text-slate-500' 
+    : score > 7.5 ? 'text-green-400' 
+    : score > 4 ? 'text-yellow-400' 
+    : 'text-red-400';
   
   return (
-    <div className={`p-2 text-center rounded-md ${colorClass}`}>
-      <p className="text-xs font-bold uppercase tracking-wider">Friend Score</p>
-      <p className="text-2xl font-bold">{displayValue}</p>
+    <div>
+      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Friend Score</p>
+      <p className={`text-2xl font-bold ${colorClass}`}>{displayValue}</p>
     </div>
   );
 }

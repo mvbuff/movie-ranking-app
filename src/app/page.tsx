@@ -27,7 +27,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center p-8 sm:p-12">
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-7xl">
         <div className="text-center mb-10">
           <h1 className="text-5xl font-extrabold tracking-tight text-gray-900">
             Movie Ranking

@@ -46,7 +46,7 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
     `px-3 py-1 text-sm font-semibold rounded-md transition-colors duration-200 ${
       isActive
         ? 'bg-indigo-600 text-white shadow-lg'
-        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
     }`;
   
   const displayRating = () => {
@@ -57,8 +57,8 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center mb-2">
-         <p className="text-sm text-gray-500">Your Rating:</p>
-         <span className="font-bold text-gray-700 text-sm">{displayRating()}</span>
+         <p className="text-sm text-slate-400">Your Rating:</p>
+         <span className="font-bold text-slate-100 text-sm">{displayRating()}</span>
       </div>
       <div className="flex justify-around">
         {letterGrades.map(grade => (

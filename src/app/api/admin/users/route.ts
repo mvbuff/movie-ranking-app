@@ -55,8 +55,10 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+
     try {
-        const { userId } = await request.json();
         if (!userId) {
             return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
         }
