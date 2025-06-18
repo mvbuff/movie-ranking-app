@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 export default function ChangePasswordPage() {
@@ -38,29 +38,25 @@ export default function ChangePasswordPage() {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to change password.');
       }
-      setSuccess(true);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
+      
+      // Automatically sign the user in with their new password
+      const signInResult = await signIn('credentials', {
+        redirect: false,
+        name: data.userName,
+        password: newPassword,
+      });
+
+      if (signInResult?.ok) {
+        router.push('/'); // Redirect to dashboard on success
       } else {
-        setError('An unknown error occurred.');
+        // If auto-login fails, redirect to login page for manual entry
+        router.push('/login');
       }
+
+    } catch (err: any) {
+      setError(err.message);
     }
   };
-
-  if (success) {
-    return (
-        <main className="flex min-h-screen flex-col items-center justify-center p-8">
-            <div className="w-full max-w-sm text-center">
-                <h1 className="text-3xl font-bold mb-4">Password Changed!</h1>
-                <p className="text-gray-600 mb-6">Your password has been updated successfully.</p>
-                <button onClick={() => router.push('/')} className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg">
-                    Continue to Dashboard
-                </button>
-            </div>
-        </main>
-    );
-  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">

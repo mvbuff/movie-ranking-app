@@ -66,5 +66,8 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({ message: 'Password changed successfully' });
+  return NextResponse.json({ 
+    message: 'Password changed successfully',
+    userName: user.name,
+  });
 } 
