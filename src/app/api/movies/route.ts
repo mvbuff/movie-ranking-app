@@ -19,23 +19,26 @@ export async function POST(request: Request) {
   try {
     const { tmdbId, title, year, posterUrl, category, tmdbRating, tmdbVoteCount } = await request.json();
 
-    if (!tmdbId || !title || !year || !category) {
+    if (!title || !category) {
       return NextResponse.json({ error: 'Missing required movie fields' }, { status: 400 });
     }
 
-    const existingMovie = await prisma.movie.findUnique({
-      where: { tmdbId: String(tmdbId) },
-    });
-
-    if (existingMovie) {
-      return NextResponse.json({ error: 'Movie already exists in the database' }, { status: 409 });
+    // Only check for duplicates if a tmdbId is provided
+    if (tmdbId) {
+      const existingMovie = await prisma.movie.findUnique({
+        where: { tmdbId: String(tmdbId) },
+      });
+      if (existingMovie) {
+        // Return existing movie data but indicate it's a duplicate.
+        return NextResponse.json(existingMovie, { status: 200 });
+      }
     }
 
     const movie = await prisma.movie.create({
       data: {
-        tmdbId: String(tmdbId),
+        tmdbId: tmdbId ? String(tmdbId) : null,
         title,
-        year: parseInt(String(year), 10),
+        year: year ? parseInt(String(year), 10) : 0,
         posterUrl,
         category,
         tmdbRating,

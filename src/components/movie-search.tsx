@@ -40,6 +40,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
   // State for the two-step add process
   const [itemToReview, setItemToReview] = useState<SearchResult | null>(null);
   const [reviewText, setReviewText] = useState('');
+  const [showManualForm, setShowManualForm] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,6 +138,57 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
     }
   };
 
+  const handleManualAdd = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get('title') as string;
+    const category = formData.get('category') as Category;
+    const review = formData.get('review') as string;
+
+    if (!title || !category) {
+      showToast('Title and category are required for manual entries.', 'error');
+      return;
+    }
+
+    try {
+       // Step 1: Add the movie to the global database.
+      const movieResponse = await fetch('/api/movies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          category,
+          year: 0, // Explicitly send 0 for year
+        }),
+      });
+
+      const movieData = await movieResponse.json();
+      if (!movieResponse.ok) {
+        throw new Error(movieData.error || 'Failed to add item');
+      }
+
+       // Step 2: If review text exists, submit it.
+      if (review.trim() && currentUser) {
+        await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            movieId: movieData.id,
+            userId: currentUser.id,
+            text: review,
+          }),
+        });
+      }
+      
+      showToast(`'${title}' was added successfully!`, 'success');
+      setShowManualForm(false);
+      onItemAdded(); // Trigger the main movie list to refresh
+
+    } catch (error: any) {
+      showToast(error.message, 'error');
+    }
+  };
+
   return (
     <div className="w-full mx-auto">
       <form onSubmit={handleSearch} className="flex gap-2 mb-4">
@@ -152,27 +204,58 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
         </button>
       </form>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="text-center mb-6">
+        <button 
+          onClick={() => setShowManualForm(!showManualForm)}
+          className="text-sm text-blue-600 hover:underline"
+        >
+          {showManualForm ? 'Cancel Manual Add' : 'Can\'t find a movie? Add it manually.'}
+        </button>
+      </div>
+
+      {showManualForm && (
+        <form onSubmit={handleManualAdd} className="p-4 border rounded-lg bg-gray-50 mb-6 space-y-4">
+          <h3 className="text-lg font-semibold">Manually Add an Entry</h3>
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium">Title</label>
+            <input type="text" name="title" id="title" required className="w-full p-2 border rounded-md" />
+          </div>
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium">Category</label>
+            <select name="category" id="category" required className="w-full p-2 border rounded-md bg-white">
+              <option value="MOVIE">Movie</option>
+              <option value="SERIES">Series</option>
+              <option value="DOCUMENTARY">Documentary</option>
+            </select>
+          </div>
+           <div>
+            <label htmlFor="review" className="block text-sm font-medium">Review (Optional)</label>
+            <textarea name="review" id="review" maxLength={100} className="w-full p-2 border rounded-md"></textarea>
+          </div>
+          <button type="submit" className="w-full px-6 py-2 bg-green-600 text-white font-semibold rounded-lg">Add Manual Entry</button>
+        </form>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {results.map((item) => {
             const title = item.title || item.name;
             const year = item.release_date || item.first_air_date;
             return (
-              <div key={item.id} className="bg-white border rounded-lg shadow-md overflow-hidden flex flex-col justify-between">
-                <div>
+              <div key={item.id} className="bg-white border rounded-lg shadow-md overflow-hidden flex flex-col">
+                <div className="relative h-80">
                   <Image
                     src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
                     alt={title ?? 'Movie Poster'}
-                    width={500}
-                    height={750}
-                    className="w-full h-auto object-cover"
+                    layout="fill"
+                    objectFit="cover"
                   />
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg truncate" title={title}>{title}</h3>
-                    <p className="text-gray-500">{year?.substring(0, 4)}</p>
-                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-lg truncate" title={title}>{title}</h3>
+                  <p className="text-gray-500">{year?.substring(0, 4)}</p>
                 </div>
 
-                <div className="p-4 border-t">
+                <div className="p-4 border-t mt-auto">
                   {itemToReview?.id === item.id ? (
                     <div className="flex flex-col space-y-2">
                        <textarea

@@ -13,27 +13,30 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
   const [selectedGrade, setSelectedGrade] = useState<LetterGrade | null>(null);
   const [selectedModifier, setSelectedModifier] = useState<Modifier | null>(null);
 
-  // Set initial state from score
   useEffect(() => {
     const { grade, modifier } = getGradeFromScore(initialScore);
     setSelectedGrade(grade);
     setSelectedModifier(modifier);
   }, [initialScore]);
-
+  
   const handleRatingUpdate = (grade: LetterGrade | null, modifier: Modifier | null) => {
     if (!grade) {
-      // If no grade is selected, there's no rating. Score is 0.
       onRatingSubmit(0);
       return;
     }
     const newScore = getScore(grade, modifier);
     onRatingSubmit(newScore);
   };
-  
+
   const handleGradeSelect = (grade: LetterGrade) => {
     const newGrade = selectedGrade === grade ? null : grade;
+    
+    // If selecting AB, or deselecting the current grade, clear modifier
+    const newModifier = (newGrade === 'AB' || !newGrade) ? null : selectedModifier;
+
     setSelectedGrade(newGrade);
-    handleRatingUpdate(newGrade, selectedModifier);
+    setSelectedModifier(newModifier);
+    handleRatingUpdate(newGrade, newModifier);
   };
 
   const handleModifierSelect = (modifier: Modifier) => {
@@ -42,11 +45,10 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
     handleRatingUpdate(selectedGrade, newModifier);
   };
 
-  const getButtonClass = (isActive: boolean) => 
+  const getButtonClass = (isActive: boolean, isDisabled: boolean = false) => 
     `px-3 py-1 text-sm font-semibold rounded-md transition-colors duration-200 ${
-      isActive
-        ? 'bg-indigo-600 text-white shadow-lg'
-        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+      isDisabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' :
+      isActive ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
     }`;
   
   const displayRating = () => {
@@ -73,16 +75,21 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
         ))}
       </div>
       <div className="flex justify-around">
-        {modifiers.map(modifier => (
+        {modifiers.map(modifier => {
+          const isButtonDisabled = disabled ||
+                                   selectedGrade === 'AB' ||
+                                   (selectedGrade === 'CB' && modifier === '--');
+          return (
             <button 
               key={modifier}
               onClick={() => handleModifierSelect(modifier)}
-              className={getButtonClass(selectedModifier === modifier)}
-              disabled={disabled}
+              className={getButtonClass(selectedModifier === modifier, isButtonDisabled)}
+              disabled={isButtonDisabled}
             >
               {modifier}
             </button>
-        ))}
+          )
+        })}
       </div>
     </div>
   );

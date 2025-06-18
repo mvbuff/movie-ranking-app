@@ -5,7 +5,7 @@ import { useUser } from '@/context/user-context';
 import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
-import { Info, Star } from 'lucide-react';
+import { Info, MessageSquarePlus, Star } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
 import { useToast } from '@/context/toast-context';
 
@@ -194,19 +194,19 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       )}
       <section className="w-full mx-auto mt-6">
         <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {filteredAndSortedMovies.map((movie) => (
             <div 
               key={movie.id} 
-              className="bg-[rgb(var(--card-background))] rounded-xl shadow-lg overflow-hidden group transition-all duration-300 hover:shadow-cyan-500/20 hover:scale-105 border border-transparent hover:border-cyan-500/50 flex flex-col"
+              className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col"
             >
-              <div className="relative">
+              <div className="relative h-80"> 
                 <Image
                   src={movie.posterUrl || '/placeholder.png'}
                   alt={`Poster for ${movie.title}`}
-                  width={500}
-                  height={750}
-                  className="w-full h-auto object-cover"
+                  layout="fill"
+                  objectFit="cover"
+                  className="transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 {movie.tmdbRating && (
@@ -225,15 +225,24 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                     className="font-bold text-lg text-gray-900 flex-grow hover:text-indigo-600 transition-colors"
                     title={movie.title}
                   >
-                    {movie.title} ({movie.year})
+                    {movie.title} ({movie.year > 0 ? movie.year : 'N/A'})
                   </a>
-                  <button 
-                    onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
-                    className="p-1 text-slate-400 hover:text-cyan-400 transition-colors flex-shrink-0"
-                    title="Show user reviews"
-                  >
-                    <Info size={18} />
-                  </button>
+                  <div className="flex-shrink-0">
+                    <button 
+                      onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
+                      className="p-1 text-gray-400 hover:text-indigo-600"
+                      title="Show user reviews"
+                    >
+                      <Info size={18} />
+                    </button>
+                    <button 
+                      onClick={() => setIsReviewing(isReviewing === movie.id ? null : movie.id)}
+                      className="p-1 text-gray-400 hover:text-indigo-600"
+                      title="Add a review"
+                    >
+                      <MessageSquarePlus size={18} />
+                    </button>
+                  </div>
                 </div>
                 <div className="mt-auto pt-4">
                   <CustomRatingInput
@@ -263,7 +272,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                   </div>
                 )}
               </div>
-              <div className="p-2 bg-black/30 border-t border-slate-800">
+              <div className="p-2 bg-gray-50 border-t">
                 <Scorecard score={movie.aggregateScore} />
               </div>
             </div>
