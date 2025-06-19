@@ -11,7 +11,7 @@ import ReviewsModal from './reviews-modal';
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
 type FilterCategory = Category | 'ALL';
-type SortKey = 'aggregateScore' | 'currentUserRating' | 'title';
+type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate';
 
 interface Movie {
   id: string;
@@ -22,6 +22,7 @@ interface Movie {
   tmdbRating: number | null;
   tmdbVoteCount: number | null;
   category: Category;
+  createdAt: string;
 }
 interface Rating { movieId: string; score: number; }
 interface AggregateScore { movieId: string; score: number; }
@@ -155,6 +156,10 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       .sort((a, b) => {
         if (sortBy === 'title') {
           return a.title.localeCompare(b.title);
+        }
+        if (sortBy === 'addedDate') {
+          // Sort by most recent first (newest to oldest)
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         }
         const scoreA = sortBy === 'aggregateScore' ? a.aggregateScore ?? -1 : a.currentUserRating;
         const scoreB = sortBy === 'aggregateScore' ? b.aggregateScore ?? -1 : b.currentUserRating;

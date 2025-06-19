@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { randomBytes } from 'crypto';
@@ -6,8 +7,19 @@ export async function GET() {
   try {
     const movies = await prisma.movie.findMany({
       orderBy: {
-        title: 'asc',
-      },
+        createdAt: 'desc',
+      } as any,
+      select: {
+        id: true,
+        title: true,
+        year: true,
+        posterUrl: true,
+        tmdbId: true,
+        tmdbRating: true,
+        tmdbVoteCount: true,
+        category: true,
+        createdAt: true,
+      } as any,
     });
     return NextResponse.json(movies);
   } catch (error) {

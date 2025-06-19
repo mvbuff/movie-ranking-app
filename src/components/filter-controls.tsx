@@ -4,7 +4,7 @@ import { SLIDER_RATING_SCALE } from '@/lib/rating-system';
 // Manually define the Category type for client-side use
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
 type FilterCategory = Category | 'ALL';
-export type SortKey = 'aggregateScore' | 'currentUserRating' | 'title';
+export type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate';
 
 interface FilterControlsProps {
   activeCategory: FilterCategory;
@@ -105,6 +105,7 @@ export default function FilterControls({
                 <option value="aggregateScore">Friend Score</option>
                 <option value="currentUserRating">Your Rating</option>
                 <option value="title">Alphabetical</option>
+                <option value="addedDate">Added Date</option>
             </select>
         </div>
       </div>
