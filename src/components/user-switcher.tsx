@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import type { User } from '@prisma/client';
 import { useUser } from '@/context/user-context';
 
@@ -11,6 +12,7 @@ interface UserSwitcherProps {
 export default function UserSwitcher({ refreshTimestamp }: UserSwitcherProps) {
   const [users, setUsers] = useState<User[]>([]);
   const { currentUser, setCurrentUser } = useUser();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,7 +31,18 @@ export default function UserSwitcher({ refreshTimestamp }: UserSwitcherProps) {
         // Only auto-select a user if one isn't already selected,
         // OR if a new user was just added to the list.
         if (data.length > 0 && (!currentUser || newUserAdded)) {
-          const userToSelect = data[data.length - 1];
+          let userToSelect = null;
+          
+          // First try to find the session user (logged-in admin) in the list
+          if (session?.user?.id) {
+            userToSelect = data.find(user => user.id === session.user.id) || null;
+          }
+          
+          // If session user not found, fall back to the last user in the list
+          if (!userToSelect) {
+            userToSelect = data[data.length - 1];
+          }
+          
           setCurrentUser(userToSelect);
         }
 
@@ -40,7 +53,7 @@ export default function UserSwitcher({ refreshTimestamp }: UserSwitcherProps) {
       }
     }
     fetchUsers();
-  }, [refreshTimestamp, users.length, currentUser, setCurrentUser]); // Removed currentUser and users from deps to be more targeted
+  }, [refreshTimestamp, users.length, currentUser, setCurrentUser, session]); // Include session to react to login changes
 
   const handleUserChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedUserId = event.target.value;
