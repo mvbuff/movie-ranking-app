@@ -37,6 +37,14 @@ export default function Home() {
         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
           Your personalized movie and series leaderboard.
         </p>
+        <div className="mt-4">
+          <Link 
+            href="/forum"
+            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+          >
+            💬 Discussion Forum
+          </Link>
+        </div>
         {!isAuthenticated && !isLoading && (
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-md mx-auto">
             <p className="text-blue-800 mb-3">

@@ -5,7 +5,7 @@ import { useUser } from '@/context/user-context';
 import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
-import { Info, Star, MessageSquare, Eye } from 'lucide-react';
+import { Info, Star, MessageSquare, Eye, Users } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
 
 // Manually define types to avoid server/client type mismatches
@@ -204,6 +204,12 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     }
   };
 
+  const handleDiscussionClick = (movie: MovieWithRatingsAndScores) => {
+    // Navigate to forum with movie context
+    const movieTitle = encodeURIComponent(`${movie.title} (${movie.year})`);
+    window.open(`/forum?movie=${movie.id}&title=${movieTitle}`, '_blank');
+  };
+
   const filteredAndSortedMovies = useMemo(() => {
     return movies
       .filter(movie => {
@@ -342,6 +348,13 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                     title="Show user reviews"
                   >
                     <Info size={18} />
+                  </button>
+                  <button 
+                    onClick={() => handleDiscussionClick(movie)}
+                    className="p-1 text-gray-400 hover:text-purple-600"
+                    title="Discuss this movie in forum"
+                  >
+                    <Users size={18} />
                   </button>
                 </div>
               </div>
