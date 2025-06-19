@@ -101,6 +101,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
           category: category,
           tmdbRating: itemToReview.vote_average,
           tmdbVoteCount: itemToReview.vote_count,
+          userId: currentUser.id,
         }),
       });
 
@@ -177,6 +178,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
           title,
           category,
           year: 0, // Explicitly send 0 for year
+          userId: currentUser?.id,
         }),
       });
 

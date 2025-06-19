@@ -1,70 +1,219 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, Star, MessageSquare, Trash2 } from 'lucide-react';
+import { getRatingDisplay } from '@/lib/rating-system';
 
-interface Review {
-  id: string;
-  text: string;
-  createdAt: string;
+interface UserReviewRating {
+  userId: string;
   user: {
+    id: string;
     name: string | null;
   };
+  review: {
+    id: string;
+    text: string;
+    createdAt: string;
+  } | null;
+  rating: {
+    id: string;
+    score: number;
+  } | null;
 }
 
 interface ReviewsModalProps {
   movieId: string;
   movieTitle: string;
+  currentUserId?: string;
   onClose: () => void;
+  onReviewDeleted?: () => void;
 }
 
-export default function ReviewsModal({ movieId, movieTitle, onClose }: ReviewsModalProps) {
-  const [reviews, setReviews] = useState<Review[]>([]);
+interface MovieInfo {
+  id: string;
+  title: string;
+  addedBy: {
+    id: string;
+    name: string;
+  } | null;
+  createdAt: string;
+}
+
+interface ApiResponse {
+  movie: MovieInfo;
+  userEntries: UserReviewRating[];
+}
+
+export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClose, onReviewDeleted }: ReviewsModalProps) {
+  const [userEntries, setUserEntries] = useState<UserReviewRating[]>([]);
+  const [movieInfo, setMovieInfo] = useState<MovieInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingReview, setDeletingReview] = useState<string | null>(null);
+
+  const fetchReviewsAndRatings = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/movies/reviews-and-ratings?movieId=${movieId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch reviews and ratings');
+      }
+      const data: ApiResponse = await response.json();
+      setUserEntries(data.userEntries);
+      setMovieInfo(data.movie);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [movieId]);
 
   useEffect(() => {
-    async function fetchReviews() {
-      try {
-        const response = await fetch(`/api/reviews?movieId=${movieId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch reviews');
-        }
-        const data = await response.json();
-        setReviews(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+    fetchReviewsAndRatings();
+  }, [fetchReviewsAndRatings]);
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!currentUserId) return;
+    
+    setDeletingReview(reviewId);
+    try {
+      const response = await fetch('/api/reviews', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reviewId, userId: currentUserId }),
+      });
+
+      if (response.ok) {
+        // Refresh the reviews and ratings
+        await fetchReviewsAndRatings();
+        onReviewDeleted?.();
+      } else {
+        console.error('Failed to delete review');
       }
+    } catch (error) {
+      console.error('Failed to delete review:', error);
+    } finally {
+      setDeletingReview(null);
     }
-    fetchReviews();
-  }, [movieId]);
+  };
+
+  const renderUserEntry = (entry: UserReviewRating) => {
+    const userName = entry.user?.name || 'Anonymous';
+    const hasReview = entry.review !== null;
+    const hasRating = entry.rating !== null;
+    const isCurrentUser = currentUserId === entry.userId;
+
+    return (
+      <li key={entry.userId} className="border p-4 rounded-md bg-gray-50 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h4 className="font-semibold text-gray-800">{userName}</h4>
+            {hasRating && (
+              <div className="flex items-center gap-1 bg-yellow-100 px-2 py-1 rounded-full">
+                <Star size={14} className="text-yellow-600" />
+                <span className="text-sm font-medium text-yellow-800">
+                  {getRatingDisplay(entry.rating!.score)}
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            {hasReview && <MessageSquare size={16} className="text-blue-500" />}
+            {hasReview && isCurrentUser && (
+              <button
+                onClick={() => handleDeleteReview(entry.review!.id)}
+                disabled={deletingReview === entry.review!.id}
+                className="p-1 text-red-400 hover:text-red-600 disabled:opacity-50"
+                title="Delete your review"
+              >
+                {deletingReview === entry.review!.id ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                ) : (
+                  <Trash2 size={14} />
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Display review if available */}
+        {hasReview && (
+          <div className="bg-white p-3 rounded border-l-4 border-blue-400">
+            <div className="flex items-start gap-2 mb-2">
+              <MessageSquare size={16} className="text-blue-500 mt-1 flex-shrink-0" />
+              <div className="flex-grow">
+                <p className="text-gray-800 italic">&quot;{entry.review!.text}&quot;</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Reviewed on {new Date(entry.review!.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Show message if user has neither review nor rating (shouldn't happen with current logic) */}
+        {!hasReview && !hasRating && (
+          <div className="text-gray-500 text-sm">
+            No review or rating available
+          </div>
+        )}
+      </li>
+    );
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg animate-fade-in-up">
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-xl font-bold">Reviews for {movieTitle}</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-200">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[85vh] animate-fade-in-up">
+        <div className="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-lg">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">User Reviews & Ratings</h2>
+            <p className="text-sm text-gray-600">{movieTitle}</p>
+            {movieInfo?.addedBy && (
+              <p className="text-xs text-gray-500 mt-1">
+                Added by {movieInfo.addedBy.name} on {new Date(movieInfo.createdAt).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+          <button 
+            onClick={onClose} 
+            className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+            title="Close modal"
+          >
             <X size={24} />
           </button>
         </div>
-        <div className="p-6 max-h-[60vh] overflow-y-auto">
+        
+        <div className="p-6 overflow-y-auto max-h-[calc(85vh-140px)]">
           {loading ? (
-            <p>Loading reviews...</p>
-          ) : reviews.length === 0 ? (
-            <p className="text-gray-500 text-center">No reviews yet for this movie.</p>
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <span className="ml-2 text-gray-600">Loading reviews and ratings...</span>
+            </div>
+          ) : userEntries.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-400 mb-2">
+                <MessageSquare size={48} className="mx-auto mb-4" />
+              </div>
+              <p className="text-gray-500">No reviews or ratings yet for this movie.</p>
+              <p className="text-sm text-gray-400 mt-2">Be the first to rate and review!</p>
+            </div>
           ) : (
-            <ul className="space-y-4">
-              {reviews.map((review) => (
-                <li key={review.id} className="border p-4 rounded-md bg-gray-50">
-                  <p className="text-gray-800">&quot;{review.text}&quot;</p>
-                  <p className="text-right text-xs text-gray-400 mt-2">
-                    - {review.user.name || 'Anonymous'} on {new Date(review.createdAt).toLocaleDateString()}
-                  </p>
-                </li>
-              ))}
-            </ul>
+            <div>
+              <div className="mb-4 text-sm text-gray-600 flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <MessageSquare size={14} className="text-blue-500" />
+                  Review
+                </span>
+                <span className="flex items-center gap-1">
+                  <Star size={14} className="text-yellow-500" />
+                  Rating
+                </span>
+                <span className="ml-auto">
+                  {userEntries.length} user{userEntries.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <ul className="space-y-4">
+                {userEntries.map(renderUserEntry)}
+              </ul>
+            </div>
           )}
         </div>
       </div>

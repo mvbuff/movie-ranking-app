@@ -18,7 +18,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { tmdbId, title, year, posterUrl, category, tmdbRating, tmdbVoteCount } = await request.json();
+    const { tmdbId, title, year, posterUrl, category, tmdbRating, tmdbVoteCount, userId } = await request.json();
 
     if (!title || !category) {
       return NextResponse.json({ error: 'Missing required movie fields' }, { status: 400 });
@@ -47,6 +47,7 @@ export async function POST(request: Request) {
         category,
         tmdbRating,
         tmdbVoteCount,
+        ...(userId && { addedById: userId }),
       },
     });
 

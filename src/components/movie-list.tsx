@@ -5,7 +5,7 @@ import { useUser } from '@/context/user-context';
 import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
-import { Info, Star } from 'lucide-react';
+import { Info, Star, MessageSquare } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
 
 // Manually define types to avoid server/client type mismatches
@@ -44,6 +44,8 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
   const [movies, setMovies] = useState<MovieWithRatingsAndScores[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeReviews, setActiveReviews] = useState<{ movieId: string; movieTitle: string; } | null>(null);
+  const [addingReview, setAddingReview] = useState<{ movieId: string; movieTitle: string; } | null>(null);
+  const [reviewText, setReviewText] = useState('');
 
   const fetchMovieData = useCallback(async () => {
     if (!currentUser) {
@@ -116,6 +118,32 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     }
   };
 
+  const handleReviewSubmit = async (movieId: string, text: string) => {
+    if (!currentUser || !text.trim()) return;
+
+    try {
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          movieId,
+          text: text.trim(),
+        }),
+      });
+
+      if (response.ok) {
+        setAddingReview(null);
+        setReviewText('');
+        // If reviews modal is open for this movie, it will refresh automatically
+      } else {
+        console.error('Failed to submit review');
+      }
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+    }
+  };
+
   const filteredAndSortedMovies = useMemo(() => {
     return movies
       .filter(movie => {
@@ -153,7 +181,11 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         <ReviewsModal
           movieId={activeReviews.movieId}
           movieTitle={activeReviews.movieTitle}
+          currentUserId={currentUser?.id}
           onClose={() => setActiveReviews(null)}
+          onReviewDeleted={() => {
+            // Optional: You could add any additional refresh logic here
+          }}
         />
       )}
       <section className="w-full mx-auto mt-6">
@@ -190,13 +222,22 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                 >
                   {movie.title} ({movie.year > 0 ? movie.year : 'N/A'})
                 </a>
-                <button 
-                  onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
-                  className="p-1 text-gray-400 hover:text-indigo-600"
-                  title="Show user reviews"
-                >
-                  <Info size={18} />
-                </button>
+                <div className="flex gap-1">
+                  <button 
+                    onClick={() => setAddingReview({ movieId: movie.id, movieTitle: movie.title })}
+                    className="p-1 text-gray-400 hover:text-blue-600"
+                    title="Add review"
+                  >
+                    <MessageSquare size={18} />
+                  </button>
+                  <button 
+                    onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
+                    className="p-1 text-gray-400 hover:text-indigo-600"
+                    title="Show user reviews"
+                  >
+                    <Info size={18} />
+                  </button>
+                </div>
               </div>
               <div className="mt-auto pt-4">
                 <CustomRatingInput
@@ -205,6 +246,40 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                     disabled={!currentUser}
                   />
                 </div>
+              {addingReview && addingReview.movieId === movie.id && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                  <h5 className="text-sm font-medium text-blue-800 mb-2">Add Review</h5>
+                  <textarea
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    placeholder="Share your thoughts... (max 100 characters)"
+                    maxLength={100}
+                    className="w-full p-2 text-sm border border-blue-300 rounded resize-none"
+                    rows={3}
+                  />
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-xs text-blue-600">{reviewText.length}/100</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setAddingReview(null);
+                          setReviewText('');
+                        }}
+                        className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleReviewSubmit(movie.id, reviewText)}
+                        disabled={!reviewText.trim()}
+                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
               {activeReviews && activeReviews.movieId === movie.id && (
                 <div className="mt-4 space-y-2">
                   {/* Add any additional review content here */}

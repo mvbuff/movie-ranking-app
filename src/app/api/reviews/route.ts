@@ -55,4 +55,38 @@ export async function POST(request: Request) {
     console.error("Failed to create review:", error);
     return NextResponse.json({ error: 'Failed to create review' }, { status: 500 });
   }
+}
+
+// DELETE a review
+export async function DELETE(request: Request) {
+  try {
+    const { reviewId, userId } = await request.json();
+
+    if (!reviewId || !userId) {
+      return NextResponse.json({ error: 'Review ID and User ID are required' }, { status: 400 });
+    }
+
+    // First, check if the review exists and belongs to the user
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
+    });
+
+    if (!review) {
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 });
+    }
+
+    if (review.userId !== userId) {
+      return NextResponse.json({ error: 'You can only delete your own reviews' }, { status: 403 });
+    }
+
+    // Delete the review
+    await prisma.review.delete({
+      where: { id: reviewId },
+    });
+
+    return NextResponse.json({ message: 'Review deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error("Failed to delete review:", error);
+    return NextResponse.json({ error: 'Failed to delete review' }, { status: 500 });
+  }
 } 
