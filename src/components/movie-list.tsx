@@ -5,12 +5,12 @@ import { useUser } from '@/context/user-context';
 import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
-import { Info, Star, MessageSquare } from 'lucide-react';
+import { Info, Star, MessageSquare, Eye } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
 
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
-type FilterCategory = Category | 'ALL';
+type FilterCategory = Category | 'ALL' | 'WATCHLIST';
 type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate';
 
 interface Movie {
@@ -30,6 +30,7 @@ interface AggregateScore { movieId: string; score: number; }
 interface MovieWithRatingsAndScores extends Movie {
   currentUserRating: number;
   aggregateScore: number | null;
+  isInWatchlist: boolean;
 }
 
 interface MovieListProps {
@@ -47,6 +48,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
   const [activeReviews, setActiveReviews] = useState<{ movieId: string; movieTitle: string; } | null>(null);
   const [addingReview, setAddingReview] = useState<{ movieId: string; movieTitle: string; } | null>(null);
   const [reviewText, setReviewText] = useState('');
+  const [togglingWatchlist, setTogglingWatchlist] = useState<string | null>(null);
 
   const fetchMovieData = useCallback(async () => {
     if (!currentUser) {
@@ -55,24 +57,28 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     }
     setLoading(true);
     try {
-      const [moviesRes, ratingsRes, scoresRes] = await Promise.all([
+      const [moviesRes, ratingsRes, scoresRes, watchlistRes] = await Promise.all([
         fetch('/api/movies'),
         fetch(`/api/ratings?userId=${currentUser.id}`),
         fetch(`/api/aggregate-scores?userId=${currentUser.id}`),
+        fetch(`/api/watchlist?userId=${currentUser.id}`),
       ]);
-      if (!moviesRes.ok || !ratingsRes.ok || !scoresRes.ok) throw new Error('Failed to fetch data');
+      if (!moviesRes.ok || !ratingsRes.ok || !scoresRes.ok || !watchlistRes.ok) throw new Error('Failed to fetch data');
       
       const allMovies: Movie[] = await moviesRes.json();
       const userRatings: Rating[] = await ratingsRes.json();
       const aggregateScores: AggregateScore[] = await scoresRes.json();
+      const watchlistItems: { movieId: string }[] = await watchlistRes.json();
       
       const ratingsMap = new Map(userRatings.map(r => [r.movieId, r.score]));
       const scoresMap = new Map(aggregateScores.map(s => [s.movieId, s.score]));
+      const watchlistSet = new Set(watchlistItems.map(w => w.movieId));
 
       const moviesWithData = allMovies.map(movie => ({
         ...movie,
         currentUserRating: ratingsMap.get(movie.id) || 0,
         aggregateScore: scoresMap.get(movie.id) ?? null,
+        isInWatchlist: watchlistSet.has(movie.id),
       }));
 
       setMovies(moviesWithData);
@@ -145,9 +151,47 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     }
   };
 
+  const handleWatchlistToggle = async (movieId: string, isCurrentlyInWatchlist: boolean) => {
+    if (!currentUser) return;
+
+    setTogglingWatchlist(movieId);
+    try {
+      const method = isCurrentlyInWatchlist ? 'DELETE' : 'POST';
+      const response = await fetch('/api/watchlist', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          movieId,
+        }),
+      });
+
+      if (response.ok) {
+        // Optimistically update the UI
+        setMovies(movies.map(m => 
+          m.id === movieId 
+            ? { ...m, isInWatchlist: !isCurrentlyInWatchlist }
+            : m
+        ));
+      } else {
+        console.error('Failed to toggle watchlist');
+      }
+    } catch (error) {
+      console.error('Failed to toggle watchlist:', error);
+    } finally {
+      setTogglingWatchlist(null);
+    }
+  };
+
   const filteredAndSortedMovies = useMemo(() => {
     return movies
       .filter(movie => {
+        // Handle watchlist filter
+        if (categoryFilter === 'WATCHLIST') {
+          return movie.isInWatchlist;
+        }
+        
+        // Handle regular category filters
         const categoryMatch = categoryFilter === 'ALL' || movie.category === categoryFilter;
         const scoreMatch = movie.aggregateScore === null || movie.aggregateScore >= scoreThreshold;
         const searchMatch = searchTerm === '' || movie.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -209,6 +253,24 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                 objectFit="cover"
                 className="transition-transform duration-300"
               />
+              {/* Watchlist toggle button - top left */}
+              <button
+                onClick={() => handleWatchlistToggle(movie.id, movie.isInWatchlist)}
+                disabled={togglingWatchlist === movie.id}
+                className={`absolute top-2 left-2 p-2 rounded-full transition-all ${
+                  movie.isInWatchlist 
+                    ? 'bg-blue-600 text-white shadow-lg' 
+                    : 'bg-black/50 text-white hover:bg-black/70'
+                } ${togglingWatchlist === movie.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={movie.isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+              >
+                {togglingWatchlist === movie.id ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Eye size={16} />
+                )}
+              </button>
+              {/* TMDb rating - top right */}
               {movie.tmdbRating && (
                 <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
                   <Star size={12} className="text-yellow-400" />

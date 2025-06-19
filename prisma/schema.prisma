@@ -41,6 +41,7 @@ model User {
   aggregateScores    AggregateScore[]
   reviews            Review[]
   addedMovies        Movie[]             @relation("MovieAddedBy")
+  watchlist          Watchlist[]
 }
 
 enum Category {
@@ -64,6 +65,7 @@ model Movie {
   ratings         Rating[]
   aggregateScores AggregateScore[]
   reviews         Review[]
+  watchlist       Watchlist[]
 }
 
 model Rating {
@@ -126,4 +128,15 @@ model Review {
   userId    String
   movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
   movieId   String
+}
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId   String
+
+  @@unique([userId, movieId])
 }

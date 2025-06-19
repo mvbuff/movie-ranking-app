@@ -3,7 +3,7 @@ import { SLIDER_RATING_SCALE } from '@/lib/rating-system';
 
 // Manually define the Category type for client-side use
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
-type FilterCategory = Category | 'ALL';
+type FilterCategory = Category | 'ALL' | 'WATCHLIST';
 export type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate';
 
 interface FilterControlsProps {
@@ -22,6 +22,7 @@ const categories: { id: FilterCategory; name: string }[] = [
   { id: 'MOVIE', name: 'Movies' },
   { id: 'SERIES', name: 'Series' },
   { id: 'DOCUMENTARY', name: 'Documentaries' },
+  { id: 'WATCHLIST', name: 'Watchlist' },
 ];
 
 export default function FilterControls({

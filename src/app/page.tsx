@@ -11,7 +11,7 @@ import { useUser } from '@/context/user-context';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 
-type FilterCategory = Category | 'ALL';
+type FilterCategory = Category | 'ALL' | 'WATCHLIST';
 
 export default function Home() {
   const [refreshTimestamp, setRefreshTimestamp] = useState<number | null>(null);
