@@ -39,9 +39,10 @@ interface MovieListProps {
   scoreThreshold: number;
   searchTerm: string;
   sortBy: SortKey;
+  readOnlyMode?: boolean;
 }
 
-export default function MovieList({ calculationTimestamp, categoryFilter, scoreThreshold, searchTerm, sortBy }: MovieListProps) {
+export default function MovieList({ calculationTimestamp, categoryFilter, scoreThreshold, searchTerm, sortBy, readOnlyMode = false }: MovieListProps) {
   const { currentUser } = useUser();
   const [movies, setMovies] = useState<MovieWithRatingsAndScores[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,43 +52,63 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
   const [togglingWatchlist, setTogglingWatchlist] = useState<string | null>(null);
 
   const fetchMovieData = useCallback(async () => {
-    if (!currentUser) {
-      setMovies([]);
-      return;
-    }
     setLoading(true);
     try {
-      const [moviesRes, ratingsRes, scoresRes, watchlistRes] = await Promise.all([
-        fetch('/api/movies'),
-        fetch(`/api/ratings?userId=${currentUser.id}`),
-        fetch(`/api/aggregate-scores?userId=${currentUser.id}`),
-        fetch(`/api/watchlist?userId=${currentUser.id}`),
-      ]);
-      if (!moviesRes.ok || !ratingsRes.ok || !scoresRes.ok || !watchlistRes.ok) throw new Error('Failed to fetch data');
-      
-      const allMovies: Movie[] = await moviesRes.json();
-      const userRatings: Rating[] = await ratingsRes.json();
-      const aggregateScores: AggregateScore[] = await scoresRes.json();
-      const watchlistItems: { movieId: string }[] = await watchlistRes.json();
-      
-      const ratingsMap = new Map(userRatings.map(r => [r.movieId, r.score]));
-      const scoresMap = new Map(aggregateScores.map(s => [s.movieId, s.score]));
-      const watchlistSet = new Set(watchlistItems.map(w => w.movieId));
+      if (readOnlyMode || !currentUser) {
+        // Read-only mode: fetch movies with public aggregate scores
+        const [moviesRes, publicScoresRes] = await Promise.all([
+          fetch('/api/movies'),
+          fetch('/api/public-aggregate-scores'),
+        ]);
+        if (!moviesRes.ok || !publicScoresRes.ok) throw new Error('Failed to fetch data');
+        
+        const allMovies: Movie[] = await moviesRes.json();
+        const publicScores: { movieId: string; score: number; userCount: number }[] = await publicScoresRes.json();
+        
+        const scoresMap = new Map(publicScores.map(s => [s.movieId, s.score]));
+        
+        const moviesWithData = allMovies.map(movie => ({
+          ...movie,
+          currentUserRating: 0,
+          aggregateScore: scoresMap.get(movie.id) ?? null,
+          isInWatchlist: false,
+        }));
 
-      const moviesWithData = allMovies.map(movie => ({
-        ...movie,
-        currentUserRating: ratingsMap.get(movie.id) || 0,
-        aggregateScore: scoresMap.get(movie.id) ?? null,
-        isInWatchlist: watchlistSet.has(movie.id),
-      }));
+        setMovies(moviesWithData);
+      } else {
+        // Authenticated mode: fetch with user-specific data
+        const [moviesRes, ratingsRes, scoresRes, watchlistRes] = await Promise.all([
+          fetch('/api/movies'),
+          fetch(`/api/ratings?userId=${currentUser.id}`),
+          fetch(`/api/aggregate-scores?userId=${currentUser.id}`),
+          fetch(`/api/watchlist?userId=${currentUser.id}`),
+        ]);
+        if (!moviesRes.ok || !ratingsRes.ok || !scoresRes.ok || !watchlistRes.ok) throw new Error('Failed to fetch data');
+        
+        const allMovies: Movie[] = await moviesRes.json();
+        const userRatings: Rating[] = await ratingsRes.json();
+        const aggregateScores: AggregateScore[] = await scoresRes.json();
+        const watchlistItems: { movieId: string }[] = await watchlistRes.json();
+        
+        const ratingsMap = new Map(userRatings.map(r => [r.movieId, r.score]));
+        const scoresMap = new Map(aggregateScores.map(s => [s.movieId, s.score]));
+        const watchlistSet = new Set(watchlistItems.map(w => w.movieId));
 
-      setMovies(moviesWithData);
+        const moviesWithData = allMovies.map(movie => ({
+          ...movie,
+          currentUserRating: ratingsMap.get(movie.id) || 0,
+          aggregateScore: scoresMap.get(movie.id) ?? null,
+          isInWatchlist: watchlistSet.has(movie.id),
+        }));
+
+        setMovies(moviesWithData);
+      }
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, readOnlyMode]);
 
   useEffect(() => {
     fetchMovieData();
@@ -211,7 +232,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       });
   }, [movies, categoryFilter, scoreThreshold, searchTerm, sortBy]);
 
-  if (!currentUser) return null;
+  if (!currentUser && !readOnlyMode) return null;
   
   if (loading) return <p className="mt-12 text-center text-gray-500">Loading movie collection...</p>;
 
@@ -230,7 +251,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         <ReviewsModal
           movieId={activeReviews.movieId}
           movieTitle={activeReviews.movieTitle}
-          currentUserId={currentUser?.id}
+          currentUserId={readOnlyMode ? undefined : currentUser?.id}
           onClose={() => setActiveReviews(null)}
           onReviewDeleted={() => {
             // Optional: You could add any additional refresh logic here
@@ -254,22 +275,31 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                 className="transition-transform duration-300"
               />
               {/* Watchlist toggle button - top left */}
-              <button
-                onClick={() => handleWatchlistToggle(movie.id, movie.isInWatchlist)}
-                disabled={togglingWatchlist === movie.id}
-                className={`absolute top-2 left-2 p-2 rounded-full transition-all ${
-                  movie.isInWatchlist 
-                    ? 'bg-blue-600 text-white shadow-lg' 
-                    : 'bg-black/50 text-white hover:bg-black/70'
-                } ${togglingWatchlist === movie.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={movie.isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
-              >
-                {togglingWatchlist === movie.id ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                ) : (
+              {readOnlyMode ? (
+                <div
+                  className="absolute top-2 left-2 p-2 rounded-full bg-gray-500/70 text-white cursor-not-allowed"
+                  title="Sign in to add to watchlist"
+                >
                   <Eye size={16} />
-                )}
-              </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleWatchlistToggle(movie.id, movie.isInWatchlist)}
+                  disabled={togglingWatchlist === movie.id}
+                  className={`absolute top-2 left-2 p-2 rounded-full transition-all ${
+                    movie.isInWatchlist 
+                      ? 'bg-blue-600 text-white shadow-lg' 
+                      : 'bg-black/50 text-white hover:bg-black/70'
+                  } ${togglingWatchlist === movie.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={movie.isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+                >
+                  {togglingWatchlist === movie.id ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <Eye size={16} />
+                  )}
+                </button>
+              )}
               {/* TMDb rating - top right */}
               {movie.tmdbRating && (
                 <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
@@ -290,13 +320,22 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                   {movie.title} ({movie.year > 0 ? movie.year : 'N/A'})
                 </a>
                 <div className="flex gap-1">
-                  <button 
-                    onClick={() => setAddingReview({ movieId: movie.id, movieTitle: movie.title })}
-                    className="p-1 text-gray-400 hover:text-blue-600"
-                    title="Add review"
-                  >
-                    <MessageSquare size={18} />
-                  </button>
+                  {readOnlyMode ? (
+                    <div
+                      className="p-1 text-gray-400 cursor-not-allowed"
+                      title="Sign in to add reviews"
+                    >
+                      <MessageSquare size={18} />
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => setAddingReview({ movieId: movie.id, movieTitle: movie.title })}
+                      className="p-1 text-gray-400 hover:text-blue-600"
+                      title="Add review"
+                    >
+                      <MessageSquare size={18} />
+                    </button>
+                  )}
                   <button 
                     onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
                     className="p-1 text-gray-400 hover:text-indigo-600"
@@ -307,12 +346,25 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                 </div>
               </div>
               <div className="mt-auto pt-4">
-                <CustomRatingInput
-                  initialScore={movie.currentUserRating}
+                {readOnlyMode ? (
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded text-center">
+                    <p className="text-gray-500 text-sm mb-2">Sign in to rate this movie</p>
+                    <div className="opacity-50 pointer-events-none">
+                      <CustomRatingInput
+                        initialScore={0}
+                        onRatingSubmit={() => {}}
+                        disabled={true}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <CustomRatingInput
+                    initialScore={movie.currentUserRating}
                     onRatingSubmit={(score) => handleRatingSubmit(movie.id, score)}
                     disabled={!currentUser}
                   />
-                </div>
+                )}
+              </div>
               {addingReview && addingReview.movieId === movie.id && (
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
                   <h5 className="text-sm font-medium text-blue-800 mb-2">Add Review</h5>
@@ -354,7 +406,10 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
               )}
             </div>
             <div className="p-2 bg-gray-50 border-t">
-              <Scorecard score={movie.aggregateScore} />
+              <Scorecard 
+                score={movie.aggregateScore} 
+                label={readOnlyMode ? "Community Score" : "Friend Score"} 
+              />
             </div>
           </div>
         ))}

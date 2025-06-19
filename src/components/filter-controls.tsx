@@ -15,6 +15,7 @@ interface FilterControlsProps {
   onSearchChange: (term: string) => void;
   sortBy: SortKey;
   onSortChange: (key: SortKey) => void;
+  readOnlyMode?: boolean;
 }
 
 const categories: { id: FilterCategory; name: string }[] = [
@@ -34,9 +35,23 @@ export default function FilterControls({
   onSearchChange,
   sortBy,
   onSortChange,
+  readOnlyMode = false,
 }: FilterControlsProps) {
+  // Filter out watchlist for non-authenticated users
+  const availableCategories = readOnlyMode 
+    ? categories.filter(cat => cat.id !== 'WATCHLIST')
+    : categories;
+
   return (
     <div className="w-full max-w-7xl mx-auto my-8 p-4 bg-white rounded-lg shadow-sm border">
+      {readOnlyMode && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-amber-800 text-sm">
+            🔒 You&apos;re viewing in read-only mode. Sign in to add movies, rate, and create your watchlist.
+          </p>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Category Filters */}
         <div className="space-y-2">
@@ -44,7 +59,7 @@ export default function FilterControls({
             Filter by Category
           </label>
           <div className="flex items-center gap-2 flex-wrap">
-            {categories.map(({ id, name }) => (
+            {availableCategories.map(({ id, name }) => (
               <button
                 key={id}
                 onClick={() => onCategoryChange(id)}
@@ -63,7 +78,7 @@ export default function FilterControls({
         {/* Score Threshold Filter */}
         <div className="space-y-2">
           <label htmlFor="score-threshold" className="block text-sm font-medium text-gray-700">
-            Min. Friend Score ({SLIDER_RATING_SCALE.find(s => s.score === scoreThreshold)?.display || 'N/A'})
+            Min. {readOnlyMode ? 'Community' : 'Friend'} Score ({SLIDER_RATING_SCALE.find(s => s.score === scoreThreshold)?.display || 'N/A'})
           </label>
           <input
             id="score-threshold"
@@ -81,7 +96,7 @@ export default function FilterControls({
         {/* Search within database */}
         <div className="w-full">
             <label htmlFor="search-db" className="block text-sm font-medium text-gray-700 mb-2">
-                Search Your Rated Movies
+                Search Movies
             </label>
             <input
                 id="search-db"
@@ -103,7 +118,7 @@ export default function FilterControls({
                 onChange={(e) => onSortChange(e.target.value as SortKey)}
                 className="w-full p-2 border rounded-md bg-white"
             >
-                <option value="aggregateScore">Friend Score</option>
+                <option value="aggregateScore">{readOnlyMode ? 'Community Score' : 'Friend Score'}</option>
                 <option value="currentUserRating">Your Rating</option>
                 <option value="title">Alphabetical</option>
                 <option value="addedDate">Added Date</option>

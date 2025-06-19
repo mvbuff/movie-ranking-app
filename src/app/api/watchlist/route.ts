@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
 
-// GET: Fetch all watchlist items for a user
+// GET: Fetch all watchlist items for a user - require authentication
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
+
+  // Check authentication for watchlist access
+  const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
 
   if (!userId) {
     return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -28,9 +35,15 @@ export async function GET(request: Request) {
   }
 }
 
-// POST: Add a movie to user's watchlist
+// POST: Add a movie to user's watchlist - require authentication
 export async function POST(request: Request) {
   try {
+    // Check authentication for write operations
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const { userId, movieId } = await request.json();
 
     if (!userId || !movieId) {
@@ -65,9 +78,15 @@ export async function POST(request: Request) {
   }
 }
 
-// DELETE: Remove a movie from user's watchlist
+// DELETE: Remove a movie from user's watchlist - require authentication
 export async function DELETE(request: Request) {
   try {
+    // Check authentication for write operations
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const { userId, movieId } = await request.json();
 
     if (!userId || !movieId) {

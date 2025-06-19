@@ -2,9 +2,11 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { randomBytes } from 'crypto';
+import { getServerSession } from 'next-auth';
 
 export async function GET() {
   try {
+    // Allow read-only access to movies for everyone
     const movies = await prisma.movie.findMany({
       orderBy: {
         createdAt: 'desc',
@@ -30,6 +32,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // Check authentication for write operations
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const { tmdbId, title, year, posterUrl, category, tmdbRating, tmdbVoteCount, userId } = await request.json();
 
     if (!title || !category) {

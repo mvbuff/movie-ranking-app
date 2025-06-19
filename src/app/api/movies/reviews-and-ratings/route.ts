@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-// GET all reviews and ratings for a specific movie from all users
+// GET all reviews and ratings for a specific movie from all users - allow read-only access
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const movieId = searchParams.get('movieId');
@@ -11,11 +11,18 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Allow read-only access for everyone to view reviews and ratings
     // Get all users who have either reviewed or rated this movie, plus movie info
     const [movieResult, reviews, ratings] = await Promise.all([
-      // Fetch movie information 
+      // Fetch movie information including who added it
       prisma.movie.findUnique({
         where: { id: movieId },
+        include: {
+          addedBy: {
+            select: { id: true, name: true },
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
       }),
       // Fetch all reviews for this movie
       prisma.review.findMany({
@@ -44,18 +51,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Movie not found' }, { status: 404 });
     }
 
-    // Fetch the user who added the movie if addedById exists
-    const movieWithFields = movieResult as typeof movieResult & { addedById?: string; createdAt: Date };
-    const addedByUser = movieWithFields.addedById ? await prisma.user.findUnique({
-      where: { id: movieWithFields.addedById },
-      select: { id: true, name: true },
-    }) : null;
-
     // Type the movie result to include the relations
-    const movie = {
-      ...movieResult,
-      addedBy: addedByUser,
-      createdAt: movieWithFields.createdAt,
+    const movie = movieResult as typeof movieResult & {
+      addedBy: { id: string; name: string } | null;
+      createdAt: Date;
     };
 
     // Create a map of userId to review for quick lookup

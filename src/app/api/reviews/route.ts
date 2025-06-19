@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
 
-// GET all reviews for a specific movie
+// GET all reviews for a specific movie - allow read-only access
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const movieId = searchParams.get('movieId');
@@ -11,6 +12,7 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Allow read-only access to reviews for everyone
     const reviews = await prisma.review.findMany({
       where: { movieId },
       include: {
@@ -29,9 +31,15 @@ export async function GET(request: Request) {
   }
 }
 
-// POST a new review for a movie
+// POST a new review for a movie - require authentication
 export async function POST(request: Request) {
   try {
+    // Check authentication for write operations
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const { movieId, userId, text } = await request.json();
 
     if (!movieId || !userId || !text) {
@@ -57,9 +65,15 @@ export async function POST(request: Request) {
   }
 }
 
-// DELETE a review
+// DELETE a review - require authentication
 export async function DELETE(request: Request) {
   try {
+    // Check authentication for write operations
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const { reviewId, userId } = await request.json();
 
     if (!reviewId || !userId) {

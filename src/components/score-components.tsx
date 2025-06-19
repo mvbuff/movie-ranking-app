@@ -6,7 +6,7 @@ import { useToast } from '@/context/toast-context';
 import { calculateUserAggregateScores } from '@/app/actions';
 import { getRatingDisplay } from '@/lib/rating-system';
 
-export function Scorecard({ score }: { score: number | null }) {
+export function Scorecard({ score, label = "Friend Score" }: { score: number | null; label?: string }) {
   const displayValue = getRatingDisplay(score);
   
   const colorClass = score === null ? 'bg-gray-100 text-gray-500' 
@@ -16,7 +16,7 @@ export function Scorecard({ score }: { score: number | null }) {
   
   return (
     <div className={`p-1 text-center rounded-md ${colorClass}`}>
-        <p className="text-[10px] font-bold uppercase tracking-wider">Friend Score</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider">{label}</p>
         <p className="text-lg font-bold">{displayValue}</p>
     </div>
   );
