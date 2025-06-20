@@ -5,7 +5,7 @@ import { useUser } from '@/context/user-context';
 import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
-import { Info, Star, MessageSquare, Eye, Share2 } from 'lucide-react';
+import { Info, Star, MessageSquare, Eye, Share2, Trash2 } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
 import AddReviewModal from './add-review-modal';
 import { getRatingDisplay } from '@/lib/rating-system';
@@ -46,13 +46,15 @@ interface MovieListProps {
 }
 
 export default function MovieList({ calculationTimestamp, categoryFilter, scoreThreshold, searchTerm, sortBy, readOnlyMode = false }: MovieListProps) {
-  const { currentUser } = useUser();
+  const { currentUser, isAdmin } = useUser();
   const { showToast } = useToast();
   const [movies, setMovies] = useState<MovieWithRatingsAndScores[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeReviews, setActiveReviews] = useState<{ movieId: string; movieTitle: string; } | null>(null);
   const [addReviewModal, setAddReviewModal] = useState<{ movieId: string; movieTitle: string; } | null>(null);
   const [togglingWatchlist, setTogglingWatchlist] = useState<string | null>(null);
+  const [deletingMovie, setDeletingMovie] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ movieId: string; movieTitle: string; movieYear: number } | null>(null);
 
   const fetchMovieData = useCallback(async () => {
     setLoading(true);
@@ -241,6 +243,38 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     }
   };
 
+  const handleMovieDelete = async (movieId: string, movieTitle: string) => {
+    if (!isAdmin) {
+      showToast('Admin access required', 'error');
+      return;
+    }
+
+    setDeletingMovie(movieId);
+    try {
+      const response = await fetch('/api/movies', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ movieId }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showToast(`Successfully deleted "${movieTitle}"`, 'success');
+        // Remove the movie from the UI immediately
+        setMovies(movies.filter(m => m.id !== movieId));
+        setDeleteConfirmation(null);
+      } else {
+        showToast(`Failed to delete movie: ${result.error}`, 'error');
+      }
+    } catch (error) {
+      console.error('Failed to delete movie:', error);
+      showToast('Failed to delete movie', 'error');
+    } finally {
+      setDeletingMovie(null);
+    }
+  };
+
   const filteredAndSortedMovies = useMemo(() => {
     return movies
       .filter(movie => {
@@ -284,6 +318,52 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
 
   return (
     <>
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-red-600 mb-4">⚠️ Delete Movie</h3>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to permanently delete <strong>&quot;{deleteConfirmation.movieTitle}&quot; ({deleteConfirmation.movieYear})</strong>?
+              <br /><br />
+              This will also delete:
+              <br />• All user ratings
+              <br />• All reviews and review likes
+              <br />• All watchlist entries
+              <br />• All aggregate scores
+              <br /><br />
+              <strong className="text-red-600">This action cannot be undone!</strong>
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirmation(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+                disabled={deletingMovie === deleteConfirmation.movieId}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleMovieDelete(deleteConfirmation.movieId, deleteConfirmation.movieTitle)}
+                disabled={deletingMovie === deleteConfirmation.movieId}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {deletingMovie === deleteConfirmation.movieId ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete Forever
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeReviews && (
         <ReviewsModal
           movieId={activeReviews.movieId}
@@ -323,10 +403,30 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                 objectFit="cover"
                 className="transition-transform duration-300"
               />
-              {/* Watchlist toggle button - top left */}
+              {/* Admin delete button - top left corner */}
+              {isAdmin && !readOnlyMode && (
+                <button
+                  onClick={() => setDeleteConfirmation({ 
+                    movieId: movie.id, 
+                    movieTitle: movie.title, 
+                    movieYear: movie.year 
+                  })}
+                  disabled={deletingMovie === movie.id}
+                  className="absolute top-2 left-2 p-2 rounded-full bg-red-600/90 text-white hover:bg-red-700/90 transition-all z-10 shadow-lg"
+                  title="Delete movie (Admin only)"
+                >
+                  {deletingMovie === movie.id ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <Trash2 size={16} />
+                  )}
+                </button>
+              )}
+              
+              {/* Watchlist toggle button - adjusted position for admin delete button */}
               {readOnlyMode ? (
                 <div
-                  className="absolute top-2 left-2 p-2 rounded-full bg-gray-500/70 text-white cursor-not-allowed"
+                  className={`absolute ${isAdmin ? 'top-2 left-12' : 'top-2 left-2'} p-2 rounded-full bg-gray-500/70 text-white cursor-not-allowed`}
                   title="Sign in to add to watchlist"
                 >
                   <Eye size={16} />
@@ -335,7 +435,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                 <button
                   onClick={() => handleWatchlistToggle(movie.id, movie.isInWatchlist)}
                   disabled={togglingWatchlist === movie.id}
-                  className={`absolute top-2 left-2 p-2 rounded-full transition-all ${
+                  className={`absolute ${isAdmin ? 'top-2 left-12' : 'top-2 left-2'} p-2 rounded-full transition-all ${
                     movie.isInWatchlist 
                       ? 'bg-blue-600 text-white shadow-lg' 
                       : 'bg-black/50 text-white hover:bg-black/70'
@@ -349,6 +449,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                   )}
                 </button>
               )}
+              
               {/* TMDb rating - top right */}
               {movie.tmdbRating && (
                 <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">

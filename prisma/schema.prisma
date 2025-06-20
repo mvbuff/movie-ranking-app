@@ -129,7 +129,7 @@ model AggregateScore {
   confidence Float?
   user       User     @relation(fields: [userId], references: [id])
   userId     String
-  movie      Movie    @relation(fields: [movieId], references: [id])
+  movie      Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
   movieId    String
 
   @@unique([userId, movieId])

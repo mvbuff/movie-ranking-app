@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { randomBytes } from 'crypto';
 import { getServerSession } from 'next-auth';
 import { ActivityLogger } from '@/lib/activity-logger';
+import { safeDeleteMovie } from '@/lib/safe-movie-deletion';
 
 export async function GET() {
   try {
@@ -86,5 +87,65 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Failed to add movie:", error);
     return NextResponse.json({ error: 'Failed to add movie to database' }, { status: 500 });
+  }
+}
+
+// DELETE: Admin-only movie deletion with safe foreign key handling
+export async function DELETE(request: Request) {
+  try {
+    // Check authentication
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const user = await prisma.user.findUnique({
+      where: { name: session.user?.name || '' },
+      select: { role: true, id: true, name: true }
+    });
+
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
+    const { movieId } = await request.json();
+
+    if (!movieId) {
+      return NextResponse.json({ error: 'Movie ID is required' }, { status: 400 });
+    }
+
+    // Get movie details before deletion for logging
+    const movie = await prisma.movie.findUnique({
+      where: { id: movieId },
+      select: { title: true, year: true }
+    });
+
+    if (!movie) {
+      return NextResponse.json({ error: 'Movie not found' }, { status: 404 });
+    }
+
+    // Use safe deletion to handle foreign key constraints
+    const deletionResult = await safeDeleteMovie(movieId);
+
+    if (!deletionResult.success) {
+      return NextResponse.json({ 
+        error: 'Failed to delete movie', 
+        details: deletionResult.message 
+      }, { status: 500 });
+    }
+
+    console.log(`🗑️ Admin ${user.name} deleted movie: ${movie.title} (${movie.year})`);
+
+    return NextResponse.json({
+      success: true,
+      message: `Successfully deleted "${movie.title}" and all related data`
+    }, { status: 200 });
+
+  } catch (error) {
+    console.error('Movie deletion error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error during movie deletion' 
+    }, { status: 500 });
   }
 } 
