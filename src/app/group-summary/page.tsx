@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Star, Share2, ExternalLink } from 'lucide-react';
 import { Suspense } from 'react';
+import { getRatingDisplay } from '@/lib/rating-system';
+import { useToast } from '@/context/toast-context';
 
 interface MovieSummary {
   id: string;
@@ -26,6 +28,7 @@ function GroupSummaryContent() {
   const [movies, setMovies] = useState<MovieSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [groupName, setGroupName] = useState('Movie Group');
+  const { showToast } = useToast();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -54,27 +57,32 @@ function GroupSummaryContent() {
     const url = window.location.href;
     const topMovies = movies
       .filter(m => m.aggregateScore && m.aggregateScore >= 7)
-      .slice(0, 3)
-      .map(m => `${m.title} (${m.aggregateScore}/10)`)
-      .join(', ');
+      .slice(0, 5)
+      .map(m => {
+        const categoryPrefix = m.category === 'MOVIE' ? 'Mreco' : 
+                              m.category === 'SERIES' ? 'Sreco' : 'Dreco';
+        return `${categoryPrefix}: ${m.title} (${getRatingDisplay(m.aggregateScore)})`;
+      })
+      .join('\n');
     
-    const message = `🎬 Check out ${groupName}'s movie rankings!\n\nTop picks: ${topMovies}\n\nSee the full list: ${url}`;
+    const message = `🎬 ${groupName} Top Picks:\n\n${topMovies}\n\nSee full list: ${url}`;
     
     try {
       await navigator.clipboard.writeText(message);
-      alert('Group summary copied to clipboard!');
+      showToast('Group summary copied to clipboard!');
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
-      alert('Failed to copy to clipboard');
+      showToast('Failed to copy to clipboard', 'error');
     }
   };
 
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+      showToast('Link copied to clipboard!');
     } catch (error) {
       console.error('Failed to copy link:', error);
+      showToast('Failed to copy link', 'error');
     }
   };
 
@@ -180,20 +188,24 @@ function GroupSummaryContent() {
                       )}
                     </div>
                     <div className="p-4">
-                      <h3 className="font-bold text-lg mb-2">{movie.title} ({movie.year})</h3>
-                      <div className="mb-3">
-                        <div className="text-2xl font-bold text-blue-600">
-                          {movie.aggregateScore?.toFixed(1)}/10
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          Group Score ({movie.ratingCount} rating{movie.ratingCount !== 1 ? 's' : ''})
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-sm">{movie.title} ({movie.year})</h3>
+                        <div className="text-right">
+                          {movie.aggregateScore && (
+                            <div className="text-lg font-bold text-indigo-600">
+                              {getRatingDisplay(movie.aggregateScore)}
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-500">
+                            {movie.ratingCount} rating{movie.ratingCount !== 1 ? 's' : ''}
+                          </div>
                         </div>
                       </div>
                       <div className="space-y-1">
                         {movie.ratings.map((rating, idx) => (
                           <div key={idx} className="flex justify-between text-sm">
                             <span className="text-gray-600">{rating.userName}</span>
-                            <span className="font-medium">{rating.score}/10</span>
+                            <span className="font-medium">{getRatingDisplay(rating.score)}</span>
                           </div>
                         ))}
                       </div>

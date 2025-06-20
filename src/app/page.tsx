@@ -53,7 +53,7 @@ export default function Home() {
                 const shareUrl = `${currentUrl}/group-summary?name=${encodeURIComponent(groupName)}`;
                 
                 // Copy message to clipboard
-                const message = `🎬 Check out our movie rankings!\n\n${shareUrl}`;
+                const message = `🎬 ${groupName} - Movie Rankings\n\n${shareUrl}`;
                 
                 try {
                   await navigator.clipboard.writeText(message);

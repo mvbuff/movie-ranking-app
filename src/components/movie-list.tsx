@@ -7,6 +7,8 @@ import Image from 'next/image';
 import { Scorecard } from './score-components';
 import { Info, Star, MessageSquare, Eye, Share2 } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
+import { getRatingDisplay } from '@/lib/rating-system';
+import { useToast } from '@/context/toast-context';
 
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
@@ -44,6 +46,7 @@ interface MovieListProps {
 
 export default function MovieList({ calculationTimestamp, categoryFilter, scoreThreshold, searchTerm, sortBy, readOnlyMode = false }: MovieListProps) {
   const { currentUser } = useUser();
+  const { showToast } = useToast();
   const [movies, setMovies] = useState<MovieWithRatingsAndScores[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeReviews, setActiveReviews] = useState<{ movieId: string; movieTitle: string; } | null>(null);
@@ -213,27 +216,54 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
   */
 
   const shareToWhatsApp = async (movie: MovieWithRatingsAndScores) => {
-    const rating = movie.currentUserRating > 0 ? movie.currentUserRating : 'Not rated yet';
-    const friendScore = movie.aggregateScore ? movie.aggregateScore.toFixed(1) : 'No score yet';
-    const tmdbScore = movie.tmdbRating ? movie.tmdbRating.toFixed(1) : 'N/A';
+    // Get category prefix
+    const getCategoryPrefix = (category: Category) => {
+      switch (category) {
+        case 'MOVIE': return 'Mreco';
+        case 'SERIES': return 'Sreco';
+        case 'DOCUMENTARY': return 'Dreco';
+        default: return 'Mreco';
+      }
+    };
+
+    const categoryPrefix = getCategoryPrefix(movie.category);
+    const letterRating = movie.currentUserRating > 0 ? getRatingDisplay(movie.currentUserRating) : 'NR';
     
-    let message = `🎬 *${movie.title}* (${movie.year})\n`;
-    
-    if (!readOnlyMode && currentUser) {
-      message += `My rating: ⭐ ${rating}/10\n`;
+    // Try to fetch user's review for this movie
+    let userReview = '';
+    if (currentUser && movie.currentUserRating > 0) {
+      try {
+        const reviewResponse = await fetch(`/api/reviews?movieId=${movie.id}`);
+        if (reviewResponse.ok) {
+          const reviews: { id: string; userId: string; text: string; movieId: string; createdAt: string; user: { name: string } }[] = await reviewResponse.json();
+          const userReviewData = reviews.find((review) => review.userId === currentUser.id);
+          if (userReviewData && userReviewData.text) {
+            userReview = userReviewData.text.trim();
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user review:', error);
+      }
     }
     
-    message += `${readOnlyMode ? 'Community' : 'Friends'} score: 🏆 ${friendScore}/10\n`;
-    message += `TMDB score: 🌟 ${tmdbScore}/10\n`;
-    message += `\nCheck it out: https://www.themoviedb.org/movie/${movie.tmdbId}`;
+    // Format the message according to the specified pattern
+    let message = `${categoryPrefix}: ${movie.title} (${movie.year})`;
+    
+    if (!readOnlyMode && currentUser && movie.currentUserRating > 0) {
+      message += ` .... ${letterRating}`;
+      if (userReview) {
+        message += `.... ${userReview}`;
+      }
+    } else {
+      message += ` .... NR`; // Not rated
+    }
     
     try {
       await navigator.clipboard.writeText(message);
-      // You could add a toast notification here if you have one
-      alert('Movie details copied to clipboard!');
+      showToast('Movie details copied to clipboard!');
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
-      alert('Failed to copy to clipboard');
+      showToast('Failed to copy to clipboard', 'error');
     }
   };
 
