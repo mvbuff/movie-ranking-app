@@ -224,8 +224,73 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
                   const IconComponent = weightInfo.icon;
                   
                   return (
-                    <div key={friend.id} className="p-6 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-start gap-4">
+                    <div key={friend.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                      {/* Mobile Layout - Stacked */}
+                      <div className="block sm:hidden space-y-4">
+                        {/* Name and Checkbox Row */}
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={friend.isFriend}
+                            onChange={() => handleToggleFriend(friend.id, friend.isFriend)}
+                            className="h-5 w-5 rounded border-2 border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-2 transition-colors"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h3 className={`text-lg font-medium truncate transition-colors ${
+                              friend.isFriend ? 'text-gray-900' : 'text-gray-400'
+                            }`}>
+                              {friend.name}
+                            </h3>
+                            {friend.isFriend && (
+                              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border mt-1 ${weightInfo.color}`}>
+                                <IconComponent size={12} />
+                                {weightInfo.label}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Weight Control - Full Width on Mobile */}
+                        {friend.isFriend && (
+                          <div className="space-y-3 pl-8">
+                            {/* Weight Display */}
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-gray-700">Influence</span>
+                              <div className={`px-3 py-1 rounded-full text-sm font-bold border ${weightInfo.color}`}>
+                                {Math.round(friend.weight * 100)}%
+                              </div>
+                            </div>
+                            
+                            {/* Custom Slider - Full Width */}
+                            <div className="relative">
+                              <input
+                                type="range"
+                                min="0"
+                                max="2"
+                                step="0.05"
+                                value={friend.weight}
+                                onChange={(e) => handleWeightChange(friend.id, parseFloat(e.target.value))}
+                                className="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-modern focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                style={{
+                                  background: `linear-gradient(to right, 
+                                    #ef4444 0%, #ef4444 25%, 
+                                    #3b82f6 25%, #3b82f6 75%, 
+                                    #22c55e 75%, #22c55e 100%)`
+                                }}
+                              />
+                              {/* Slider Labels */}
+                              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>Low</span>
+                                <span>Normal</span>
+                                <span>High</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Desktop Layout - Side by Side */}
+                      <div className="hidden sm:flex items-start gap-4">
                         {/* Checkbox and Name */}
                         <div className="flex items-center min-w-0 flex-1">
                           <div className="relative">
@@ -251,9 +316,9 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
                           </div>
                         </div>
 
-                        {/* Weight Control */}
+                        {/* Weight Control - Desktop Width */}
                         {friend.isFriend && (
-                          <div className="flex-shrink-0 w-full sm:w-64">
+                          <div className="flex-shrink-0 w-64">
                             <div className="space-y-3">
                               {/* Weight Display */}
                               <div className="flex items-center justify-between">
