@@ -1,6 +1,6 @@
 'use client';
 import { SLIDER_RATING_SCALE } from '@/lib/rating-system';
-import { X } from 'lucide-react';
+import { X, Activity } from 'lucide-react';
 
 // Manually define the Category type for client-side use
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
@@ -19,6 +19,7 @@ interface FilterControlsProps {
   sortBy: SortKey;
   onSortChange: (key: SortKey) => void;
   readOnlyMode?: boolean;
+  setShowActivityPopup?: (show: boolean) => void;
 }
 
 const categories: { id: FilterCategory; name: string }[] = [
@@ -41,6 +42,7 @@ export default function FilterControls({
   sortBy,
   onSortChange,
   readOnlyMode = false,
+  setShowActivityPopup,
 }: FilterControlsProps) {
   // Filter out watchlist for non-authenticated users
   const availableCategories = readOnlyMode 
@@ -98,7 +100,7 @@ export default function FilterControls({
         </div>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-6 mt-4 pt-4 border-t">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-center gap-4 mt-4 pt-4 border-t">
         {/* Search Movies */}
         <div className="w-full">
           <label htmlFor="search-movies" className="block text-sm font-medium text-gray-700 mb-2">
@@ -168,6 +170,22 @@ export default function FilterControls({
             <option value="addedDate">Added Date</option>
           </select>
         </div>
+
+        {/* Recent Updates Button */}
+        {!readOnlyMode && setShowActivityPopup && (
+          <div className="w-full">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              🔔 Community
+            </label>
+            <button
+              onClick={() => setShowActivityPopup(true)}
+              className="w-full p-2 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white rounded-md font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 text-sm"
+            >
+              <Activity size={14} />
+              Recent Updates
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -23,6 +23,16 @@ enum UserStatus {
   ACTIVE
 }
 
+enum ActivityType {
+  MOVIE_ADDED
+  MOVIE_RATED
+  REVIEW_ADDED
+  REVIEW_LIKED
+  FORUM_THREAD_CREATED
+  FORUM_POST_ADDED
+  USER_REGISTERED
+}
+
 model User {
   id                 String              @id @default(cuid())
   name               String              @unique
@@ -45,6 +55,7 @@ model User {
   forumThreads       ForumThread[]
   forumPosts         ForumPost[]
   reviewLikes        ReviewLike[]
+  activities         Activity[]
 }
 
 enum Category {
@@ -204,4 +215,28 @@ model ForumPost {
   parentPost  ForumPost?  @relation("PostReplies", fields: [parentId], references: [id], onDelete: Cascade)
   parentId    String?
   replies     ForumPost[] @relation("PostReplies")
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  type        ActivityType
+  description String       // Human-readable description of the activity
+  createdAt   DateTime     @default(now())
+  
+  // User who performed the activity
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  
+  // Optional references to related objects
+  movieId     String?      // For movie-related activities
+  reviewId    String?      // For review-related activities  
+  threadId    String?      // For forum thread activities
+  postId      String?      // For forum post activities
+  
+  // Additional metadata as JSON (for extensibility)
+  metadata    Json?
+  
+  @@index([createdAt(sort: Desc)]) // For efficient sorting by latest
+  @@index([userId])                // For user-specific queries
+  @@index([type])                  // For filtering by activity type
 }

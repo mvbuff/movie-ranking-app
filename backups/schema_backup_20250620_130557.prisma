@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String              @id @default(cuid())
+  name                  String              @unique
+  password              String?
+  role                  UserRole            @default(USER)
+  status                UserStatus          @default(PENDING)
+  passwordResetRequired Boolean             @default(false)
+  email                 String?             @unique
+  image                 String?
+  createdAt             DateTime            @default(now())
+  activities            Activity[]
+  aggregateScores       AggregateScore[]
+  forumPosts            ForumPost[]
+  forumThreads          ForumThread[]
+  ownedFriendGroups     FriendGroup[]
+  groupMemberships      FriendGroupMember[]
+  addedMovies           Movie[]             @relation("MovieAddedBy")
+  ratings               Rating[]
+  reviews               Review[]
+  reviewLikes           ReviewLike[]
+  watchlist             Watchlist[]
+  weightsAboutMe        WeightPreference[]  @relation("WeightedFriend")
+  weightPreferences     WeightPreference[]  @relation("WeightSetter")
+}
+
+model Movie {
+  id              String           @id @default(cuid())
+  title           String
+  year            Int
+  posterUrl       String?
+  tmdbId          String           @unique
+  tmdbRating      Float?
+  tmdbVoteCount   Int?
+  category        Category         @default(MOVIE)
+  addedById       String?
+  createdAt       DateTime         @default(now())
+  aggregateScores AggregateScore[]
+  forumCategories ForumCategory[]
+  addedBy         User?            @relation("MovieAddedBy", fields: [addedById], references: [id])
+  ratings         Rating[]
+  reviews         Review[]
+  watchlist       Watchlist[]
+}
+
+model Rating {
+  id      String @id @default(cuid())
+  score   Float
+  userId  String
+  movieId String
+  movie   Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+}
+
+model WeightPreference {
+  id       String @id @default(cuid())
+  weight   Float  @default(1.0)
+  userId   String
+  friendId String
+  friend   User   @relation("WeightedFriend", fields: [friendId], references: [id])
+  user     User   @relation("WeightSetter", fields: [userId], references: [id])
+
+  @@unique([userId, friendId])
+}
+
+model FriendGroup {
+  id      String              @id @default(cuid())
+  name    String
+  ownerId String
+  owner   User                @relation(fields: [ownerId], references: [id])
+  members FriendGroupMember[]
+}
+
+model FriendGroupMember {
+  id       String      @id @default(cuid())
+  groupId  String
+  memberId String
+  group    FriendGroup @relation(fields: [groupId], references: [id])
+  member   User        @relation(fields: [memberId], references: [id])
+
+  @@unique([groupId, memberId])
+}
+
+model AggregateScore {
+  id         String @id @default(cuid())
+  score      Float
+  confidence Float?
+  userId     String
+  movieId    String
+  movie      Movie  @relation(fields: [movieId], references: [id])
+  user       User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, movieId])
+}
+
+model Review {
+  id        String       @id @default(cuid())
+  text      String       @db.VarChar(100)
+  createdAt DateTime     @default(now())
+  userId    String
+  movieId   String
+  movie     Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes     ReviewLike[]
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reviewId])
+}
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+}
+
+model ForumCategory {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  description String?
+  color       String?
+  isMovieLink Boolean       @default(false)
+  movieId     String?
+  createdAt   DateTime      @default(now())
+  movie       Movie?        @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  threads     ForumThread[]
+}
+
+model ForumThread {
+  id         String        @id @default(cuid())
+  title      String
+  isSticky   Boolean       @default(false)
+  isLocked   Boolean       @default(false)
+  views      Int           @default(0)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  authorId   String
+  categoryId String
+  posts      ForumPost[]
+  author     User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category   ForumCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model ForumPost {
+  id          String      @id @default(cuid())
+  content     String
+  isFirstPost Boolean     @default(false)
+  likes       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  authorId    String
+  threadId    String
+  parentId    String?
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentPost  ForumPost?  @relation("PostReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     ForumPost[] @relation("PostReplies")
+  thread      ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  type        ActivityType
+  description String
+  createdAt   DateTime     @default(now())
+  userId      String
+  movieId     String?
+  reviewId    String?
+  threadId    String?
+  postId      String?
+  metadata    Json?
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([userId])
+  @@index([type])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+}
+
+enum ActivityType {
+  MOVIE_ADDED
+  MOVIE_RATED
+  REVIEW_ADDED
+  REVIEW_LIKED
+  WATCHLIST_ADDED
+  WATCHLIST_REMOVED
+  FORUM_THREAD_CREATED
+  FORUM_POST_ADDED
+  USER_REGISTERED
+}
+
+enum Category {
+  MOVIE
+  SERIES
+  DOCUMENTARY
+}
+
+

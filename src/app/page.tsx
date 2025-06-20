@@ -12,6 +12,8 @@ import { useUser } from '@/context/user-context';
 import { signOut, signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { calculateUserAggregateScores } from '@/app/actions';
+import { Maximize2, Minimize2 } from 'lucide-react';
+import ActivityFeedPopup from '@/components/activity-feed-popup';
 
 type FilterCategory = Category | 'ALL' | 'WATCHLIST';
 
@@ -23,6 +25,8 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewSearchTerm, setReviewSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('addedDate');
+  const [showActivityPopup, setShowActivityPopup] = useState(false);
+  const [isMoviesFullWidth, setIsMoviesFullWidth] = useState(true);
 
   const isAuthenticated = sessionStatus === 'authenticated';
   const isLoading = sessionStatus === 'loading';
@@ -30,8 +34,6 @@ export default function Home() {
   const triggerDataRefresh = useCallback(() => {
     setRefreshTimestamp(Date.now());
   }, []);
-
-
 
   // Auto-calculate when page loads for authenticated users
   useEffect(() => {
@@ -103,7 +105,7 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column */}
+        {/* Left Column - Controls & Filters */}
         <div className="lg:col-span-2 space-y-8">
           {isAuthenticated && (
             <>
@@ -111,7 +113,7 @@ export default function Home() {
             </>
           )}
           
-          <FilterControls 
+          <FilterControls
             activeCategory={activeCategory}
             onCategoryChange={setActiveCategory}
             scoreThreshold={scoreThreshold}
@@ -123,10 +125,43 @@ export default function Home() {
             sortBy={sortBy}
             onSortChange={setSortBy}
             readOnlyMode={!isAuthenticated}
+            setShowActivityPopup={setShowActivityPopup}
           />
+
+          {/* Review Search Results - Show when there's a search term */}
+          {reviewSearchTerm.trim() && (
+            <div className="mt-12">
+              <ReviewSearchResults searchTerm={reviewSearchTerm} />
+            </div>
+          )}
+
+          {/* Movie List - Only show here if NOT in full-width mode */}
+          {!isMoviesFullWidth && (
+            <div className="mt-12">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-900">Your Movie Rankings</h2>
+                <button
+                  onClick={() => setIsMoviesFullWidth(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                  title="Expand movies to full width"
+                >
+                  <Maximize2 size={16} />
+                  Full Width
+                </button>
+              </div>
+              <MovieList 
+                calculationTimestamp={refreshTimestamp}
+                categoryFilter={activeCategory}
+                scoreThreshold={scoreThreshold}
+                searchTerm={searchTerm}
+                sortBy={sortBy}
+                readOnlyMode={!isAuthenticated}
+              />
+            </div>
+          )}
         </div>
 
-        {/* Right Column */}
+        {/* Right Column - Sidebar */}
         <div className="space-y-6">
           {isAuthenticated && (
             <>
@@ -151,30 +186,43 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+              
               <FriendList onCalculationComplete={triggerDataRefresh} />
             </>
           )}
         </div>
       </div>
 
-      {/* Review Search Results - Show when there's a search term */}
-      {reviewSearchTerm.trim() && (
-        <div className="mt-12">
-          <ReviewSearchResults searchTerm={reviewSearchTerm} />
+      {/* Full-Width Movie List - Show when in full-width mode */}
+      {isMoviesFullWidth && (
+        <div className="mt-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-900">Your Movie Rankings</h2>
+            <button
+              onClick={() => setIsMoviesFullWidth(false)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm"
+              title="Return to normal width"
+            >
+              <Minimize2 size={16} />
+              Normal Width
+            </button>
+          </div>
+          <MovieList 
+            calculationTimestamp={refreshTimestamp}
+            categoryFilter={activeCategory}
+            scoreThreshold={scoreThreshold}
+            searchTerm={searchTerm}
+            sortBy={sortBy}
+            readOnlyMode={!isAuthenticated}
+          />
         </div>
       )}
 
-      {/* Movie List - show for everyone */}
-      <div className="mt-12">
-        <MovieList
-          calculationTimestamp={refreshTimestamp}
-          categoryFilter={activeCategory}
-          scoreThreshold={scoreThreshold}
-          searchTerm={searchTerm}
-          sortBy={sortBy}
-          readOnlyMode={!isAuthenticated}
-        />
-      </div>
+      {/* Activity Feed Popup */}
+      <ActivityFeedPopup 
+        isOpen={showActivityPopup}
+        onClose={() => setShowActivityPopup(false)}
+      />
     </main>
   );
 }
