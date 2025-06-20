@@ -18,7 +18,7 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('ALL');
   const [scoreThreshold, setScoreThreshold] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<SortKey>('aggregateScore');
+  const [sortBy, setSortBy] = useState<SortKey>('addedDate');
   const { isAdmin, currentUser, sessionStatus } = useUser();
 
   const triggerDataRefresh = useCallback(() => {
@@ -44,6 +44,30 @@ export default function Home() {
           >
             💬 Discussion Forum
           </Link>
+          {isAuthenticated && (
+            <button
+              onClick={async () => {
+                // Create a shareable group summary link
+                const currentUrl = window.location.origin;
+                const groupName = currentUser?.name ? `${currentUser.name}'s Group` : 'Movie Group';
+                const shareUrl = `${currentUrl}/group-summary?name=${encodeURIComponent(groupName)}`;
+                
+                // Copy message to clipboard
+                const message = `🎬 Check out our movie rankings!\n\n${shareUrl}`;
+                
+                try {
+                  await navigator.clipboard.writeText(message);
+                  alert('Group summary link copied to clipboard!');
+                } catch (error) {
+                  console.error('Failed to copy to clipboard:', error);
+                  alert('Failed to copy to clipboard');
+                }
+              }}
+              className="ml-3 inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              📊 Copy Group Summary
+            </button>
+          )}
         </div>
         {!isAuthenticated && !isLoading && (
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-md mx-auto">

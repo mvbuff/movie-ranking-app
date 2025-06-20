@@ -5,7 +5,7 @@ import { useUser } from '@/context/user-context';
 import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
-import { Info, Star, MessageSquare, Eye, Users } from 'lucide-react';
+import { Info, Star, MessageSquare, Eye, Share2 } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
 
 // Manually define types to avoid server/client type mismatches
@@ -204,10 +204,37 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     }
   };
 
+  /* Temporarily disabled - keeping for future use
   const handleDiscussionClick = (movie: MovieWithRatingsAndScores) => {
     // Navigate to forum with movie context
     const movieTitle = encodeURIComponent(`${movie.title} (${movie.year})`);
     window.open(`/forum?movie=${movie.id}&title=${movieTitle}`, '_blank');
+  };
+  */
+
+  const shareToWhatsApp = async (movie: MovieWithRatingsAndScores) => {
+    const rating = movie.currentUserRating > 0 ? movie.currentUserRating : 'Not rated yet';
+    const friendScore = movie.aggregateScore ? movie.aggregateScore.toFixed(1) : 'No score yet';
+    const tmdbScore = movie.tmdbRating ? movie.tmdbRating.toFixed(1) : 'N/A';
+    
+    let message = `🎬 *${movie.title}* (${movie.year})\n`;
+    
+    if (!readOnlyMode && currentUser) {
+      message += `My rating: ⭐ ${rating}/10\n`;
+    }
+    
+    message += `${readOnlyMode ? 'Community' : 'Friends'} score: 🏆 ${friendScore}/10\n`;
+    message += `TMDB score: 🌟 ${tmdbScore}/10\n`;
+    message += `\nCheck it out: https://www.themoviedb.org/movie/${movie.tmdbId}`;
+    
+    try {
+      await navigator.clipboard.writeText(message);
+      // You could add a toast notification here if you have one
+      alert('Movie details copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      alert('Failed to copy to clipboard');
+    }
   };
 
   const filteredAndSortedMovies = useMemo(() => {
@@ -349,12 +376,21 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                   >
                     <Info size={18} />
                   </button>
+                  {/* Temporarily removed Users/Discussion button - keeping function for future use
                   <button 
                     onClick={() => handleDiscussionClick(movie)}
                     className="p-1 text-gray-400 hover:text-purple-600"
                     title="Discuss this movie in forum"
                   >
                     <Users size={18} />
+                  </button>
+                  */}
+                  <button 
+                    onClick={() => shareToWhatsApp(movie)}
+                    className="p-1 text-gray-400 hover:text-green-600"
+                    title="Copy movie details"
+                  >
+                    <Share2 size={18} />
                   </button>
                 </div>
               </div>
