@@ -7,9 +7,10 @@ import { useUser } from '@/context/user-context';
 
 interface UserSwitcherProps {
   refreshTimestamp: number | null;
+  onUserChange?: () => void;
 }
 
-export default function UserSwitcher({ refreshTimestamp }: UserSwitcherProps) {
+export default function UserSwitcher({ refreshTimestamp, onUserChange }: UserSwitcherProps) {
   const [users, setUsers] = useState<User[]>([]);
   const { currentUser, setCurrentUser } = useUser();
   const { data: session } = useSession();
@@ -44,6 +45,9 @@ export default function UserSwitcher({ refreshTimestamp }: UserSwitcherProps) {
           }
           
           setCurrentUser(userToSelect);
+          if (onUserChange) {
+            onUserChange();
+          }
         }
 
       } catch (error) {
@@ -53,12 +57,15 @@ export default function UserSwitcher({ refreshTimestamp }: UserSwitcherProps) {
       }
     }
     fetchUsers();
-  }, [refreshTimestamp, users.length, currentUser, setCurrentUser, session]); // Include session to react to login changes
+  }, [refreshTimestamp, users.length, currentUser, setCurrentUser, session, onUserChange]); // Include session to react to login changes
 
   const handleUserChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedUserId = event.target.value;
     const user = users.find((u) => u.id === selectedUserId) || null;
     setCurrentUser(user);
+    if (onUserChange) {
+      onUserChange();
+    }
   };
 
   if (loading) {

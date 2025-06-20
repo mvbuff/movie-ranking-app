@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import MovieSearch from "@/components/movie-search";
 import MovieList from "@/components/movie-list";
 import UserSwitcher from "@/components/user-switcher";
@@ -10,6 +10,7 @@ import type { Category, SortKey } from '@/components/filter-controls';
 import { useUser } from '@/context/user-context';
 import { signOut, signIn } from 'next-auth/react';
 import Link from 'next/link';
+import { calculateUserAggregateScores } from '@/app/actions';
 
 type FilterCategory = Category | 'ALL' | 'WATCHLIST';
 
@@ -21,12 +22,45 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<SortKey>('addedDate');
   const { isAdmin, currentUser, sessionStatus } = useUser();
 
-  const triggerDataRefresh = useCallback(() => {
-    setRefreshTimestamp(new Date().getTime());
-  }, []);
-
   const isAuthenticated = sessionStatus === 'authenticated';
   const isLoading = sessionStatus === 'loading';
+
+  // Auto-calculate friend scores
+  const autoCalculateScores = useCallback(async () => {
+    if (!currentUser || sessionStatus !== 'authenticated') return;
+    
+    try {
+      await calculateUserAggregateScores(currentUser.id);
+      console.log('✨ Friend scores updated for:', currentUser.name);
+      
+      // Update timestamp to trigger MovieList refresh
+      setRefreshTimestamp(new Date().getTime());
+    } catch (error) {
+      console.error('❌ Auto-calculation failed:', error);
+    }
+  }, [currentUser, sessionStatus]);
+
+  // Auto-calculate when page loads or user changes
+  useEffect(() => {
+    if (isAuthenticated && currentUser) {
+      // Add small delay to ensure user context is fully updated
+      const timer = setTimeout(() => {
+        autoCalculateScores();
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, currentUser, autoCalculateScores]);
+
+  const triggerDataRefresh = useCallback(async () => {
+    // Auto-calculate scores when new movies are added or data is refreshed
+    if (currentUser && sessionStatus === 'authenticated') {
+      await autoCalculateScores();
+    } else {
+      // If no user or not authenticated, just trigger a basic refresh
+      setRefreshTimestamp(new Date().getTime());
+    }
+  }, [currentUser, sessionStatus, autoCalculateScores]);
 
   return (
     <main className="min-h-screen p-4 sm:p-8">
@@ -97,7 +131,7 @@ export default function Home() {
               <div className="p-4 bg-gray-50 rounded-lg shadow-sm border">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div className="flex-grow">
-                    {isAdmin && <UserSwitcher refreshTimestamp={refreshTimestamp} />}
+                    {isAdmin && <UserSwitcher refreshTimestamp={refreshTimestamp} onUserChange={triggerDataRefresh} />}
                     {currentUser && <p className="text-sm text-gray-500 mt-2">Now acting as: <span className="font-bold">{currentUser.name}</span></p>}
                   </div>
                   <div className="flex flex-col items-stretch gap-2 flex-shrink-0">

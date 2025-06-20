@@ -5,7 +5,7 @@ import type { User, WeightPreference } from '@prisma/client';
 import { useUser } from '@/context/user-context';
 import { useDebounce } from 'use-debounce';
 import { CalculateScoresButton } from './score-components';
-import { ChevronDown, Users, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { ChevronDown, Users } from 'lucide-react';
 
 interface FriendListProps {
   onCalculationComplete: () => void;
@@ -18,9 +18,9 @@ interface FriendWithPreference extends User {
 
 // Helper function to get weight display info
 const getWeightInfo = (weight: number) => {
-  if (weight < 0.5) return { color: 'text-red-600 bg-red-50 border-red-200', icon: TrendingDown, label: 'Low Impact' };
-  if (weight < 1.5) return { color: 'text-blue-600 bg-blue-50 border-blue-200', icon: Minus, label: 'Normal' };
-  return { color: 'text-green-600 bg-green-50 border-green-200', icon: TrendingUp, label: 'High Impact' };
+  if (weight < 0.5) return { color: 'text-red-600 bg-red-50 border-red-200' };
+  if (weight < 1.5) return { color: 'text-blue-600 bg-blue-50 border-blue-200' };
+  return { color: 'text-green-600 bg-green-50 border-green-200' };
 };
 
 function FriendList({ onCalculationComplete }: FriendListProps) {
@@ -28,6 +28,13 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
   const [friends, setFriends] = useState<FriendWithPreference[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+
+  // Function to collapse menu after calculation
+  const handleCalculationComplete = () => {
+    onCalculationComplete();
+    // Auto-collapse the menu after calculation
+    setIsOpen(false);
+  };
 
   // --- Data Fetching and Handlers (unchanged) ---
   const fetchFriendData = useCallback(async () => {
@@ -44,11 +51,6 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
       const preferences: WeightPreference[] = await prefsRes.json();
       const prefsMap = new Map(preferences.map(p => [p.friendId, p.weight]));
 
-      console.log('📊 Debug Info:');
-      console.log('- Total users fetched:', allUsers.length);
-      console.log('- Current user:', currentUser.name);
-      console.log('- Users after filtering current user:', allUsers.filter(u => u.id !== currentUser.id).length);
-
       const friendData = allUsers
         .filter(u => u.id !== currentUser.id)
         .map(user => ({
@@ -56,17 +58,53 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
           isFriend: prefsMap.has(user.id),
           weight: prefsMap.get(user.id) ?? 1.0,
         }));
+
+      // If user has no weight preferences stored, automatically select all friends with 100% weight
+      if (preferences.length === 0 && friendData.length > 0) {
+        console.log('🚀 New user detected - auto-selecting all friends with 100% weight');
+        
+        // Update the local state to show all friends as selected
+        const autoSelectedFriends = friendData.map(friend => ({
+          ...friend,
+          isFriend: true,
+          weight: 1.0,
+        }));
+        
+        setFriends(autoSelectedFriends);
+
+        // Save the default preferences to the database
+        try {
+          await fetch('/api/weight-preferences/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: currentUser.id,
+              friendIds: friendData.map(f => f.id),
+              isFriend: true,
+            }),
+          });
+          console.log('✅ Default friend weights saved for:', currentUser.name);
+          
+          // Trigger auto-calculation of friend scores for the new user
+          if (onCalculationComplete) {
+            onCalculationComplete();
+          }
+        } catch (error) {
+          console.error('❌ Failed to save default friend weights:', error);
+          // If saving fails, revert to original data
+          setFriends(friendData);
+        }
+      } else {
+        // User has existing preferences, use them as-is
+        setFriends(friendData);
+      }
       
-      console.log('- Final friend data length:', friendData.length);
-      console.log('- Friend names:', friendData.map(f => f.name));
-      
-      setFriends(friendData);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, onCalculationComplete]);
 
   useEffect(() => {
     fetchFriendData();
@@ -179,7 +217,7 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
           />
         </button>
         <div className="flex-shrink-0">
-          <CalculateScoresButton onCalculationComplete={onCalculationComplete} compact={true} />
+          <CalculateScoresButton onCalculationComplete={handleCalculationComplete} compact={true} />
         </div>
       </div>
 
@@ -214,6 +252,7 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
                   >
                     Unselect All
                   </button>
+                  <CalculateScoresButton onCalculationComplete={handleCalculationComplete} compact={true} />
                 </div>
               </div>
 
@@ -221,12 +260,11 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
               <div className="divide-y divide-gray-100">
                 {friends.map(friend => {
                   const weightInfo = getWeightInfo(friend.weight);
-                  const IconComponent = weightInfo.icon;
                   
                   return (
                     <div key={friend.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
                       {/* Mobile Layout - Stacked */}
-                      <div className="block sm:hidden space-y-4">
+                      <div className="block sm:hidden space-y-3">
                         {/* Name and Checkbox Row */}
                         <div className="flex items-center gap-3">
                           <input
@@ -241,117 +279,73 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
                             }`}>
                               {friend.name}
                             </h3>
-                            {friend.isFriend && (
-                              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border mt-1 ${weightInfo.color}`}>
-                                <IconComponent size={12} />
-                                {weightInfo.label}
-                              </div>
-                            )}
                           </div>
                         </div>
                         
-                        {/* Weight Control - Full Width on Mobile */}
+                        {/* Weight Control - Compact */}
                         {friend.isFriend && (
-                          <div className="space-y-3 pl-8">
-                            {/* Weight Display */}
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-gray-700">Influence</span>
-                              <div className={`px-3 py-1 rounded-full text-sm font-bold border ${weightInfo.color}`}>
-                                {Math.round(friend.weight * 100)}%
-                              </div>
-                            </div>
-                            
-                            {/* Custom Slider - Full Width */}
-                            <div className="relative">
-                              <input
-                                type="range"
-                                min="0"
-                                max="2"
-                                step="0.05"
-                                value={friend.weight}
-                                onChange={(e) => handleWeightChange(friend.id, parseFloat(e.target.value))}
-                                className="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-modern focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                style={{
-                                  background: `linear-gradient(to right, 
-                                    #ef4444 0%, #ef4444 25%, 
-                                    #3b82f6 25%, #3b82f6 75%, 
-                                    #22c55e 75%, #22c55e 100%)`
-                                }}
-                              />
-                              {/* Slider Labels */}
-                              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                <span>Low</span>
-                                <span>Normal</span>
-                                <span>High</span>
-                              </div>
+                          <div className="flex items-center gap-3 pl-8">
+                            <input
+                              type="range"
+                              min="0"
+                              max="2"
+                              step="0.05"
+                              value={friend.weight}
+                              onChange={(e) => handleWeightChange(friend.id, parseFloat(e.target.value))}
+                              className="flex-1 h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-modern focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              style={{
+                                background: `linear-gradient(to right, 
+                                  #ef4444 0%, #ef4444 25%, 
+                                  #3b82f6 25%, #3b82f6 75%, 
+                                  #22c55e 75%, #22c55e 100%)`
+                              }}
+                            />
+                            <div className={`px-3 py-1 rounded-full text-sm font-bold border ${weightInfo.color}`}>
+                              {Math.round(friend.weight * 100)}%
                             </div>
                           </div>
                         )}
                       </div>
 
                       {/* Desktop Layout - Side by Side */}
-                      <div className="hidden sm:flex items-start gap-4">
+                      <div className="hidden sm:flex items-center gap-4">
                         {/* Checkbox and Name */}
                         <div className="flex items-center min-w-0 flex-1">
-                          <div className="relative">
-                            <input
-                              type="checkbox"
-                              checked={friend.isFriend}
-                              onChange={() => handleToggleFriend(friend.id, friend.isFriend)}
-                              className="h-5 w-5 rounded border-2 border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-2 transition-colors"
-                            />
-                          </div>
+                          <input
+                            type="checkbox"
+                            checked={friend.isFriend}
+                            onChange={() => handleToggleFriend(friend.id, friend.isFriend)}
+                            className="h-5 w-5 rounded border-2 border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-2 transition-colors"
+                          />
                           <div className="ml-4 min-w-0 flex-1">
                             <h3 className={`text-lg font-medium truncate transition-colors ${
                               friend.isFriend ? 'text-gray-900' : 'text-gray-400'
                             }`}>
                               {friend.name}
                             </h3>
-                            {friend.isFriend && (
-                              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border mt-2 ${weightInfo.color}`}>
-                                <IconComponent size={12} />
-                                {weightInfo.label}
-                              </div>
-                            )}
                           </div>
                         </div>
 
-                        {/* Weight Control - Desktop Width */}
+                        {/* Weight Control - Compact Desktop */}
                         {friend.isFriend && (
-                          <div className="flex-shrink-0 w-64">
-                            <div className="space-y-3">
-                              {/* Weight Display */}
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-700">Influence</span>
-                                <div className={`px-3 py-1 rounded-full text-sm font-bold border ${weightInfo.color}`}>
-                                  {Math.round(friend.weight * 100)}%
-                                </div>
-                              </div>
-                              
-                              {/* Custom Slider */}
-                              <div className="relative">
-                                <input
-                                  type="range"
-                                  min="0"
-                                  max="2"
-                                  step="0.05"
-                                  value={friend.weight}
-                                  onChange={(e) => handleWeightChange(friend.id, parseFloat(e.target.value))}
-                                  className="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-modern focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                  style={{
-                                    background: `linear-gradient(to right, 
-                                      #ef4444 0%, #ef4444 25%, 
-                                      #3b82f6 25%, #3b82f6 75%, 
-                                      #22c55e 75%, #22c55e 100%)`
-                                  }}
-                                />
-                                {/* Slider Labels */}
-                                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                  <span>Low</span>
-                                  <span>Normal</span>
-                                  <span>High</span>
-                                </div>
-                              </div>
+                          <div className="flex items-center gap-3 w-64">
+                            <input
+                              type="range"
+                              min="0"
+                              max="2"
+                              step="0.05"
+                              value={friend.weight}
+                              onChange={(e) => handleWeightChange(friend.id, parseFloat(e.target.value))}
+                              className="flex-1 h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-modern focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              style={{
+                                background: `linear-gradient(to right, 
+                                  #ef4444 0%, #ef4444 25%, 
+                                  #3b82f6 25%, #3b82f6 75%, 
+                                  #22c55e 75%, #22c55e 100%)`
+                              }}
+                            />
+                            <div className={`px-3 py-1 rounded-full text-sm font-bold border ${weightInfo.color}`}>
+                              {Math.round(friend.weight * 100)}%
                             </div>
                           </div>
                         )}
@@ -359,6 +353,13 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Bottom Calculate Button */}
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
+                <div className="flex justify-center">
+                  <CalculateScoresButton onCalculationComplete={handleCalculationComplete} compact={false} />
+                </div>
               </div>
             </>
           )}
