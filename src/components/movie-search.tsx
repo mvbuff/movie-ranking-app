@@ -7,6 +7,7 @@ import type { Category } from './filter-controls';
 import { useToast } from '@/context/toast-context';
 import CustomRatingInput from './custom-rating';
 import { getScore, getGradeFromScore, LetterGrade, Modifier } from '@/lib/rating-system';
+import { X } from 'lucide-react';
 
 // Combined type for movies and TV shows from TMDb
 interface SearchResult {
@@ -216,13 +217,25 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
   return (
     <div className="w-full mx-auto">
       <form onSubmit={handleSearch} className="flex gap-2 mb-4">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search for movies or series to add to the database..."
-          className="flex-grow p-2 border rounded-l-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
+        <div className="relative flex-grow">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search for movies or series to add to the database..."
+            className="w-full p-2 pr-8 border rounded-l-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              title="Clear search"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
         <button type="submit" disabled={loading} className="px-6 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 disabled:bg-gray-400">
           {loading ? 'Searching...' : 'Search'}
         </button>

@@ -1,5 +1,6 @@
 'use client';
 import { SLIDER_RATING_SCALE } from '@/lib/rating-system';
+import { X } from 'lucide-react';
 
 // Manually define the Category type for client-side use
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
@@ -13,6 +14,8 @@ interface FilterControlsProps {
   onScoreThresholdChange: (threshold: number) => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
+  reviewSearchTerm: string;
+  onReviewSearchChange: (term: string) => void;
   sortBy: SortKey;
   onSortChange: (key: SortKey) => void;
   readOnlyMode?: boolean;
@@ -33,6 +36,8 @@ export default function FilterControls({
   onScoreThresholdChange,
   searchTerm,
   onSearchChange,
+  reviewSearchTerm,
+  onReviewSearchChange,
   sortBy,
   onSortChange,
   readOnlyMode = false,
@@ -92,37 +97,76 @@ export default function FilterControls({
           />
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-6 mt-4 pt-4 border-t">
-        {/* Search within database */}
+      
+      <div className="grid grid-cols-1 sm:grid-cols-3 items-center gap-6 mt-4 pt-4 border-t">
+        {/* Search Movies */}
         <div className="w-full">
-            <label htmlFor="search-db" className="block text-sm font-medium text-gray-700 mb-2">
-                Search Movies
-            </label>
+          <label htmlFor="search-movies" className="block text-sm font-medium text-gray-700 mb-2">
+            🎬 Search Movies
+          </label>
+          <div className="relative">
             <input
-                id="search-db"
-                type="text"
-                value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Type to search..."
-                className="w-full p-2 border rounded-md"
+              id="search-movies"
+              type="text"
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search by movie title..."
+              className="w-full p-2 pr-8 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
+            {searchTerm && (
+              <button
+                onClick={() => onSearchChange('')}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Clear search"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
         </div>
+        
+        {/* Search Reviews */}
+        <div className="w-full">
+          <label htmlFor="search-reviews" className="block text-sm font-medium text-gray-700 mb-2">
+            💬 Search in Reviews
+          </label>
+          <div className="relative">
+            <input
+              id="search-reviews"
+              type="text"
+              value={reviewSearchTerm}
+              onChange={(e) => onReviewSearchChange(e.target.value)}
+              placeholder="Search review content..."
+              className="w-full p-2 pr-8 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            />
+            {reviewSearchTerm && (
+              <button
+                onClick={() => onReviewSearchChange('')}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Clear search"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+        
         {/* Sort by */}
         <div className="w-full">
-            <label htmlFor="sort-by" className="block text-sm font-medium text-gray-700 mb-2">
-                Sort By
-            </label>
-            <select 
-                id="sort-by"
-                value={sortBy}
-                onChange={(e) => onSortChange(e.target.value as SortKey)}
-                className="w-full p-2 border rounded-md bg-white"
-            >
-                <option value="aggregateScore">{readOnlyMode ? 'Community Score' : 'Friend Score'}</option>
-                <option value="currentUserRating">Your Rating</option>
-                <option value="title">Alphabetical</option>
-                <option value="addedDate">Added Date</option>
-            </select>
+          <label htmlFor="sort-by" className="block text-sm font-medium text-gray-700 mb-2">
+            📊 Sort By
+          </label>
+          <select 
+            id="sort-by"
+            value={sortBy}
+            onChange={(e) => onSortChange(e.target.value as SortKey)}
+            className="w-full p-2 border rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="aggregateScore">{readOnlyMode ? 'Community Score' : 'Friend Score'}</option>
+            <option value="currentUserRating">Your Rating</option>
+            <option value="title">Alphabetical</option>
+            <option value="addedDate">Added Date</option>
+          </select>
         </div>
       </div>
     </div>

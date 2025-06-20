@@ -6,6 +6,7 @@ import MovieList from "@/components/movie-list";
 import UserSwitcher from "@/components/user-switcher";
 import FriendList from "@/components/friend-list";
 import FilterControls from '@/components/filter-controls';
+import ReviewSearchResults from '@/components/review-search-results';
 import type { Category, SortKey } from '@/components/filter-controls';
 import { useUser } from '@/context/user-context';
 import { signOut, signIn } from 'next-auth/react';
@@ -15,52 +16,51 @@ import { calculateUserAggregateScores } from '@/app/actions';
 type FilterCategory = Category | 'ALL' | 'WATCHLIST';
 
 export default function Home() {
-  const [refreshTimestamp, setRefreshTimestamp] = useState<number | null>(null);
+  const { currentUser, isAdmin, sessionStatus } = useUser();
+  const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('ALL');
-  const [scoreThreshold, setScoreThreshold] = useState<number>(0);
+  const [scoreThreshold, setScoreThreshold] = useState(3);
   const [searchTerm, setSearchTerm] = useState('');
+  const [reviewSearchTerm, setReviewSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('addedDate');
-  const { isAdmin, currentUser, sessionStatus } = useUser();
 
   const isAuthenticated = sessionStatus === 'authenticated';
   const isLoading = sessionStatus === 'loading';
 
-  // Auto-calculate friend scores
-  const autoCalculateScores = useCallback(async () => {
-    if (!currentUser || sessionStatus !== 'authenticated') return;
-    
-    try {
-      await calculateUserAggregateScores(currentUser.id);
-      console.log('✨ Friend scores updated for:', currentUser.name);
-      
-      // Update timestamp to trigger MovieList refresh
-      setRefreshTimestamp(new Date().getTime());
-    } catch (error) {
-      console.error('❌ Auto-calculation failed:', error);
-    }
-  }, [currentUser, sessionStatus]);
+  const triggerDataRefresh = useCallback(() => {
+    setRefreshTimestamp(Date.now());
+  }, []);
 
-  // Auto-calculate when page loads or user changes
+
+
+  // Auto-calculate when page loads for authenticated users
   useEffect(() => {
-    if (isAuthenticated && currentUser) {
-      // Add small delay to ensure user context is fully updated
-      const timer = setTimeout(() => {
-        autoCalculateScores();
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isAuthenticated, currentUser, autoCalculateScores]);
+    if (isAuthenticated && currentUser && !isLoading) {
+      const autoCalculate = async () => {
+        try {
+          await calculateUserAggregateScores(currentUser.id);
+          setRefreshTimestamp(Date.now());
+        } catch (error) {
+          console.error('Auto-calculation failed:', error);
+        }
+      };
 
-  const triggerDataRefresh = useCallback(async () => {
-    // Auto-calculate scores when new movies are added or data is refreshed
-    if (currentUser && sessionStatus === 'authenticated') {
-      await autoCalculateScores();
-    } else {
-      // If no user or not authenticated, just trigger a basic refresh
-      setRefreshTimestamp(new Date().getTime());
+      // Small delay to ensure user context is ready
+      const timeoutId = setTimeout(autoCalculate, 100);
+      return () => clearTimeout(timeoutId);
     }
-  }, [currentUser, sessionStatus, autoCalculateScores]);
+  }, [isAuthenticated, currentUser, isLoading]);
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen p-4 sm:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen p-4 sm:p-8">
@@ -118,6 +118,8 @@ export default function Home() {
             onScoreThresholdChange={setScoreThreshold}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
+            reviewSearchTerm={reviewSearchTerm}
+            onReviewSearchChange={setReviewSearchTerm}
             sortBy={sortBy}
             onSortChange={setSortBy}
             readOnlyMode={!isAuthenticated}
@@ -155,15 +157,24 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Review Search Results - Show when there's a search term */}
+      {reviewSearchTerm.trim() && (
+        <div className="mt-12">
+          <ReviewSearchResults searchTerm={reviewSearchTerm} />
+        </div>
+      )}
+
       {/* Movie List - show for everyone */}
-      <MovieList
-        calculationTimestamp={refreshTimestamp}
-        categoryFilter={activeCategory}
-        scoreThreshold={scoreThreshold}
-        searchTerm={searchTerm}
-        sortBy={sortBy}
-        readOnlyMode={!isAuthenticated}
-      />
+      <div className="mt-12">
+        <MovieList
+          calculationTimestamp={refreshTimestamp}
+          categoryFilter={activeCategory}
+          scoreThreshold={scoreThreshold}
+          searchTerm={searchTerm}
+          sortBy={sortBy}
+          readOnlyMode={!isAuthenticated}
+        />
+      </div>
     </main>
   );
 }

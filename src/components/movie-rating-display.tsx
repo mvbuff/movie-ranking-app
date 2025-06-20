@@ -7,6 +7,13 @@ interface MovieRatingDisplayProps {
   score: number;
 }
 
+// Rating explanations in Telugu
+const ratingExplanations = {
+  AB: 'Assalu Bagodhu',
+  BB: 'Baguntundhi Bro',
+  CB: 'Chala Bagundhi'
+};
+
 export default function MovieRatingDisplay({ score }: MovieRatingDisplayProps) {
   const [selectedGrade, setSelectedGrade] = useState<LetterGrade | null>(null);
   const [selectedModifier, setSelectedModifier] = useState<Modifier | null>(null);
@@ -39,6 +46,7 @@ export default function MovieRatingDisplay({ score }: MovieRatingDisplayProps) {
               key={grade} 
               className={getButtonClass(selectedGrade === grade)}
               disabled={true}
+              title={ratingExplanations[grade]}
             >
               {grade}
             </button>

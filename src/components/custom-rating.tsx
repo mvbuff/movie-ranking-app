@@ -9,6 +9,13 @@ interface CustomRatingInputProps {
   disabled: boolean;
 }
 
+// Rating explanations in Telugu
+const ratingExplanations = {
+  AB: 'Assalu Bagodhu',
+  BB: 'Baguntundhi Bro',
+  CB: 'Chala Bagundhi'
+};
+
 export default function CustomRatingInput({ initialScore, onRatingSubmit, disabled }: CustomRatingInputProps) {
   const [selectedGrade, setSelectedGrade] = useState<LetterGrade | null>(null);
   const [selectedModifier, setSelectedModifier] = useState<Modifier | null>(null);
@@ -68,6 +75,7 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
               onClick={() => handleGradeSelect(grade)}
               className={getButtonClass(selectedGrade === grade)}
               disabled={disabled}
+              title={ratingExplanations[grade]}
             >
               {grade}
             </button>
