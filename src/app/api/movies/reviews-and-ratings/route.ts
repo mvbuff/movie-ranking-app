@@ -31,7 +31,16 @@ export async function GET(request: Request) {
           user: {
             select: { id: true, name: true },
           },
-        },
+          likes: {
+            include: {
+              user: {
+                select: { id: true, name: true }
+              }
+            },
+            orderBy: { createdAt: 'asc' }
+          }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         orderBy: {
           createdAt: 'desc',
         },
@@ -84,6 +93,15 @@ export async function GET(request: Request) {
           id: review.id,
           text: review.text,
           createdAt: review.createdAt,
+          likes: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            count: (review as any).likes.length,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            users: (review as any).likes.map((like: any) => ({
+              id: like.user.id,
+              name: like.user.name
+            }))
+          }
         } : null,
         rating: rating ? {
           id: rating.id,
@@ -99,7 +117,8 @@ export async function GET(request: Request) {
       }
       if (a.review && !b.review) return -1;
       if (!a.review && b.review) return 1;
-      return (a.user?.name || '').localeCompare(b.user?.name || '');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return ((a.user as any)?.name || '').localeCompare(((b.user as any)?.name || ''));
     });
 
     return NextResponse.json({

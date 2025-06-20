@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, Star, MessageSquare, Trash2 } from 'lucide-react';
+import { X, Star, MessageSquare, Trash2, ThumbsUp } from 'lucide-react';
 import { getRatingDisplay } from '@/lib/rating-system';
+import { useToast } from '@/context/toast-context';
 
 interface UserReviewRating {
   userId: string;
@@ -14,6 +15,13 @@ interface UserReviewRating {
     id: string;
     text: string;
     createdAt: string;
+    likes: {
+      count: number;
+      users: Array<{
+        id: string;
+        name: string;
+      }>;
+    };
   } | null;
   rating: {
     id: string;
@@ -49,6 +57,8 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
   const [movieInfo, setMovieInfo] = useState<MovieInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [deletingReview, setDeletingReview] = useState<string | null>(null);
+  const [likingReview, setLikingReview] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const fetchReviewsAndRatings = useCallback(async () => {
     try {
@@ -92,6 +102,59 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
       console.error('Failed to delete review:', error);
     } finally {
       setDeletingReview(null);
+    }
+  };
+
+  const handleLikeReview = async (reviewId: string) => {
+    if (!currentUserId) {
+      showToast('Please sign in to like reviews', 'error');
+      return;
+    }
+
+    setLikingReview(reviewId);
+    try {
+      // Check if already liked
+      const currentEntry = userEntries.find(entry => 
+        entry.review?.id === reviewId
+      );
+      const isLiked = currentEntry?.review?.likes.users.some(user => user.id === currentUserId);
+
+      if (isLiked) {
+        // Unlike the review
+        const response = await fetch('/api/reviews/likes', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reviewId, userId: currentUserId }),
+        });
+
+        if (response.ok) {
+          showToast('Review unliked', 'info');
+          await fetchReviewsAndRatings();
+        } else {
+          const error = await response.json();
+          showToast(error.error || 'Failed to unlike review', 'error');
+        }
+      } else {
+        // Like the review
+        const response = await fetch('/api/reviews/likes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reviewId, userId: currentUserId }),
+        });
+
+        if (response.ok) {
+          showToast('Review liked!', 'success');
+          await fetchReviewsAndRatings();
+        } else {
+          const error = await response.json();
+          showToast(error.error || 'Failed to like review', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to handle like:', error);
+      showToast('Failed to like review', 'error');
+    } finally {
+      setLikingReview(null);
     }
   };
 
@@ -144,6 +207,39 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
                 <p className="text-xs text-gray-500 mt-1">
                   Reviewed on {new Date(entry.review!.createdAt).toLocaleDateString()}
                 </p>
+              </div>
+            </div>
+            
+            {/* Like section */}
+            <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => handleLikeReview(entry.review!.id)}
+                  disabled={likingReview === entry.review!.id}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm transition-colors ${
+                    currentUserId && entry.review!.likes.users.some(user => user.id === currentUserId)
+                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  } ${!currentUserId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={currentUserId ? 'Like this review' : 'Sign in to like reviews'}
+                >
+                  {likingReview === entry.review!.id ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                  ) : (
+                    <ThumbsUp 
+                      size={14} 
+                      className={currentUserId && entry.review!.likes.users.some(user => user.id === currentUserId) ? 'fill-current' : ''}
+                    />
+                  )}
+                  <span>{entry.review!.likes.count}</span>
+                </button>
+                
+                {/* Show names of users who liked */}
+                {entry.review!.likes.count > 0 && (
+                  <span className="text-xs text-gray-500">
+                    Liked by {entry.review!.likes.users.map(user => user.name).join(', ')}
+                  </span>
+                )}
               </div>
             </div>
           </div>

@@ -44,6 +44,7 @@ model User {
   watchlist          Watchlist[]
   forumThreads       ForumThread[]
   forumPosts         ForumPost[]
+  reviewLikes        ReviewLike[]
 }
 
 enum Category {
@@ -131,6 +132,18 @@ model Review {
   userId    String
   movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
   movieId   String
+  likes     ReviewLike[]
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewId  String
+
+  @@unique([userId, reviewId])
 }
 
 model Watchlist {
