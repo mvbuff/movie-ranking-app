@@ -372,17 +372,26 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
               )}
             </div>
             <div className="p-4 flex flex-col flex-1">
-              <div className="flex justify-between items-start">
+              {/* Mobile-first responsive layout for title and buttons */}
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
                 <a
                   href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-bold text-lg text-gray-900 flex-grow hover:text-indigo-600 transition-colors"
-                  title={movie.title}
+                  className="font-bold text-base sm:text-lg text-gray-900 hover:text-indigo-600 transition-colors line-clamp-2 sm:line-clamp-1 sm:flex-1 sm:min-w-0"
+                  title={`${movie.title} (${movie.year > 0 ? movie.year : 'N/A'})`}
+                  style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    wordBreak: 'break-word',
+                    hyphens: 'auto'
+                  }}
                 >
                   {movie.title} ({movie.year > 0 ? movie.year : 'N/A'})
                 </a>
-                <div className="flex gap-1">
+                <div className="flex gap-1 self-end sm:self-start flex-shrink-0">
                   {readOnlyMode ? (
                     <div
                       className="p-1 text-gray-400 cursor-not-allowed"
