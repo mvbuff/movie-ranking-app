@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
+import { ActivityLogger } from '@/lib/activity-logger';
 
 // GET all reviews for a specific movie - allow read-only access
 export async function GET(request: Request) {
@@ -50,6 +51,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Review text must be 100 characters or less' }, { status: 400 });
     }
 
+    // Get movie details for activity logging
+    const movie = await prisma.movie.findUnique({
+      where: { id: movieId },
+      select: { title: true }
+    });
+
     const newReview = await prisma.review.create({
       data: {
         movieId,
@@ -57,6 +64,15 @@ export async function POST(request: Request) {
         text,
       },
     });
+
+    // Log the review activity
+    try {
+      await ActivityLogger.reviewAdded(userId, newReview.id, movieId, movie?.title || 'Unknown Movie');
+      console.log(`✅ Review activity logged for movie: ${movie?.title}`);
+    } catch (activityError) {
+      console.error('❌ Failed to log review activity:', activityError);
+      // Don't fail the review creation if activity logging fails
+    }
 
     return NextResponse.json(newReview, { status: 201 });
   } catch (error) {

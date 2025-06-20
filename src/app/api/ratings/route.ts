@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
+import { ActivityLogger } from '@/lib/activity-logger';
+import { getRatingDisplay } from '@/lib/rating-system';
 
 // GET: Fetch all ratings for a given user - allow read-only access
 export async function GET(request: Request) {
@@ -56,6 +58,23 @@ export async function POST(request: Request) {
       update: { score },
       create: { userId, movieId, score },
     });
+
+    // Log activity for both new ratings and updates
+    try {
+      // Get movie details for activity logging
+      const movie = await prisma.movie.findUnique({
+        where: { id: movieId },
+        select: { title: true }
+      });
+
+      const customRating = getRatingDisplay(score);
+      
+      await ActivityLogger.movieRated(userId, movieId, movie?.title || 'Unknown Movie', score);
+      console.log(`✅ Rating activity logged for movie: ${movie?.title} (${customRating})`);
+    } catch (activityError) {
+      console.error('❌ Failed to log rating activity:', activityError);
+      // Don't fail the rating creation if activity logging fails
+    }
 
     // After a rating is submitted, we should trigger a recalculation
     // of the aggregate score for this user and movie.

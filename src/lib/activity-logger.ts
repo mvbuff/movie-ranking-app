@@ -1,4 +1,6 @@
 // import prisma from '@/lib/prisma';
+import prisma from '@/lib/prisma';
+import { getRatingDisplay } from '@/lib/rating-system';
 
 // Configuration for number of activities to show
 export const ACTIVITY_FEED_LIMIT = 10; // Reduced for popup display
@@ -20,27 +22,43 @@ interface ActivityLogOptions {
   reviewId?: string;
   threadId?: string;
   postId?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, string | number | boolean>;
 }
 
 export async function logActivity(options: ActivityLogOptions) {
   try {
-    // TODO: Uncomment once Prisma types are available
-    // await prisma.activity.create({
-    //   data: {
-    //     userId: options.userId,
-    //     type: options.type,
-    //     description: options.description,
-    //     movieId: options.movieId,
-    //     reviewId: options.reviewId,
-    //     threadId: options.threadId,
-    //     postId: options.postId,
-    //     metadata: options.metadata,
-    //   },
-    // });
-    console.log('Activity logged:', options.description);
+    console.log('🔄 Attempting to log activity:', options.description);
+    
+    // Use raw SQL to insert activity (bypassing Prisma type issues)
+    await prisma.$executeRaw`
+      INSERT INTO "Activity" (
+        id,
+        "userId", 
+        type, 
+        description, 
+        "movieId", 
+        "reviewId", 
+        "threadId", 
+        "postId", 
+        metadata, 
+        "createdAt"
+      ) VALUES (
+        gen_random_uuid()::text,
+        ${options.userId},
+        ${options.type}::"ActivityType",
+        ${options.description},
+        ${options.movieId},
+        ${options.reviewId},
+        ${options.threadId},
+        ${options.postId},
+        ${JSON.stringify(options.metadata || {})}::jsonb,
+        NOW()
+      )
+    `;
+    console.log('✅ Activity successfully logged to database:', options.description);
   } catch (error) {
-    console.error('Failed to log activity:', error);
+    console.error('❌ Failed to log activity:', error);
+    console.error('❌ Activity details:', options);
     // Don't throw error as activity logging should not break main functionality
   }
 }
@@ -58,12 +76,13 @@ export const ActivityLogger = {
   },
 
   movieRated: async (userId: string, movieId: string, movieTitle: string, score: number) => {
+    const customRating = getRatingDisplay(score);
     await logActivity({
       userId,
       type: 'MOVIE_RATED',
-      description: `Rated "${movieTitle}" with score ${score}`,
+      description: `Rated "${movieTitle}" as ${customRating}`,
       movieId,
-      metadata: { movieTitle, score }
+      metadata: { movieTitle, score, customRating }
     });
   },
 

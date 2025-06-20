@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { randomBytes } from 'crypto';
 import { getServerSession } from 'next-auth';
+import { ActivityLogger } from '@/lib/activity-logger';
 
 export async function GET() {
   try {
@@ -70,6 +71,16 @@ export async function POST(request: Request) {
         ...(userId && { addedById: userId }),
       },
     });
+
+    // Log the activity when a new movie is added
+    if (userId) {
+      try {
+        await ActivityLogger.movieAdded(userId, movie.id, movie.title);
+      } catch (activityError) {
+        console.error('Failed to log movie addition activity:', activityError);
+        // Don't fail the request if activity logging fails
+      }
+    }
 
     return NextResponse.json(movie, { status: 201 });
   } catch (error) {

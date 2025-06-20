@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
+import { ActivityLogger } from '@/lib/activity-logger';
 
 // GET likes for a specific review
 export async function GET(request: NextRequest) {
@@ -51,9 +52,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Review ID and User ID are required' }, { status: 400 });
     }
 
-    // Check if review exists
+    // Check if review exists and get review author info
     const review = await prisma.review.findUnique({
-      where: { id: reviewId }
+      where: { id: reviewId },
+      include: {
+        user: {
+          select: { name: true }
+        }
+      }
     });
 
     if (!review) {
@@ -86,6 +92,15 @@ export async function POST(request: NextRequest) {
         }
       }
     });
+
+    // Log the review like activity
+    try {
+      await ActivityLogger.reviewLiked(userId, reviewId, review.user.name || 'Unknown User');
+      console.log(`✅ Review like activity logged: ${like.user.name} liked ${review.user.name}'s review`);
+    } catch (activityError) {
+      console.error('❌ Failed to log review like activity:', activityError);
+      // Don't fail the like creation if activity logging fails
+    }
 
     return NextResponse.json({
       id: like.id,

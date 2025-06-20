@@ -112,6 +112,14 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
       }
 
       const movieId = movieData.id;
+      const isNewMovie = movieResponse.status === 201;
+      
+      // Log activity on client side for debugging
+      if (isNewMovie) {
+        console.log(`✅ Movie "${title}" added successfully! Activity should be logged.`);
+      } else {
+        console.log(`ℹ️ Movie "${title}" already exists in database.`);
+      }
 
       // Step 2: If a rating was given, submit it.
       if (ratingScore > 0) {

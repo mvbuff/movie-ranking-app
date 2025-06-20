@@ -104,6 +104,31 @@ export default function Home() {
         )}
       </div>
 
+      {/* Mobile User Controls - Only visible on mobile */}
+      {isAuthenticated && (
+        <div className="lg:hidden mb-6 p-4 bg-gray-50 rounded-lg shadow-sm border">
+          <div className="flex flex-col gap-4">
+            <div className="flex-grow">
+              {isAdmin && <UserSwitcher refreshTimestamp={refreshTimestamp} onUserChange={triggerDataRefresh} />}
+              {currentUser && <p className="text-sm text-gray-500 mt-2">Now acting as: <span className="font-bold">{currentUser.name}</span></p>}
+            </div>
+            <div className="flex gap-2">
+              {isAdmin && (
+                <Link href="/admin" className="flex-1 px-3 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 text-center">
+                  Admin Panel
+                </Link>
+              )}
+              <button
+                onClick={() => signOut()}
+                className="flex-1 px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 text-center"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Controls & Filters */}
         <div className="lg:col-span-2 space-y-8">
@@ -165,7 +190,8 @@ export default function Home() {
         <div className="space-y-6">
           {isAuthenticated && (
             <>
-              <div className="p-4 bg-gray-50 rounded-lg shadow-sm border">
+              {/* Desktop User Controls - Hidden on mobile */}
+              <div className="hidden lg:block p-4 bg-gray-50 rounded-lg shadow-sm border">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div className="flex-grow">
                     {isAdmin && <UserSwitcher refreshTimestamp={refreshTimestamp} onUserChange={triggerDataRefresh} />}
