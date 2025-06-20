@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/context/toast-context';
 import { useUser } from '@/context/user-context';
+import { useClickOutside } from '@/hooks/useClickOutside';
 
 interface Movie {
   id: string;
@@ -68,6 +69,15 @@ function ForumPageContent() {
     title: '',
     content: '',
     categoryId: ''
+  });
+
+  // Click outside to close functionality for new thread modal
+  const newThreadModalRef = useClickOutside<HTMLDivElement>({
+    onClickOutside: () => {
+      setShowNewThreadForm(false);
+      setNewThreadData({ title: '', content: '', categoryId: '' });
+    },
+    enabled: showNewThreadForm
   });
 
   // Get movie context from URL parameters
@@ -463,8 +473,15 @@ function ForumPageContent() {
 
         {/* New Thread Modal */}
         {showNewThreadForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 modal-backdrop"
+            data-modal-backdrop="true"
+          >
+            <div 
+              ref={newThreadModalRef}
+              className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="p-6">
                 <h2 className="text-2xl font-bold mb-4">Create New Thread</h2>
                 

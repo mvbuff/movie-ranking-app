@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, Star, MessageSquare, Trash2, ThumbsUp } from 'lucide-react';
 import { getRatingDisplay } from '@/lib/rating-system';
 import { useToast } from '@/context/toast-context';
+import { useClickOutside } from '@/hooks/useClickOutside';
 
 interface UserReviewRating {
   userId: string;
@@ -59,6 +60,12 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
   const [deletingReview, setDeletingReview] = useState<string | null>(null);
   const [likingReview, setLikingReview] = useState<string | null>(null);
   const { showToast } = useToast();
+
+  // Click outside to close functionality
+  const modalContentRef = useClickOutside<HTMLDivElement>({
+    onClickOutside: onClose,
+    enabled: true
+  });
 
   const fetchReviewsAndRatings = useCallback(async () => {
     try {
@@ -256,8 +263,15 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[85vh] animate-fade-in-up">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-backdrop"
+      data-modal-backdrop="true"
+    >
+      <div 
+        ref={modalContentRef}
+        className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[85vh] animate-fade-in-up"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-lg">
           <div>
             <h2 className="text-xl font-bold text-gray-800">User Reviews & Ratings</h2>
