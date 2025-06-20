@@ -13,6 +13,7 @@ import {
   Calendar,
   X
 } from 'lucide-react';
+import { useClickOutside } from '@/hooks/useClickOutside';
 
 interface ActivityItem {
   id: string;
@@ -45,6 +46,12 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Click outside to close functionality
+  const modalContentRef = useClickOutside<HTMLDivElement>({
+    onClickOutside: onClose,
+    enabled: isOpen
+  });
+
   useEffect(() => {
     if (isOpen) {
       fetchActivities();
@@ -52,6 +59,8 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
   }, [isOpen]);
 
   const fetchActivities = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await fetch('/api/activities?limit=10');
       if (!response.ok) {
@@ -103,32 +112,40 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[80vh] flex flex-col">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-backdrop"
+      data-modal-backdrop="true"
+    >
+      <div 
+        ref={modalContentRef}
+        className="bg-white rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-fade-in-up"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-lg flex-shrink-0">
           <div className="flex items-center gap-2">
             <Activity className="text-gray-600" size={18} />
             <h2 className="text-lg font-semibold text-gray-800">Recent Updates</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+            title="Close"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 min-h-0">
           {loading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 bg-gray-200 rounded-full"></div>
-                    <div className="flex-1">
-                      <div className="h-3 bg-gray-200 rounded w-3/4 mb-1"></div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0"></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
                       <div className="h-2 bg-gray-200 rounded w-1/2"></div>
                     </div>
                   </div>
@@ -137,29 +154,41 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
             </div>
           ) : error ? (
             <div className="text-center py-8">
-              <p className="text-red-600 text-sm">Error: {error}</p>
+              <Activity className="mx-auto mb-3 text-gray-400" size={32} />
+              <p className="text-red-600 text-sm mb-2">Error loading activities</p>
+              <p className="text-xs text-gray-500">{error}</p>
+              <button
+                onClick={fetchActivities}
+                className="mt-3 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+              >
+                Retry
+              </button>
             </div>
           ) : activities.length === 0 ? (
             <div className="text-center py-8">
-              <Activity className="mx-auto mb-2 text-gray-400" size={32} />
+              <Activity className="mx-auto mb-3 text-gray-400" size={32} />
               <p className="text-gray-500 text-sm">No recent activities</p>
+              <p className="text-xs text-gray-400 mt-1">Check back later for community updates</p>
             </div>
           ) : (
             <div className="space-y-3">
               {activities.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-2 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                <div 
+                  key={activity.id} 
+                  className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                >
                   {/* User Avatar */}
-                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {activity.user.image ? (
                       <Image
                         src={activity.user.image}
                         alt={activity.user.name || 'User'}
-                        width={24}
-                        height={24}
+                        width={32}
+                        height={32}
                         className="rounded-full"
                       />
                     ) : (
-                      <span className="text-xs font-medium text-gray-600">
+                      <span className="text-sm font-medium text-gray-600">
                         {(activity.user.name || 'U').charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -167,19 +196,19 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
 
                   {/* Activity Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-1">
-                      <div className="mt-0.5">{getActivityIcon(activity.type)}</div>
+                    <div className="flex items-start gap-2">
+                      <div className="mt-1 flex-shrink-0">{getActivityIcon(activity.type)}</div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-800 leading-relaxed">
+                        <p className="text-sm text-gray-800 leading-relaxed">
                           <span className="font-medium">{activity.user.name || 'Someone'}</span>{' '}
                           {activity.description}
                         </p>
                         
-                        {/* Movie Info - Compact */}
+                        {/* Movie Info */}
                         {activity.movie && (
-                          <div className="mt-1 flex items-center gap-1">
+                          <div className="mt-2 flex items-center gap-2 p-2 bg-gray-50 rounded border">
                             {activity.movie.posterUrl && (
-                              <div className="w-4 h-5 relative flex-shrink-0">
+                              <div className="w-6 h-8 relative flex-shrink-0">
                                 <Image
                                   src={activity.movie.posterUrl}
                                   alt={activity.movie.title}
@@ -188,14 +217,19 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
                                 />
                               </div>
                             )}
-                            <p className="text-xs text-gray-600 truncate">
-                              {activity.movie.title} ({activity.movie.year})
-                            </p>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-gray-700 truncate">
+                                {activity.movie.title}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {activity.movie.year} • {activity.movie.category}
+                              </p>
+                            </div>
                           </div>
                         )}
                         
-                        <div className="flex items-center gap-1 mt-1">
-                          <Calendar size={10} className="text-gray-400" />
+                        <div className="flex items-center gap-1 mt-2">
+                          <Calendar size={10} className="text-gray-400 flex-shrink-0" />
                           <span className="text-xs text-gray-500">
                             {formatTimeAgo(activity.createdAt)}
                           </span>
@@ -210,8 +244,8 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t bg-gray-50 text-center">
-          <p className="text-xs text-gray-500">Latest community activities</p>
+        <div className="p-3 border-t bg-gray-50 text-center rounded-b-lg flex-shrink-0">
+          <p className="text-xs text-gray-500">Latest community activities • Tap outside to close</p>
         </div>
       </div>
     </div>
