@@ -180,6 +180,7 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
                 >
                   Unselect All
                 </button>
+                <CalculateScoresButton onCalculationComplete={onCalculationComplete} compact={true} />
               </div>
             <ul className="divide-y divide-gray-200">
               {friends.map(friend => (
@@ -214,7 +215,6 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
             </ul>
             </>
           )}
-          <CalculateScoresButton onCalculationComplete={onCalculationComplete} />
         </div>
       </div>
     </div>

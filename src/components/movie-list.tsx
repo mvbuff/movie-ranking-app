@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { Scorecard } from './score-components';
 import { Info, Star, MessageSquare, Eye, Share2 } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
+import AddReviewModal from './add-review-modal';
 import { getRatingDisplay } from '@/lib/rating-system';
 import { useToast } from '@/context/toast-context';
 
@@ -50,8 +51,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
   const [movies, setMovies] = useState<MovieWithRatingsAndScores[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeReviews, setActiveReviews] = useState<{ movieId: string; movieTitle: string; } | null>(null);
-  const [addingReview, setAddingReview] = useState<{ movieId: string; movieTitle: string; } | null>(null);
-  const [reviewText, setReviewText] = useState('');
+  const [addReviewModal, setAddReviewModal] = useState<{ movieId: string; movieTitle: string; } | null>(null);
   const [togglingWatchlist, setTogglingWatchlist] = useState<string | null>(null);
 
   const fetchMovieData = useCallback(async () => {
@@ -146,32 +146,6 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     } catch (error) {
       console.error('Failed to submit rating:', error);
       fetchMovieData(); 
-    }
-  };
-
-  const handleReviewSubmit = async (movieId: string, text: string) => {
-    if (!currentUser || !text.trim()) return;
-
-    try {
-      const response = await fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUser.id,
-          movieId,
-          text: text.trim(),
-        }),
-      });
-
-      if (response.ok) {
-        setAddingReview(null);
-        setReviewText('');
-        // If reviews modal is open for this movie, it will refresh automatically
-      } else {
-        console.error('Failed to submit review');
-      }
-    } catch (error) {
-      console.error('Failed to submit review:', error);
     }
   };
 
@@ -321,6 +295,18 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
           }}
         />
       )}
+      {addReviewModal && currentUser && (
+        <AddReviewModal
+          movieId={addReviewModal.movieId}
+          movieTitle={addReviewModal.movieTitle}
+          userId={currentUser.id}
+          onClose={() => setAddReviewModal(null)}
+          onReviewAdded={() => {
+            // Refresh movie data to show the new review
+            fetchMovieData();
+          }}
+        />
+      )}
       <section className="w-full mx-auto mt-6">
        <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-6">
@@ -401,7 +387,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                     </div>
                   ) : (
                     <button 
-                      onClick={() => setAddingReview({ movieId: movie.id, movieTitle: movie.title })}
+                      onClick={() => setAddReviewModal({ movieId: movie.id, movieTitle: movie.title })}
                       className="p-1 text-gray-400 hover:text-blue-600"
                       title="Add review"
                     >
@@ -453,45 +439,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                   />
                 )}
               </div>
-              {addingReview && addingReview.movieId === movie.id && (
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                  <h5 className="text-sm font-medium text-blue-800 mb-2">Add Review</h5>
-                  <textarea
-                    value={reviewText}
-                    onChange={(e) => setReviewText(e.target.value)}
-                    placeholder="Share your thoughts... (max 100 characters)"
-                    maxLength={100}
-                    className="w-full p-2 text-sm border border-blue-300 rounded resize-none"
-                    rows={3}
-                  />
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-xs text-blue-600">{reviewText.length}/100</span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setAddingReview(null);
-                          setReviewText('');
-                        }}
-                        className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => handleReviewSubmit(movie.id, reviewText)}
-                        disabled={!reviewText.trim()}
-                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                      >
-                        Submit
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {activeReviews && activeReviews.movieId === movie.id && (
-                <div className="mt-4 space-y-2">
-                  {/* Add any additional review content here */}
-              </div>
-              )}
+              {/* Old inline review form removed - now using modal */}
             </div>
             <div className="p-2 bg-gray-50 border-t">
               <Scorecard 

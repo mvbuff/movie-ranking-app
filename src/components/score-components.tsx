@@ -23,7 +23,7 @@ export function Scorecard({ score, label = "Friend Score" }: { score: number | n
 }
 
 
-export function CalculateScoresButton({ onCalculationComplete }: { onCalculationComplete: () => void }) {
+export function CalculateScoresButton({ onCalculationComplete, compact = false }: { onCalculationComplete: () => void; compact?: boolean }) {
   const { currentUser } = useUser();
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -44,13 +44,17 @@ export function CalculateScoresButton({ onCalculationComplete }: { onCalculation
     : !currentUser ? 'bg-gray-400' 
     : 'bg-indigo-600 hover:bg-indigo-700';
 
+  const buttonStyle = compact 
+    ? `px-4 py-2 text-sm font-medium rounded-md disabled:cursor-not-allowed transition-colors ${buttonColor}`
+    : `w-full px-6 py-3 text-white font-semibold rounded-lg shadow-md disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 ${buttonColor}`;
+
   return (
     <button
       onClick={handleCalculate}
       disabled={isPending || !currentUser}
-      className={`w-full px-6 py-3 text-white font-semibold rounded-lg shadow-md disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 ${buttonColor}`}
+      className={`text-white ${buttonStyle}`}
     >
-      {isPending ? 'Calculating...' : 'Calculate My Friend Scores'}
+      {isPending ? 'Calculating...' : compact ? 'Calculate' : 'Calculate My Friend Scores'}
     </button>
   );
 } 
