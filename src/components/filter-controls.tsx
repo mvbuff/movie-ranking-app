@@ -4,8 +4,8 @@ import { X, Activity } from 'lucide-react';
 
 // Manually define the Category type for client-side use
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
-type FilterCategory = Category | 'ALL' | 'WATCHLIST';
-export type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate';
+type FilterCategory = Category | 'ALL' | 'WATCHLIST' | 'YET_TO_RATE';
+export type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore';
 
 interface FilterControlsProps {
   activeCategory: FilterCategory;
@@ -28,6 +28,7 @@ const categories: { id: FilterCategory; name: string }[] = [
   { id: 'SERIES', name: 'Series' },
   { id: 'DOCUMENTARY', name: 'Documentaries' },
   { id: 'WATCHLIST', name: 'Watchlist' },
+  { id: 'YET_TO_RATE', name: 'Yet to rate' },
 ];
 
 export default function FilterControls({
@@ -44,9 +45,9 @@ export default function FilterControls({
   readOnlyMode = false,
   setShowActivityPopup,
 }: FilterControlsProps) {
-  // Filter out watchlist for non-authenticated users
+  // Filter out watchlist and yet-to-rate for non-authenticated users
   const availableCategories = readOnlyMode 
-    ? categories.filter(cat => cat.id !== 'WATCHLIST')
+    ? categories.filter(cat => cat.id !== 'WATCHLIST' && cat.id !== 'YET_TO_RATE')
     : categories;
 
   return (
@@ -72,11 +73,19 @@ export default function FilterControls({
                 onClick={() => onCategoryChange(id)}
                 className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
                   activeCategory === id
-                    ? 'bg-indigo-600 text-white shadow'
+                    ? id === 'YET_TO_RATE'
+                      ? 'bg-orange-600 text-white shadow'
+                      : id === 'WATCHLIST'
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'bg-indigo-600 text-white shadow'
+                    : id === 'YET_TO_RATE'
+                    ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                    : id === 'WATCHLIST'
+                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
-                {name}
+                {id === 'YET_TO_RATE' ? '⭐ ' : ''}{name}
               </button>
             ))}
           </div>
@@ -168,6 +177,7 @@ export default function FilterControls({
             <option value="currentUserRating">Your Rating</option>
             <option value="title">Alphabetical</option>
             <option value="addedDate">Added Date</option>
+            <option value="addedDateThenScore">Added Date then by Score</option>
           </select>
         </div>
 

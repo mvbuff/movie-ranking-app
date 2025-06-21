@@ -15,7 +15,7 @@ import { calculateUserAggregateScores } from '@/app/actions';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import ActivityFeedPopup from '@/components/activity-feed-popup';
 
-type FilterCategory = Category | 'ALL' | 'WATCHLIST';
+type FilterCategory = Category | 'ALL' | 'WATCHLIST' | 'YET_TO_RATE';
 
 export default function Home() {
   const { currentUser, isAdmin, sessionStatus } = useUser();
@@ -24,7 +24,7 @@ export default function Home() {
   const [scoreThreshold, setScoreThreshold] = useState(3);
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewSearchTerm, setReviewSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<SortKey>('addedDate');
+  const [sortBy, setSortBy] = useState<SortKey>('addedDateThenScore');
   const [showActivityPopup, setShowActivityPopup] = useState(false);
   const [isMoviesFullWidth, setIsMoviesFullWidth] = useState(true);
 

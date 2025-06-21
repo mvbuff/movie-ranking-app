@@ -13,8 +13,8 @@ import { useToast } from '@/context/toast-context';
 
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
-type FilterCategory = Category | 'ALL' | 'WATCHLIST';
-type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate';
+type FilterCategory = Category | 'ALL' | 'WATCHLIST' | 'YET_TO_RATE';
+type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore';
 
 interface Movie {
   id: string;
@@ -280,7 +280,14 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       .filter(movie => {
         // Handle watchlist filter
         if (categoryFilter === 'WATCHLIST') {
-          return movie.isInWatchlist;
+          const searchMatch = searchTerm === '' || movie.title.toLowerCase().includes(searchTerm.toLowerCase());
+          return movie.isInWatchlist && searchMatch;
+        }
+        
+        // Handle yet-to-rate filter  
+        if (categoryFilter === 'YET_TO_RATE') {
+          const searchMatch = searchTerm === '' || movie.title.toLowerCase().includes(searchTerm.toLowerCase());
+          return movie.currentUserRating === 0 && searchMatch;
         }
         
         // Handle regular category filters
@@ -296,6 +303,22 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         if (sortBy === 'addedDate') {
           // Sort by most recent first (newest to oldest)
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        if (sortBy === 'addedDateThenScore') {
+          // First sort by added date (newest first)
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          const dateDiff = dateB - dateA;
+          
+          // If dates are different, use date sorting
+          if (dateDiff !== 0) {
+            return dateDiff;
+          }
+          
+          // If dates are the same, sort by aggregate score (highest first)
+          const scoreA = a.aggregateScore ?? -1;
+          const scoreB = b.aggregateScore ?? -1;
+          return scoreB - scoreA;
         }
         const scoreA = sortBy === 'aggregateScore' ? a.aggregateScore ?? -1 : a.currentUserRating;
         const scoreB = sortBy === 'aggregateScore' ? b.aggregateScore ?? -1 : b.currentUserRating;
@@ -388,7 +411,14 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         />
       )}
       <section className="w-full mx-auto mt-6">
-       <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">Your Movie Rankings</h2>
+       <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">
+         {categoryFilter === 'YET_TO_RATE' 
+           ? '⭐ Movies You Haven\'t Rated Yet' 
+           : categoryFilter === 'WATCHLIST'
+           ? '👀 Your Watchlist'
+           : 'Your Movie Rankings'
+         }
+       </h2>
        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-6">
         {filteredAndSortedMovies.map((movie) => (
           <div 
@@ -553,8 +583,22 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
        </div>
        {filteredAndSortedMovies.length === 0 && movies.length > 0 && (
          <div className="text-center p-8 my-10 bg-gray-50 rounded-lg border-dashed border-2 border-gray-300">
-           <p className="text-gray-500">No movies match your current filters.</p>
-           <p className="text-sm text-gray-400 mt-2">Try adjusting the category or score threshold.</p>
+           <p className="text-gray-500">
+             {categoryFilter === 'YET_TO_RATE' 
+               ? '🎉 Great job! You\'ve rated all the movies in your collection.'
+               : categoryFilter === 'WATCHLIST'
+               ? 'Your watchlist is empty. Add movies to watch later!'
+               : 'No movies match your current filters.'
+             }
+           </p>
+           <p className="text-sm text-gray-400 mt-2">
+             {categoryFilter === 'YET_TO_RATE' 
+               ? 'Add more movies to continue rating, or check back after new movies are added.'
+               : categoryFilter === 'WATCHLIST'
+               ? 'Use the eye icon on movie cards to add them to your watchlist.'
+               : 'Try adjusting the category or score threshold.'
+             }
+           </p>
          </div>
        )}
     </section>
