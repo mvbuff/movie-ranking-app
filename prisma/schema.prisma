@@ -56,6 +56,8 @@ model User {
   forumPosts         ForumPost[]
   reviewLikes        ReviewLike[]
   activities         Activity[]
+  userSessions       UserSession[]
+  pageSessions       PageSession[]
 }
 
 enum Category {
@@ -239,4 +241,36 @@ model Activity {
   @@index([createdAt(sort: Desc)]) // For efficient sorting by latest
   @@index([userId])                // For user-specific queries
   @@index([type])                  // For filtering by activity type
+}
+
+model UserSession {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  loginAt     DateTime  @default(now())
+  logoutAt    DateTime?
+  ipAddress   String?
+  userAgent   String?
+  duration    Int?      // Duration in seconds
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId, loginAt(sort: Desc)]) // For fetching recent logins
+  @@index([loginAt(sort: Desc)])         // For overall login analytics
+}
+
+model PageSession {
+  id            String    @id @default(cuid())
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String?   // Optional - can track anonymous users too
+  sessionId     String    // Browser session ID
+  page          String    // Page path
+  startTime     DateTime  @default(now())
+  endTime       DateTime?
+  duration      Int?      // Duration in seconds
+  ipAddress     String?
+  userAgent     String?
+  
+  @@index([userId, startTime(sort: Desc)]) // For user-specific analytics
+  @@index([page, startTime(sort: Desc)])   // For page-specific analytics
+  @@index([startTime(sort: Desc)])         // For overall analytics
 }
