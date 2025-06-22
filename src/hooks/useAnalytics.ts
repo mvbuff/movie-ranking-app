@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
@@ -16,7 +16,7 @@ export function useAnalytics(): AnalyticsHook {
   const currentPageRef = useRef<string>('');
 
   // Generate a unique session ID for this browser session
-  const getSessionId = () => {
+  const getSessionId = useCallback(() => {
     if (typeof window === 'undefined') return null;
     
     let sessionId = sessionStorage.getItem('analytics_session_id');
@@ -25,10 +25,10 @@ export function useAnalytics(): AnalyticsHook {
       sessionStorage.setItem('analytics_session_id', sessionId);
     }
     return sessionId;
-  };
+  }, []);
 
   // Track page session start
-  const startPageTracking = async (page: string) => {
+  const startPageTracking = useCallback(async (page: string) => {
     if (typeof window === 'undefined') return;
     
     const sessionId = getSessionId();
@@ -50,10 +50,10 @@ export function useAnalytics(): AnalyticsHook {
     } catch (error) {
       console.warn('Page tracking failed:', error);
     }
-  };
+  }, [getSessionId]);
 
   // Track page session end
-  const endPageTracking = async () => {
+  const endPageTracking = useCallback(async () => {
     if (!pageSessionIdRef.current) return;
 
     const duration = Math.round((Date.now() - pageStartTimeRef.current) / 1000);
@@ -72,10 +72,10 @@ export function useAnalytics(): AnalyticsHook {
     }
 
     pageSessionIdRef.current = null;
-  };
+  }, []);
 
   // Track login
-  const trackLogin = async () => {
+  const trackLogin = useCallback(async () => {
     if (status !== 'authenticated' || !session) return;
 
     try {
@@ -91,10 +91,10 @@ export function useAnalytics(): AnalyticsHook {
     } catch (error) {
       console.warn('Login tracking failed:', error);
     }
-  };
+  }, [status, session]);
 
   // Track logout
-  const trackLogout = async () => {
+  const trackLogout = useCallback(async () => {
     if (!sessionIdRef.current) return;
 
     const duration = Math.round((Date.now() - pageStartTimeRef.current) / 1000);
@@ -113,7 +113,7 @@ export function useAnalytics(): AnalyticsHook {
     }
 
     sessionIdRef.current = null;
-  };
+  }, []);
 
   // Track page changes and time spent
   useEffect(() => {
@@ -133,14 +133,14 @@ export function useAnalytics(): AnalyticsHook {
     return () => {
       endPageTracking();
     };
-  }, [router]);
+  }, [router, endPageTracking, startPageTracking]);
 
   // Track login when session becomes authenticated
   useEffect(() => {
     if (status === 'authenticated' && session && !sessionIdRef.current) {
       trackLogin();
     }
-  }, [status, session]);
+  }, [status, session, trackLogin]);
 
   // Handle page visibility changes (tab switching, minimizing)
   useEffect(() => {
@@ -169,7 +169,7 @@ export function useAnalytics(): AnalyticsHook {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, []);
+  }, [endPageTracking, startPageTracking, trackLogout]);
 
   return { trackLogin, trackLogout };
 } 

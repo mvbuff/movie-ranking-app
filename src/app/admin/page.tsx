@@ -33,13 +33,18 @@ interface UserWithAnalytics extends User {
   analytics: UserAnalytics;
 }
 
+type SortOption = 'name' | 'lastLogin' | 'totalTime' | 'avgSession' | 'recentLogins' | 'avgLoginDuration';
+
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [analyticsData, setAnalyticsData] = useState<UserWithAnalytics[]>([]);
+  const [sortedAnalyticsData, setSortedAnalyticsData] = useState<UserWithAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'users' | 'analytics'>('users');
+  const [sortBy, setSortBy] = useState<SortOption>('lastLogin');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -67,6 +72,73 @@ export default function AdminPage() {
       console.error('Analytics fetch error:', error);
     }
     setLoading(false);
+  };
+
+  // Sort analytics data
+  const sortAnalyticsData = (data: UserWithAnalytics[], sortBy: SortOption, order: 'asc' | 'desc') => {
+    const sorted = [...data].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'lastLogin':
+          // Get the most recent login timestamp
+          aValue = a.analytics.lastLoginSessions.length > 0 
+            ? new Date(a.analytics.lastLoginSessions[0].loginAt).getTime()
+            : 0;
+          bValue = b.analytics.lastLoginSessions.length > 0 
+            ? new Date(b.analytics.lastLoginSessions[0].loginAt).getTime()
+            : 0;
+          break;
+        case 'totalTime':
+          aValue = a.analytics.totalTimeSpent;
+          bValue = b.analytics.totalTimeSpent;
+          break;
+        case 'avgSession':
+          aValue = a.analytics.avgTimePerSession;
+          bValue = b.analytics.avgTimePerSession;
+          break;
+        case 'recentLogins':
+          aValue = a.analytics.recentLogins;
+          bValue = b.analytics.recentLogins;
+          break;
+        case 'avgLoginDuration':
+          aValue = a.analytics.avgSessionDuration;
+          bValue = b.analytics.avgSessionDuration;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return order === 'asc' ? -1 : 1;
+      if (aValue > bValue) return order === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  };
+
+  // Update sorted data when analytics data or sort options change
+  useEffect(() => {
+    if (analyticsData.length > 0) {
+      const sorted = sortAnalyticsData(analyticsData, sortBy, sortOrder);
+      setSortedAnalyticsData(sorted);
+    }
+  }, [analyticsData, sortBy, sortOrder]);
+
+  const handleSortChange = (newSortBy: SortOption) => {
+    if (sortBy === newSortBy) {
+      // Toggle sort order if same field
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, default to desc for most metrics, asc for name
+      setSortBy(newSortBy);
+      setSortOrder(newSortBy === 'name' ? 'asc' : 'desc');
+    }
   };
 
   useEffect(() => {
@@ -134,6 +206,29 @@ export default function AdminPage() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
+  };
+
+  const getLastLoginText = (user: UserWithAnalytics) => {
+    if (user.analytics.lastLoginSessions.length === 0) {
+      return 'Never logged in';
+    }
+    const lastLogin = new Date(user.analytics.lastLoginSessions[0].loginAt);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${diffInHours}h ago`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
+    }
+  };
+
+  const getSortIcon = (field: SortOption) => {
+    if (sortBy !== field) return '↕️';
+    return sortOrder === 'asc' ? '↑' : '↓';
   };
 
   if (loading || status === 'loading') {
@@ -217,11 +312,88 @@ export default function AdminPage() {
 
       {activeTab === 'analytics' && (
         <div className="space-y-6">
-          {analyticsData.map((user) => (
+          {/* Sorting Controls */}
+          <div className="bg-white p-4 rounded-lg shadow-md">
+            <h3 className="text-lg font-medium mb-3">Sort Users By:</h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => handleSortChange('lastLogin')}
+                className={`px-3 py-2 text-sm rounded-md ${
+                  sortBy === 'lastLogin'
+                    ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Last Login {getSortIcon('lastLogin')}
+              </button>
+              <button
+                onClick={() => handleSortChange('totalTime')}
+                className={`px-3 py-2 text-sm rounded-md ${
+                  sortBy === 'totalTime'
+                    ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Total Time {getSortIcon('totalTime')}
+              </button>
+              <button
+                onClick={() => handleSortChange('avgSession')}
+                className={`px-3 py-2 text-sm rounded-md ${
+                  sortBy === 'avgSession'
+                    ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Avg Session {getSortIcon('avgSession')}
+              </button>
+              <button
+                onClick={() => handleSortChange('recentLogins')}
+                className={`px-3 py-2 text-sm rounded-md ${
+                  sortBy === 'recentLogins'
+                    ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Recent Logins {getSortIcon('recentLogins')}
+              </button>
+              <button
+                onClick={() => handleSortChange('avgLoginDuration')}
+                className={`px-3 py-2 text-sm rounded-md ${
+                  sortBy === 'avgLoginDuration'
+                    ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Avg Login Duration {getSortIcon('avgLoginDuration')}
+              </button>
+              <button
+                onClick={() => handleSortChange('name')}
+                className={`px-3 py-2 text-sm rounded-md ${
+                  sortBy === 'name'
+                    ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Name {getSortIcon('name')}
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              Showing {sortedAnalyticsData.length} users sorted by {sortBy} ({sortOrder === 'desc' ? 'highest first' : 'lowest first'})
+            </p>
+          </div>
+
+          {/* Analytics Data */}
+          {sortedAnalyticsData.map((user) => (
             <div key={user.id} className="bg-white p-6 rounded-lg shadow-md">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
-                <p className="text-sm text-gray-500">{user.email || 'No email'}</p>
+              <div className="mb-4 flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">{user.name}</h3>
+                  <p className="text-sm text-gray-500">{user.email || 'No email'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-gray-700">Last Login</p>
+                  <p className="text-sm text-gray-500">{getLastLoginText(user)}</p>
+                </div>
               </div>
 
               {/* Summary Stats */}
@@ -312,7 +484,7 @@ export default function AdminPage() {
             </div>
           ))}
           
-          {analyticsData.length === 0 && (
+          {sortedAnalyticsData.length === 0 && (
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
               <p className="text-gray-500">No analytics data available</p>
             </div>
