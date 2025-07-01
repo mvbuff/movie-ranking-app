@@ -228,10 +228,10 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     if (!readOnlyMode && currentUser && movie.currentUserRating > 0) {
       message += ` .... ${letterRating}`;
       if (userReview) {
-        message += `.... ${userReview}`;
+        message += `.... ${userReview}\n\n--shared via www.peer-movie-rating-app.vercel.app`;
       }
     } else {
-      message += ` .... NR`; // Not rated
+      message += ` .... NR\n\n--shared via www.peer-movie-rating-app.vercel.app`; // Not rated
     }
     
     try {
