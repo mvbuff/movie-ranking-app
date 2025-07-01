@@ -5,6 +5,10 @@ import { randomBytes } from 'crypto';
 import { getServerSession } from 'next-auth';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { safeDeleteMovie } from '@/lib/safe-movie-deletion';
+import { invalidateMovieCache } from '@/lib/cache';
+
+// Enable static generation with revalidation
+export const revalidate = 300; // 5 minutes
 
 export async function GET() {
   try {
@@ -25,7 +29,12 @@ export async function GET() {
         createdAt: true,
       } as any,
     });
-    return NextResponse.json(movies);
+    
+    // Add cache headers for client-side caching
+    const response = NextResponse.json(movies);
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    
+    return response;
   } catch (error) {
     console.error("Failed to fetch movies:", error);
     return NextResponse.json({ error: 'Failed to fetch movies' }, { status: 500 });
@@ -83,6 +92,9 @@ export async function POST(request: Request) {
       }
     }
 
+    // Invalidate movie cache
+    await invalidateMovieCache();
+
     return NextResponse.json(movie, { status: 201 });
   } catch (error) {
     console.error("Failed to add movie:", error);
@@ -136,6 +148,9 @@ export async function DELETE(request: Request) {
     }
 
     console.log(`🗑️ Admin ${user.name} deleted movie: ${movie.title} (${movie.year})`);
+
+    // Invalidate movie cache
+    await invalidateMovieCache();
 
     return NextResponse.json({
       success: true,

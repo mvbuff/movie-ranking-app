@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { getRatingDisplay } from '@/lib/rating-system';
+import { invalidateMovieCache, invalidateUserCache } from '@/lib/cache';
 
 // GET: Fetch all ratings for a given user - allow read-only access
 export async function GET(request: Request) {
@@ -80,6 +81,10 @@ export async function POST(request: Request) {
     // of the aggregate score for this user and movie.
     // We'll add this logic later.
 
+    // Invalidate caches
+    await invalidateMovieCache(movieId);
+    await invalidateUserCache(userId);
+
     return NextResponse.json(rating, { status: 200 });
   } catch (error) {
     console.error("Failed to upsert rating:", error);
@@ -118,6 +123,10 @@ export async function DELETE(request: Request) {
 
         // After a rating is deleted, we should also trigger a recalculation.
         // We can add this later.
+
+        // Invalidate caches
+        await invalidateMovieCache(movieId);
+        await invalidateUserCache(userId);
 
         return NextResponse.json({ message: 'Rating deleted' }, { status: 200 });
     } catch (error) {

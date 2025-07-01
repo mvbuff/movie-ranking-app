@@ -121,7 +121,7 @@ export async function GET(request: Request) {
       return ((a.user as any)?.name || '').localeCompare(((b.user as any)?.name || ''));
     });
 
-    return NextResponse.json({
+    const responseData = {
       movie: {
         id: movie.id,
         title: movie.title,
@@ -132,7 +132,13 @@ export async function GET(request: Request) {
         createdAt: movie.createdAt,
       },
       userEntries: combinedData,
-    });
+    };
+
+    // Add cache headers
+    const response = NextResponse.json(responseData);
+    response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=240');
+    
+    return response;
   } catch (error) {
     console.error("Failed to fetch reviews and ratings:", error);
     return NextResponse.json({ error: 'Failed to fetch reviews and ratings' }, { status: 500 });

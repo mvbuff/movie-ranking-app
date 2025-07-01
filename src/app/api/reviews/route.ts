@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { ActivityLogger } from '@/lib/activity-logger';
+import { invalidateMovieCache } from '@/lib/cache';
 
 // GET all reviews for a specific movie - allow read-only access
 export async function GET(request: Request) {
@@ -74,6 +75,9 @@ export async function POST(request: Request) {
       // Don't fail the review creation if activity logging fails
     }
 
+    // Invalidate movie cache
+    await invalidateMovieCache(movieId);
+
     return NextResponse.json(newReview, { status: 201 });
   } catch (error) {
     console.error("Failed to create review:", error);
@@ -113,6 +117,9 @@ export async function DELETE(request: Request) {
     await prisma.review.delete({
       where: { id: reviewId },
     });
+
+    // Invalidate movie cache
+    await invalidateMovieCache(review.movieId);
 
     return NextResponse.json({ message: 'Review deleted successfully' }, { status: 200 });
   } catch (error) {

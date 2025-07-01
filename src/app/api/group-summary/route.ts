@@ -53,12 +53,13 @@ export async function GET(request: NextRequest) {
       ? moviesWithScores.filter((movie: any) => movie.ratingCount > 0)
       : moviesWithScores;
 
-    return Response.json(filteredMovies);
+    // Add cache headers
+    const response = Response.json(filteredMovies);
+    response.headers.set('Cache-Control', 'public, s-maxage=240, stale-while-revalidate=480');
+    
+    return response;
   } catch (error) {
-    console.error('Error fetching group summary:', error);
-    return Response.json(
-      { error: 'Failed to fetch group summary' },
-      { status: 500 }
-    );
+    console.error('Failed to fetch group summary:', error);
+    return Response.json({ error: 'Failed to fetch group summary' }, { status: 500 });
   }
 } 
