@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { getRatingDisplay } from '@/lib/rating-system';
 
 // Configuration for number of activities to show
-export const ACTIVITY_FEED_LIMIT = 10; // Reduced for popup display
+export const ACTIVITY_FEED_LIMIT = 25; // Increased for more community updates
 
 type ActivityType = 
   | 'MOVIE_ADDED'

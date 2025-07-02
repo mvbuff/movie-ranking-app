@@ -62,7 +62,7 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/activities?limit=10');
+      const response = await fetch('/api/activities?limit=25');
       if (!response.ok) {
         throw new Error('Failed to fetch activities');
       }

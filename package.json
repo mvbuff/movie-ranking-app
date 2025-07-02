@@ -6,7 +6,17 @@
     "dev": "next dev",
     "build": "prisma generate &&  prisma db push && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "backup": "node scripts/backup-runner.js",
+    "backup:help": "node scripts/backup-runner.js --help",
+    "backup:uncompressed": "node scripts/backup-runner.js --no-compress",
+    "backup:quick": "node scripts/backup-runner.js --max-backups 2",
+    "backup:shell": "bash scripts/backup-db.sh",
+    "backup:prisma": "node scripts/prisma-backup.js",
+    "backup:prisma:sql": "node scripts/prisma-backup.js --sql",
+    "backup:prisma:help": "node scripts/prisma-backup.js --help",
+    "backup:list": "ls -la backups/ 2>/dev/null || echo 'No backups directory found'",
+    "backup:clean": "find backups/ -name '*.sql*' -mtime +30 -delete 2>/dev/null || echo 'No old backups to clean'"
   },
   "prisma": {
     "seed": "ts-node --project prisma/tsconfig.seed.json prisma/seed.ts"
@@ -18,6 +28,7 @@
     "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.0.1",
     "lucide-react": "^0.515.0",
     "next": "15.3.3",
     "next-auth": "^4.24.11",
