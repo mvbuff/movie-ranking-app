@@ -26,6 +26,8 @@ interface Movie {
   tmdbVoteCount: number | null;
   category: Category;
   createdAt: string;
+  ratingsCount: number;
+  reviewsCount: number;
 }
 interface Rating { movieId: string; score: number; }
 interface AggregateScore { movieId: string; score: number; }
@@ -508,48 +510,64 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                 >
                   {movie.title} ({movie.year > 0 ? movie.year : 'N/A'})
                 </a>
-                <div className="flex gap-1 self-end sm:self-start flex-shrink-0">
-                  {readOnlyMode ? (
-                    <div
-                      className="p-1 text-gray-400 cursor-not-allowed"
-                      title="Sign in to add reviews"
-                    >
-                      <MessageSquare size={18} />
-                    </div>
-                  ) : (
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                  {/* Action buttons */}
+                  <div className="flex gap-1">
+                    {readOnlyMode ? (
+                      <div
+                        className="p-1 text-gray-400 cursor-not-allowed"
+                        title="Sign in to add reviews"
+                      >
+                        <MessageSquare size={18} />
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => setAddReviewModal({ movieId: movie.id, movieTitle: movie.title })}
+                        className="p-1 text-gray-400 hover:text-blue-600"
+                        title="Add review"
+                      >
+                        <MessageSquare size={18} />
+                      </button>
+                    )}
                     <button 
-                      onClick={() => setAddReviewModal({ movieId: movie.id, movieTitle: movie.title })}
-                      className="p-1 text-gray-400 hover:text-blue-600"
-                      title="Add review"
+                      onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
+                      className="p-1 text-gray-400 hover:text-indigo-600"
+                      title="Show user reviews"
                     >
-                      <MessageSquare size={18} />
+                      <Info size={18} />
                     </button>
-                  )}
-                  <button 
-                    onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
-                    className="p-1 text-gray-400 hover:text-indigo-600"
-                    title="Show user reviews"
-                  >
-                    <Info size={18} />
-                  </button>
-                  {/* Temporarily removed Users/Discussion button - keeping function for future use
-                  <button 
-                    onClick={() => handleDiscussionClick(movie)}
-                    className="p-1 text-gray-400 hover:text-purple-600"
-                    title="Discuss this movie in forum"
-                  >
-                    <Users size={18} />
-                  </button>
-                  */}
-                  <button 
-                    onClick={() => shareToWhatsApp(movie)}
-                    className="p-1 text-gray-400 hover:text-green-600"
-                    title="Copy movie details"
-                  >
-                    <Share2 size={18} />
-                  </button>
+                    {/* Temporarily removed Users/Discussion button - keeping function for future use
+                    <button 
+                      onClick={() => handleDiscussionClick(movie)}
+                      className="p-1 text-gray-400 hover:text-purple-600"
+                      title="Discuss this movie in forum"
+                    >
+                      <Users size={18} />
+                    </button>
+                    */}
+                    <button 
+                      onClick={() => shareToWhatsApp(movie)}
+                      className="p-1 text-gray-400 hover:text-green-600"
+                      title="Copy movie details"
+                    >
+                      <Share2 size={18} />
+                    </button>
+                  </div>
+                  
+                  {/* Rating and Review counts */}
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <Star size={12} className="text-yellow-500" />
+                      <span>{movie.ratingsCount}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <MessageSquare size={12} className="text-blue-500" />
+                      <span>{movie.reviewsCount}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+              
               <div className="mt-auto pt-4">
                 {readOnlyMode ? (
                   <div className="p-3 bg-gray-50 border border-gray-200 rounded text-center">

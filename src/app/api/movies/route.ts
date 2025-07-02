@@ -27,11 +27,25 @@ export async function GET() {
         tmdbVoteCount: true,
         category: true,
         createdAt: true,
+        _count: {
+          select: {
+            ratings: true,
+            reviews: true,
+          },
+        },
       } as any,
     });
     
+    // Transform the data to flatten the counts
+    const moviesWithCounts = movies.map((movie: any) => ({
+      ...movie,
+      ratingsCount: movie._count.ratings,
+      reviewsCount: movie._count.reviews,
+      _count: undefined, // Remove the nested _count object
+    }));
+    
     // Add cache headers for client-side caching
-    const response = NextResponse.json(movies);
+    const response = NextResponse.json(moviesWithCounts);
     response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     
     return response;
