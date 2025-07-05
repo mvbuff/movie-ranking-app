@@ -35,27 +35,48 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Mobile Debug Console - Only loads on mobile devices with ?debug=1 */}
+        {/* Debug Console - Loads on any device with ?debug=1 */}
         <Script
-          id="mobile-debug"
-          strategy="beforeInteractive"
+          id="debug-console"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 const hasDebugParam = window.location.search.includes('debug=1');
                 
-                if (isMobile && hasDebugParam) {
+                if (hasDebugParam) {
+                  console.log('🔧 Debug mode detected, loading Eruda console...');
+                  
                   const script = document.createElement('script');
                   script.src = 'https://cdn.jsdelivr.net/npm/eruda@3.0.1/eruda.min.js';
                   script.onload = function() {
                     if (window.eruda) {
                       window.eruda.init();
-                      console.log('🛠️ Mobile debug console loaded! Check the console icon.');
+                      console.log('🛠️ Debug console loaded! Look for the floating button on the page.');
+                      
+                      // Make sure console is visible
+                      setTimeout(() => {
+                        if (window.eruda) {
+                          window.eruda.show();
+                        }
+                      }, 1000);
                     }
                   };
+                  script.onerror = function() {
+                    console.error('❌ Failed to load debug console');
+                  };
                   document.head.appendChild(script);
-                }
+                                 } else {
+                   console.log('💡 Add ?debug=1 to URL to enable debug console');
+                 }
+                 
+                 // Simple debug overlay as backup
+                 if (hasDebugParam) {
+                   const debugDiv = document.createElement('div');
+                   debugDiv.innerHTML = '🐛 DEBUG MODE ACTIVE';
+                   debugDiv.style.cssText = 'position:fixed;top:10px;right:10px;background:red;color:white;padding:5px;z-index:9999;font-size:12px;border-radius:4px;';
+                   document.body.appendChild(debugDiv);
+                 }
               })();
             `
           }}
