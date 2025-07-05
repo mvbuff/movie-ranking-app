@@ -4,29 +4,40 @@ import { getServerSession } from 'next-auth';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { invalidateMovieCache } from '@/lib/cache';
 
-// GET all reviews for a specific movie - allow read-only access
+// GET reviews - support both movieId and userId filters
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const movieId = searchParams.get('movieId');
-
-  if (!movieId) {
-    return NextResponse.json({ error: 'Movie ID is required' }, { status: 400 });
-  }
+  const userId = searchParams.get('userId');
 
   try {
-    // Allow read-only access to reviews for everyone
-    const reviews = await prisma.review.findMany({
-      where: { movieId },
-      include: {
-        user: {
-          select: { name: true }, // Only include the user's name
+    if (userId) {
+      // Fetch all reviews for a specific user (like ratings API)
+      const reviews = await prisma.review.findMany({
+        where: { userId },
+        select: {
+          movieId: true,
+          text: true,
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-    return NextResponse.json(reviews);
+      });
+      return NextResponse.json(reviews);
+    } else if (movieId) {
+      // Fetch all reviews for a specific movie (original functionality)
+      const reviews = await prisma.review.findMany({
+        where: { movieId },
+        include: {
+          user: {
+            select: { name: true }, // Only include the user's name
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+      return NextResponse.json(reviews);
+    } else {
+      return NextResponse.json({ error: 'Either Movie ID or User ID is required' }, { status: 400 });
+    }
   } catch (error) {
     console.error("Failed to fetch reviews:", error);
     return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
