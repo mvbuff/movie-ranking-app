@@ -233,10 +233,10 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     if (!readOnlyMode && currentUser && movie.currentUserRating > 0) {
       message += ` .... ${letterRating}`;
       if (userReview) {
-        message += `.... ${userReview}\n\n--shared via www.peer-movie-rating-app.vercel.app`;
+        message += `.... ${userReview}\n\n--shared via https://peer-movie-rating-app.vercel.app`;
       }
     } else {
-      message += ` .... NR\n\n--shared via www.peer-movie-rating-app.vercel.app`; // Not rated
+      message += ` .... NR\n\n--shared via https://peer-movie-rating-app.vercel.app`; // Not rated
     }
     
     try {
@@ -399,7 +399,8 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
           currentUserId={readOnlyMode ? undefined : currentUser?.id}
           onClose={() => setActiveReviews(null)}
           onReviewDeleted={() => {
-            // Optional: You could add any additional refresh logic here
+            // Refresh movie data to update review counts
+            fetchMovieData();
           }}
         />
       )}

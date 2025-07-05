@@ -2,14 +2,12 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,8 +22,8 @@ export default function LoginPage() {
     if (result?.error) {
       setError(result.error);
     } else if (result?.ok) {
-      // Redirect to home page on successful login
-      router.push('/');
+      // Force a full page refresh to ensure session is properly loaded
+      window.location.href = '/';
     }
   };
 

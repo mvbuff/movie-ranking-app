@@ -69,7 +69,11 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
 
   const fetchReviewsAndRatings = useCallback(async () => {
     try {
-      const response = await fetch(`/api/movies/reviews-and-ratings?movieId=${movieId}`);
+      // Add cache-busting parameter to ensure fresh data
+      const cacheBuster = `&t=${Date.now()}`;
+      const response = await fetch(`/api/movies/reviews-and-ratings?movieId=${movieId}${cacheBuster}`, {
+        cache: 'no-store'
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch reviews and ratings');
       }
@@ -91,6 +95,17 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
     if (!currentUserId) return;
     
     setDeletingReview(reviewId);
+    
+    // Optimistically update UI by removing the review immediately
+    const previousEntries = [...userEntries];
+    setUserEntries(currentEntries => 
+      currentEntries.map(entry => 
+        entry.review?.id === reviewId 
+          ? { ...entry, review: null }
+          : entry
+      ).filter(entry => entry.review !== null || entry.rating !== null)
+    );
+    
     try {
       const response = await fetch('/api/reviews', {
         method: 'DELETE',
@@ -99,13 +114,19 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
       });
 
       if (response.ok) {
-        // Refresh the reviews and ratings
-        await fetchReviewsAndRatings();
+        // Success - the optimistic update was correct
         onReviewDeleted?.();
+        
+        // Fetch fresh data to ensure consistency
+        await fetchReviewsAndRatings();
       } else {
+        // Revert optimistic update on failure
+        setUserEntries(previousEntries);
         console.error('Failed to delete review');
       }
     } catch (error) {
+      // Revert optimistic update on error
+      setUserEntries(previousEntries);
       console.error('Failed to delete review:', error);
     } finally {
       setDeletingReview(null);
@@ -119,13 +140,39 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
     }
 
     setLikingReview(reviewId);
-    try {
-      // Check if already liked
-      const currentEntry = userEntries.find(entry => 
-        entry.review?.id === reviewId
-      );
-      const isLiked = currentEntry?.review?.likes.users.some(user => user.id === currentUserId);
+    
+    // Check if already liked
+    const currentEntry = userEntries.find(entry => 
+      entry.review?.id === reviewId
+    );
+    const isLiked = currentEntry?.review?.likes.users.some(user => user.id === currentUserId);
+    
+    // Optimistically update UI immediately
+    const previousEntries = [...userEntries];
+    setUserEntries(currentEntries => 
+      currentEntries.map(entry => {
+        if (entry.review?.id === reviewId) {
+          const currentLikeUsers = entry.review.likes.users;
+          const updatedUsers = isLiked
+            ? currentLikeUsers.filter(user => user.id !== currentUserId)
+            : [...currentLikeUsers, { id: currentUserId, name: 'You' }];
+          
+          return {
+            ...entry,
+            review: {
+              ...entry.review,
+              likes: {
+                count: updatedUsers.length,
+                users: updatedUsers
+              }
+            }
+          };
+        }
+        return entry;
+      })
+    );
 
+    try {
       if (isLiked) {
         // Unlike the review
         const response = await fetch('/api/reviews/likes', {
@@ -136,8 +183,11 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
 
         if (response.ok) {
           showToast('Review unliked', 'info');
+          // Fetch fresh data to ensure consistency
           await fetchReviewsAndRatings();
         } else {
+          // Revert optimistic update on failure
+          setUserEntries(previousEntries);
           const error = await response.json();
           showToast(error.error || 'Failed to unlike review', 'error');
         }
@@ -151,13 +201,18 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
 
         if (response.ok) {
           showToast('Review liked!', 'success');
+          // Fetch fresh data to ensure consistency
           await fetchReviewsAndRatings();
         } else {
+          // Revert optimistic update on failure
+          setUserEntries(previousEntries);
           const error = await response.json();
           showToast(error.error || 'Failed to like review', 'error');
         }
       }
     } catch (error) {
+      // Revert optimistic update on error
+      setUserEntries(previousEntries);
       console.error('Failed to handle like:', error);
       showToast('Failed to like review', 'error');
     } finally {

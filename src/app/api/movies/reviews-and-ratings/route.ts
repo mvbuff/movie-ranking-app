@@ -134,9 +134,11 @@ export async function GET(request: Request) {
       userEntries: combinedData,
     };
 
-    // Add cache headers
+    // Disable cache for dynamic review data to ensure fresh updates
     const response = NextResponse.json(responseData);
-    response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=240');
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
     
     return response;
   } catch (error) {

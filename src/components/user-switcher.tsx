@@ -44,9 +44,12 @@ export default function UserSwitcher({ refreshTimestamp, onUserChange }: UserSwi
             userToSelect = data[data.length - 1];
           }
           
-          setCurrentUser(userToSelect);
-          if (onUserChange) {
-            onUserChange();
+          // Only set the user if it's different from the current one
+          if (userToSelect && userToSelect.id !== currentUser?.id) {
+            setCurrentUser(userToSelect);
+            if (onUserChange) {
+              onUserChange();
+            }
           }
         }
 

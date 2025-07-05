@@ -20,22 +20,36 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const isAdmin = session?.user?.role === 'ADMIN';
 
   useEffect(() => {
-    // If a user is logged in but is NOT an admin, we can set their context
-    // immediately from the session data.
-    if (status === 'authenticated' && !isAdmin) {
-      // Create a User-like object from the session for context
-      setCurrentUser({
-        id: session.user.id,
-        name: session.user.name || 'User',
-        email: session.user.email || null,
-        image: session.user.image || null,
-        // These are default values, as they exist on the real User model
-        role: 'USER',
-        status: 'ACTIVE',
-        password: null,
-        passwordResetRequired: false,
-        createdAt: new Date(),
-      });
+    if (status === 'authenticated' && session?.user) {
+      // For non-admin users, set their context immediately from the session data
+      if (!isAdmin) {
+        setCurrentUser({
+          id: session.user.id,
+          name: session.user.name || 'User',
+          email: session.user.email || null,
+          image: session.user.image || null,
+          // These are default values, as they exist on the real User model
+          role: 'USER',
+          status: 'ACTIVE',
+          password: null,
+          passwordResetRequired: false,
+          createdAt: new Date(),
+        });
+      } else {
+        // For admin users, set their own user data initially
+        // The UserSwitcher component will allow them to switch to other users
+        setCurrentUser({
+          id: session.user.id,
+          name: session.user.name || 'Admin User',
+          email: session.user.email || null,
+          image: session.user.image || null,
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          password: null,
+          passwordResetRequired: false,
+          createdAt: new Date(),
+        });
+      }
     } else if (status === 'unauthenticated') {
       // Clear user when logged out
       setCurrentUser(null);
