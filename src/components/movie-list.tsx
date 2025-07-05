@@ -264,11 +264,24 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     // Helper function to ensure text is properly decoded (fixes iOS URL encoding issues)
     const ensurePlainText = (text: string) => {
       try {
+        // Always decode first in case the text is already encoded
+        let decodedText = text;
+        
         // Check if text is URL-encoded by looking for common patterns
         if (text.includes('%20') || text.includes('%3A') || text.includes('%0A')) {
-          return decodeURIComponent(text);
+          decodedText = decodeURIComponent(text);
         }
-        return text;
+        
+        // Double-check and clean any remaining encoding
+        decodedText = decodedText
+          .replace(/%20/g, ' ')    // spaces
+          .replace(/%3A/g, ':')    // colons
+          .replace(/%0A/g, '\n')   // newlines
+          .replace(/%2F/g, '/')    // forward slashes
+          .replace(/%2E/g, '.')    // periods
+          .replace(/%2D/g, '-');   // hyphens
+        
+        return decodedText;
       } catch (error) {
         // If decoding fails, return original text
         console.log('Text decode failed, using original:', error);
@@ -279,9 +292,42 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     // Ensure our message is plain text
     const plainMessage = ensurePlainText(message);
 
+    // Helper function to send logs to server (appears in Vercel logs)
+    const serverLog = async (level: 'log' | 'warn' | 'error', message: string, data?: unknown) => {
+      try {
+        // Also log locally for immediate debugging
+        console[level](`📋 ${message}`, data);
+        
+        // Send to server for Vercel logs
+        fetch('/api/client-logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            level,
+            message: `📋 ${message}`,
+            data,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent
+          })
+        }).catch(err => console.error('Failed to send log to server:', err));
+      } catch (error) {
+        console.error('Logging failed:', error);
+      }
+    };
+
+    // Debug logging to see what's happening (will appear in Vercel logs)
+    await serverLog('log', 'COPY DEBUG v2.0 - Original message:', message);
+    await serverLog('log', 'COPY DEBUG v2.0 - Plain message:', plainMessage);
+    await serverLog('log', 'COPY DEBUG v2.0 - Message contains URL encoding:', message.includes('%20') || message.includes('%3A') || message.includes('%0A'));
+    await serverLog('log', 'COPY DEBUG v2.0 - Fix is active!', { movieTitle: movie.title });
+
     // Copy to clipboard IMMEDIATELY to preserve user interaction context (iOS requirement)
     try {
       await navigator.clipboard.writeText(plainMessage);
+      await serverLog('log', '✅ Successfully copied to clipboard', { 
+        messageLength: plainMessage.length,
+        movieTitle: movie.title 
+      });
       const preview = getPreview(plainMessage);
       const hasReview = !readOnlyMode && currentUser && movie.currentUserReview;
       showToast(`${hasReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
@@ -314,12 +360,12 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         timestamp: new Date().toISOString()
       };
       
-      console.error('🚨 CLIPBOARD COPY FAILED - Debug Info:', debugInfo);
-      console.error('Original error:', error);
+      await serverLog('error', '🚨 CLIPBOARD COPY FAILED - Debug Info:', debugInfo);
+      await serverLog('error', 'Original error:', error);
       
       // Fallback for iOS/Safari: Use deprecated execCommand
       try {
-        console.log('🔄 Attempting fallback copy method (execCommand)...');
+        await serverLog('log', '🔄 Attempting fallback copy method (execCommand)...');
         const textArea = document.createElement('textarea');
         textArea.value = plainMessage;
         textArea.style.position = 'fixed';
@@ -331,21 +377,21 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         document.body.removeChild(textArea);
         
         if (successful) {
-          console.log('✅ Fallback copy successful using execCommand');
+          await serverLog('log', '✅ Fallback copy successful using execCommand');
           const preview = getPreview(plainMessage);
           const hasReview = !readOnlyMode && currentUser && movie.currentUserReview;
           showToast(`${hasReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
         } else {
-          console.error('❌ Fallback copy failed - execCommand returned false');
-          console.log('📋 Attempting manual copy dialog fallback...');
+          await serverLog('error', '❌ Fallback copy failed - execCommand returned false');
+          await serverLog('log', '📋 Attempting manual copy dialog fallback...');
           
           // Final fallback: Show the text in a prompt
           if (confirm('Copy failed. Would you like to see the text to copy manually?')) {
             prompt('Copy this text:', plainMessage);
-            console.log('👤 Manual copy dialog shown to user');
+            await serverLog('log', '👤 Manual copy dialog shown to user');
           } else {
             showToast('Failed to copy to clipboard', 'error');
-            console.log('👤 User declined manual copy dialog');
+            await serverLog('log', '👤 User declined manual copy dialog');
           }
         }
       } catch (fallbackError) {
@@ -359,19 +405,19 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
           fallbackErrorStack: undefined
         };
 
-        console.error('🚨 FALLBACK COPY ALSO FAILED:', {
+        await serverLog('error', '🚨 FALLBACK COPY ALSO FAILED:', {
           ...debugInfo,
           ...fallbackErrorInfo
         });
-        console.error('Fallback error:', fallbackError);
+        await serverLog('error', 'Fallback error:', fallbackError);
       
         // Final fallback: Show the text in a prompt
         if (confirm('Copy failed. Would you like to see the text to copy manually?')) {
           prompt('Copy this text:', plainMessage);
-          console.log('👤 Manual copy dialog shown after all methods failed');
+          await serverLog('log', '👤 Manual copy dialog shown after all methods failed');
         } else {
           showToast('Failed to copy to clipboard', 'error');
-          console.log('👤 User declined manual copy dialog after all methods failed');
+          await serverLog('log', '👤 User declined manual copy dialog after all methods failed');
         }
       }
     }
