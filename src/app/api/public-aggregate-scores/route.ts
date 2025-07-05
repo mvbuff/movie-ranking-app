@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { appCache, CacheKeys } from '@/lib/cache';
 
-// Enable static generation with revalidation - shorter for dynamic scores
-export const revalidate = 180; // 3 minutes
+// Disable static generation to ensure fresh data
+export const dynamic = 'force-dynamic'; // 3 minutes
 
 // GET public aggregate scores - calculate friend scores with equal weights for all users
 export async function GET() {

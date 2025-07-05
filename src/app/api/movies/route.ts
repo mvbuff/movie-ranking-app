@@ -7,8 +7,8 @@ import { ActivityLogger } from '@/lib/activity-logger';
 import { safeDeleteMovie } from '@/lib/safe-movie-deletion';
 import { invalidateMovieCache } from '@/lib/cache';
 
-// Enable static generation with revalidation
-export const revalidate = 300; // 5 minutes
+// Disable static generation to ensure fresh data
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
@@ -44,9 +44,9 @@ export async function GET() {
       _count: undefined, // Remove the nested _count object
     }));
     
-    // Add cache headers for client-side caching
+    // Add cache headers for client-side caching with shorter cache time
     const response = NextResponse.json(moviesWithCounts);
-    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
     
     return response;
   } catch (error) {

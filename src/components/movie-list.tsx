@@ -61,11 +61,14 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
   const fetchMovieData = useCallback(async () => {
     setLoading(true);
     try {
+      // Add cache-busting parameter to force fresh data
+      const cacheBuster = `?t=${Date.now()}`;
+      
       if (readOnlyMode || !currentUser) {
         // Read-only mode: fetch movies with public aggregate scores
         const [moviesRes, publicScoresRes] = await Promise.all([
-          fetch('/api/movies'),
-          fetch('/api/public-aggregate-scores'),
+          fetch(`/api/movies${cacheBuster}`, { cache: 'no-store' }),
+          fetch(`/api/public-aggregate-scores${cacheBuster}`, { cache: 'no-store' }),
         ]);
         if (!moviesRes.ok || !publicScoresRes.ok) throw new Error('Failed to fetch data');
         
@@ -85,10 +88,10 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       } else {
         // Authenticated mode: fetch with user-specific data
         const [moviesRes, ratingsRes, scoresRes, watchlistRes] = await Promise.all([
-          fetch('/api/movies'),
-          fetch(`/api/ratings?userId=${currentUser.id}`),
-          fetch(`/api/aggregate-scores?userId=${currentUser.id}`),
-          fetch(`/api/watchlist?userId=${currentUser.id}`),
+          fetch(`/api/movies${cacheBuster}`, { cache: 'no-store' }),
+          fetch(`/api/ratings?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`/api/aggregate-scores?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`/api/watchlist?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
         ]);
         if (!moviesRes.ok || !ratingsRes.ok || !scoresRes.ok || !watchlistRes.ok) throw new Error('Failed to fetch data');
         
