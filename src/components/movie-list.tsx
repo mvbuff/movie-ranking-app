@@ -36,6 +36,7 @@ interface MovieWithRatingsAndScores extends Movie {
   currentUserRating: number;
   aggregateScore: number | null;
   isInWatchlist: boolean;
+  currentUserReview: string | null;
 }
 
 interface MovieListProps {
@@ -97,6 +98,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
           currentUserRating: 0,
           aggregateScore: scoresMap.get(movie.id) ?? null,
           isInWatchlist: false,
+          currentUserReview: null,
         }));
 
         setMovies(moviesWithData);
@@ -108,28 +110,32 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         };
       } else {
         // Authenticated mode: fetch with user-specific data
-        const [moviesRes, ratingsRes, scoresRes, watchlistRes] = await Promise.all([
+        const [moviesRes, ratingsRes, scoresRes, watchlistRes, reviewsRes] = await Promise.all([
           fetch(`/api/movies${cacheBuster}`, { cache: 'no-store' }),
           fetch(`/api/ratings?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
           fetch(`/api/aggregate-scores?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
           fetch(`/api/watchlist?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`/api/reviews?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
         ]);
-        if (!moviesRes.ok || !ratingsRes.ok || !scoresRes.ok || !watchlistRes.ok) throw new Error('Failed to fetch data');
+        if (!moviesRes.ok || !ratingsRes.ok || !scoresRes.ok || !watchlistRes.ok || !reviewsRes.ok) throw new Error('Failed to fetch data');
         
         const allMovies: Movie[] = await moviesRes.json();
         const userRatings: Rating[] = await ratingsRes.json();
         const aggregateScores: AggregateScore[] = await scoresRes.json();
         const watchlistItems: { movieId: string }[] = await watchlistRes.json();
+        const userReviews: { movieId: string; reviewText: string }[] = await reviewsRes.json();
         
         const ratingsMap = new Map(userRatings.map(r => [r.movieId, r.score]));
         const scoresMap = new Map(aggregateScores.map(s => [s.movieId, s.score]));
         const watchlistSet = new Set(watchlistItems.map(w => w.movieId));
+        const reviewsMap = new Map(userReviews.map(r => [r.movieId, r.reviewText]));
 
         const moviesWithData = allMovies.map(movie => ({
           ...movie,
           currentUserRating: ratingsMap.get(movie.id) || 0,
           aggregateScore: scoresMap.get(movie.id) ?? null,
           isInWatchlist: watchlistSet.has(movie.id),
+          currentUserReview: reviewsMap.get(movie.id) || null,
         }));
 
         setMovies(moviesWithData);
@@ -238,14 +244,15 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     const categoryPrefix = getCategoryPrefix(movie.category);
     const letterRating = movie.currentUserRating > 0 ? getRatingDisplay(movie.currentUserRating) : 'NR';
     
-    // Create initial message without review (to copy immediately)
-    let initialMessage = `${categoryPrefix}: ${movie.title} (${movie.year})`;
+    // Create the complete message with all available data
+    let message = `${categoryPrefix}: ${movie.title} (${movie.year}) .... ${letterRating}`;
     
-    if (!readOnlyMode && currentUser && movie.currentUserRating > 0) {
-      initialMessage += ` .... ${letterRating}\n\n--shared via https://peer-movie-rating-app.vercel.app`;
-    } else {
-      initialMessage += ` .... NR\n\n--shared via https://peer-movie-rating-app.vercel.app`;
+    // Add review text if available
+    if (!readOnlyMode && currentUser && movie.currentUserRating > 0 && movie.currentUserReview) {
+      message += `.... ${movie.currentUserReview.trim()}`;
     }
+    
+    message += `\n\n--shared via https://peer-movie-rating-app.vercel.app`;
 
     // Helper function to get preview of copied content (last 2 lines)
     const getPreview = (text: string) => {
@@ -256,9 +263,10 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
 
     // Copy to clipboard IMMEDIATELY to preserve user interaction context (iOS requirement)
     try {
-      await navigator.clipboard.writeText(initialMessage);
-      const preview = getPreview(initialMessage);
-      showToast(`Copied to clipboard!\n\n${preview}`);
+      await navigator.clipboard.writeText(message);
+      const preview = getPreview(message);
+      const hasReview = !readOnlyMode && currentUser && movie.currentUserRating > 0 && movie.currentUserReview;
+      showToast(`${hasReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
     } catch (error) {
       // Comprehensive debug logging for clipboard failures
       const errorInfo = error instanceof Error ? {
@@ -284,7 +292,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
         ...errorInfo,
         movieTitle: movie.title,
-        messageLength: initialMessage.length,
+        messageLength: message.length,
         timestamp: new Date().toISOString()
       };
       
@@ -295,7 +303,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       try {
         console.log('🔄 Attempting fallback copy method (execCommand)...');
         const textArea = document.createElement('textarea');
-        textArea.value = initialMessage;
+        textArea.value = message;
         textArea.style.position = 'fixed';
         textArea.style.opacity = '0';
         document.body.appendChild(textArea);
@@ -306,177 +314,48 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         
         if (successful) {
           console.log('✅ Fallback copy successful using execCommand');
-          const preview = getPreview(initialMessage);
-          showToast(`Copied to clipboard!\n\n${preview}`);
+          const preview = getPreview(message);
+          const hasReview = !readOnlyMode && currentUser && movie.currentUserRating > 0 && movie.currentUserReview;
+          showToast(`${hasReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
         } else {
           console.error('❌ Fallback copy failed - execCommand returned false');
           console.log('📋 Attempting manual copy dialog fallback...');
           
           // Final fallback: Show the text in a prompt
           if (confirm('Copy failed. Would you like to see the text to copy manually?')) {
-            prompt('Copy this text:', initialMessage);
+            prompt('Copy this text:', message);
             console.log('👤 Manual copy dialog shown to user');
           } else {
             showToast('Failed to copy to clipboard', 'error');
             console.log('👤 User declined manual copy dialog');
           }
         }
-              } catch (fallbackError) {
-          const fallbackErrorInfo = fallbackError instanceof Error ? {
-            fallbackErrorName: fallbackError.name,
-            fallbackErrorMessage: fallbackError.message,
-            fallbackErrorStack: fallbackError.stack
-          } : {
-            fallbackErrorName: 'Unknown',
-            fallbackErrorMessage: String(fallbackError),
-            fallbackErrorStack: undefined
-          };
+      } catch (fallbackError) {
+        const fallbackErrorInfo = fallbackError instanceof Error ? {
+          fallbackErrorName: fallbackError.name,
+          fallbackErrorMessage: fallbackError.message,
+          fallbackErrorStack: fallbackError.stack
+        } : {
+          fallbackErrorName: 'Unknown',
+          fallbackErrorMessage: String(fallbackError),
+          fallbackErrorStack: undefined
+        };
 
-          console.error('🚨 FALLBACK COPY ALSO FAILED:', {
-            ...debugInfo,
-            ...fallbackErrorInfo
-          });
-          console.error('Fallback error:', fallbackError);
-        
+        console.error('🚨 FALLBACK COPY ALSO FAILED:', {
+          ...debugInfo,
+          ...fallbackErrorInfo
+        });
+        console.error('Fallback error:', fallbackError);
+      
         // Final fallback: Show the text in a prompt
         if (confirm('Copy failed. Would you like to see the text to copy manually?')) {
-          prompt('Copy this text:', initialMessage);
+          prompt('Copy this text:', message);
           console.log('👤 Manual copy dialog shown after all methods failed');
         } else {
           showToast('Failed to copy to clipboard', 'error');
           console.log('👤 User declined manual copy dialog after all methods failed');
         }
       }
-    }
-
-    // Optionally fetch user review and update clipboard if available (background operation)
-    if (currentUser && movie.currentUserRating > 0) {
-      console.log('🔍 Starting background review fetch for enhanced share...', {
-        userId: currentUser.id,
-        movieId: movie.id,
-        movieTitle: movie.title,
-        userRating: movie.currentUserRating
-      });
-
-      try {
-        const cacheBuster = `t=${Date.now()}`;
-        const reviewUrl = `/api/reviews?movieId=${movie.id}&${cacheBuster}`;
-        
-        console.log('📡 Fetching reviews from:', reviewUrl);
-        
-        const reviewResponse = await fetch(reviewUrl, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          cache: 'no-store'
-        });
-
-        console.log('📡 Review fetch response:', {
-          status: reviewResponse.status,
-          statusText: reviewResponse.statusText,
-          ok: reviewResponse.ok,
-          headers: Object.fromEntries(reviewResponse.headers.entries())
-        });
-
-        if (reviewResponse.ok) {
-          const reviews: { id: string; userId: string; text: string; movieId: string; createdAt: string; user: { name: string } }[] = await reviewResponse.json();
-          
-          console.log('📝 Reviews received:', {
-            totalReviews: reviews.length,
-            reviewsData: reviews.map(r => ({
-              id: r.id,
-              userId: r.userId,
-              hasText: !!r.text,
-              textLength: r.text?.length || 0,
-              userName: r.user?.name
-            }))
-          });
-
-          const userReviewData = reviews.find((review) => review.userId === currentUser.id);
-          
-          console.log('👤 User review search result:', {
-            lookingForUserId: currentUser.id,
-            foundReview: !!userReviewData,
-            reviewId: userReviewData?.id,
-            hasText: !!userReviewData?.text,
-            textPreview: userReviewData?.text?.substring(0, 50)
-          });
-
-          if (userReviewData && userReviewData.text) {
-            const userReview = userReviewData.text.trim();
-            const enhancedMessage = `${categoryPrefix}: ${movie.title} (${movie.year}) .... ${letterRating}.... ${userReview}\n\n--shared via https://peer-movie-rating-app.vercel.app`;
-            
-            console.log('✨ Attempting to update clipboard with enhanced message...', {
-              originalLength: initialMessage.length,
-              enhancedLength: enhancedMessage.length,
-              reviewLength: userReview.length
-            });
-
-            // Try to update clipboard with enhanced message (might fail on iOS, but that's OK)
-            try {
-              await navigator.clipboard.writeText(enhancedMessage);
-              const enhancedPreview = getPreview(enhancedMessage);
-              showToast(`Updated with your review!\n\n${enhancedPreview}`);
-              console.log('✅ Successfully updated clipboard with review!');
-            } catch (clipboardError) {
-              console.log('📋 Could not update clipboard with review (iOS limitation):', {
-                error: clipboardError instanceof Error ? {
-                  name: clipboardError.name,
-                  message: clipboardError.message
-                } : String(clipboardError),
-                isSecureContext: window.isSecureContext,
-                hasClipboardAPI: !!navigator.clipboard
-              });
-            }
-          } else {
-            console.log('❌ No review text found for user:', {
-              hasReviewData: !!userReviewData,
-              reviewText: userReviewData?.text,
-              reviewTextTrimmed: userReviewData?.text?.trim()
-            });
-          }
-        } else {
-          console.error('❌ Review fetch failed:', {
-            status: reviewResponse.status,
-            statusText: reviewResponse.statusText,
-            url: reviewUrl
-          });
-          
-          // Try to get response text for more details
-          try {
-            const errorText = await reviewResponse.text();
-            console.error('❌ Review fetch error response:', errorText);
-          } catch (textError) {
-            console.error('❌ Could not read error response text:', textError);
-          }
-        }
-      } catch (error) {
-        console.error('🚨 REVIEW FETCH COMPLETELY FAILED:', {
-          error: error instanceof Error ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-          } : String(error),
-          userAgent: navigator.userAgent,
-          isOnline: navigator.onLine,
-                     connectionType: (() => {
-             try {
-               const nav = navigator as { connection?: { effectiveType?: string } };
-               return nav.connection?.effectiveType || 'unknown';
-             } catch {
-               return 'unknown';
-             }
-           })(),
-          timestamp: new Date().toISOString()
-        });
-      }
-    } else {
-      console.log('⏭️ Skipping review fetch:', {
-        hasCurrentUser: !!currentUser,
-        userRating: movie.currentUserRating,
-        reason: !currentUser ? 'No current user' : 'User rating is 0'
-      });
     }
   };
 
