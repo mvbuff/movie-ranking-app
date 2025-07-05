@@ -7,6 +7,7 @@ import SessionProvider from "@/components/session-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import AnalyticsProvider from '@/components/analytics-provider';
+import Script from 'next/script';
 
 // Initialize Prisma backup scheduler (server-side only)
 if (typeof window === 'undefined') {
@@ -33,6 +34,33 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Mobile Debug Console - Only loads on mobile devices with ?debug=1 */}
+        <Script
+          id="mobile-debug"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const hasDebugParam = window.location.search.includes('debug=1');
+                
+                if (isMobile && hasDebugParam) {
+                  const script = document.createElement('script');
+                  script.src = 'https://cdn.jsdelivr.net/npm/eruda@3.0.1/eruda.min.js';
+                  script.onload = function() {
+                    if (window.eruda) {
+                      window.eruda.init();
+                      console.log('🛠️ Mobile debug console loaded! Check the console icon.');
+                    }
+                  };
+                  document.head.appendChild(script);
+                }
+              })();
+            `
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <SessionProvider>
           <UserProvider>

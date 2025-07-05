@@ -351,33 +351,132 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
 
     // Optionally fetch user review and update clipboard if available (background operation)
     if (currentUser && movie.currentUserRating > 0) {
+      console.log('🔍 Starting background review fetch for enhanced share...', {
+        userId: currentUser.id,
+        movieId: movie.id,
+        movieTitle: movie.title,
+        userRating: movie.currentUserRating
+      });
+
       try {
-        const cacheBuster = `&t=${Date.now()}`;
-        const reviewResponse = await fetch(`/api/reviews?movieId=${movie.id}${cacheBuster}`, {
+        const cacheBuster = `t=${Date.now()}`;
+        const reviewUrl = `/api/reviews?movieId=${movie.id}&${cacheBuster}`;
+        
+        console.log('📡 Fetching reviews from:', reviewUrl);
+        
+        const reviewResponse = await fetch(reviewUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           cache: 'no-store'
         });
+
+        console.log('📡 Review fetch response:', {
+          status: reviewResponse.status,
+          statusText: reviewResponse.statusText,
+          ok: reviewResponse.ok,
+          headers: Object.fromEntries(reviewResponse.headers.entries())
+        });
+
         if (reviewResponse.ok) {
           const reviews: { id: string; userId: string; text: string; movieId: string; createdAt: string; user: { name: string } }[] = await reviewResponse.json();
+          
+          console.log('📝 Reviews received:', {
+            totalReviews: reviews.length,
+            reviewsData: reviews.map(r => ({
+              id: r.id,
+              userId: r.userId,
+              hasText: !!r.text,
+              textLength: r.text?.length || 0,
+              userName: r.user?.name
+            }))
+          });
+
           const userReviewData = reviews.find((review) => review.userId === currentUser.id);
+          
+          console.log('👤 User review search result:', {
+            lookingForUserId: currentUser.id,
+            foundReview: !!userReviewData,
+            reviewId: userReviewData?.id,
+            hasText: !!userReviewData?.text,
+            textPreview: userReviewData?.text?.substring(0, 50)
+          });
+
           if (userReviewData && userReviewData.text) {
             const userReview = userReviewData.text.trim();
             const enhancedMessage = `${categoryPrefix}: ${movie.title} (${movie.year}) .... ${letterRating}.... ${userReview}\n\n--shared via https://peer-movie-rating-app.vercel.app`;
             
-                         // Try to update clipboard with enhanced message (might fail on iOS, but that's OK)
-             try {
-               await navigator.clipboard.writeText(enhancedMessage);
-               const enhancedPreview = getPreview(enhancedMessage);
-               showToast(`Updated with your review!\n\n${enhancedPreview}`);
-             } catch {
-               // Silent failure is OK here - user already has basic message copied
-               console.log('Could not update clipboard with review (iOS limitation)');
-             }
+            console.log('✨ Attempting to update clipboard with enhanced message...', {
+              originalLength: initialMessage.length,
+              enhancedLength: enhancedMessage.length,
+              reviewLength: userReview.length
+            });
+
+            // Try to update clipboard with enhanced message (might fail on iOS, but that's OK)
+            try {
+              await navigator.clipboard.writeText(enhancedMessage);
+              const enhancedPreview = getPreview(enhancedMessage);
+              showToast(`Updated with your review!\n\n${enhancedPreview}`);
+              console.log('✅ Successfully updated clipboard with review!');
+            } catch (clipboardError) {
+              console.log('📋 Could not update clipboard with review (iOS limitation):', {
+                error: clipboardError instanceof Error ? {
+                  name: clipboardError.name,
+                  message: clipboardError.message
+                } : String(clipboardError),
+                isSecureContext: window.isSecureContext,
+                hasClipboardAPI: !!navigator.clipboard
+              });
+            }
+          } else {
+            console.log('❌ No review text found for user:', {
+              hasReviewData: !!userReviewData,
+              reviewText: userReviewData?.text,
+              reviewTextTrimmed: userReviewData?.text?.trim()
+            });
+          }
+        } else {
+          console.error('❌ Review fetch failed:', {
+            status: reviewResponse.status,
+            statusText: reviewResponse.statusText,
+            url: reviewUrl
+          });
+          
+          // Try to get response text for more details
+          try {
+            const errorText = await reviewResponse.text();
+            console.error('❌ Review fetch error response:', errorText);
+          } catch (textError) {
+            console.error('❌ Could not read error response text:', textError);
           }
         }
       } catch (error) {
-        // Silent failure for review fetch - user still has basic message
-        console.error('Failed to fetch user review for enhancement:', error);
+        console.error('🚨 REVIEW FETCH COMPLETELY FAILED:', {
+          error: error instanceof Error ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          } : String(error),
+          userAgent: navigator.userAgent,
+          isOnline: navigator.onLine,
+                     connectionType: (() => {
+             try {
+               const nav = navigator as { connection?: { effectiveType?: string } };
+               return nav.connection?.effectiveType || 'unknown';
+             } catch {
+               return 'unknown';
+             }
+           })(),
+          timestamp: new Date().toISOString()
+        });
       }
+    } else {
+      console.log('⏭️ Skipping review fetch:', {
+        hasCurrentUser: !!currentUser,
+        userRating: movie.currentUserRating,
+        reason: !currentUser ? 'No current user' : 'User rating is 0'
+      });
     }
   };
 
