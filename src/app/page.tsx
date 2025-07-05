@@ -1,32 +1,38 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import MovieSearch from "@/components/movie-search";
-import MovieList from "@/components/movie-list";
-import UserSwitcher from "@/components/user-switcher";
-import FriendList from "@/components/friend-list";
-import FilterControls from '@/components/filter-controls';
-import ReviewSearchResults from '@/components/review-search-results';
-import type { Category, SortKey } from '@/components/filter-controls';
-import { useUser } from '@/context/user-context';
-import { signOut, signIn } from 'next-auth/react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import MovieList from '@/components/movie-list';
+import MovieSearch from '@/components/movie-search';
+import FilterControls from '@/components/filter-controls';
+import FriendList from '@/components/friend-list';
+import ReviewSearchResults from '@/components/review-search-results';
+import ActivityFeedPopup from '@/components/activity-feed-popup';
+import { useUser } from '@/context/user-context';
 import { calculateUserAggregateScores } from '@/app/actions';
 import { Maximize2, Minimize2 } from 'lucide-react';
-import ActivityFeedPopup from '@/components/activity-feed-popup';
 
+type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
 type FilterCategory = Category | 'ALL' | 'WATCHLIST' | 'YET_TO_RATE';
 
 export default function Home() {
-  const { currentUser, isAdmin, sessionStatus } = useUser();
-  const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
+  const { status: sessionStatus } = useSession();
+  const { currentUser, isAdmin } = useUser();
+  const [refreshTimestamp, setRefreshTimestamp] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState<FilterCategory>('ALL');
-  const [scoreThreshold, setScoreThreshold] = useState(3);
+  const [scoreThreshold, setScoreThreshold] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewSearchTerm, setReviewSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<SortKey>('addedDateThenScore');
-  const [showActivityPopup, setShowActivityPopup] = useState(false);
+  const [sortBy, setSortBy] = useState<'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore'>('addedDateThenScore');
   const [isMoviesFullWidth, setIsMoviesFullWidth] = useState(true);
+  const [showActivityPopup, setShowActivityPopup] = useState(false);
+
+  // Use ref to prevent auto-calculation from running multiple times
+  const autoCalculationRef = useRef<{ hasRun: boolean; lastUserId: string | null }>({
+    hasRun: false,
+    lastUserId: null
+  });
 
   const isAuthenticated = sessionStatus === 'authenticated';
   const isLoading = sessionStatus === 'loading';
@@ -35,23 +41,32 @@ export default function Home() {
     setRefreshTimestamp(Date.now());
   }, []);
 
-  // Auto-calculate when page loads for authenticated users
+  // Auto-calculate when page loads for authenticated users (improved logic)
   useEffect(() => {
     if (isAuthenticated && currentUser && !isLoading) {
-      const autoCalculate = async () => {
-        try {
-          await calculateUserAggregateScores(currentUser.id);
-          setRefreshTimestamp(Date.now());
-        } catch (error) {
-          console.error('Auto-calculation failed:', error);
-        }
-      };
+      // Only run auto-calculation once per user session, not on every refresh
+      const shouldRunAutoCalculation = 
+        !autoCalculationRef.current.hasRun || 
+        autoCalculationRef.current.lastUserId !== currentUser.id;
 
-      // Small delay to ensure user context is ready
-      const timeoutId = setTimeout(autoCalculate, 100);
-      return () => clearTimeout(timeoutId);
+      if (shouldRunAutoCalculation) {
+        const autoCalculate = async () => {
+          try {
+            await calculateUserAggregateScores(currentUser.id);
+            autoCalculationRef.current.hasRun = true;
+            autoCalculationRef.current.lastUserId = currentUser.id;
+            setRefreshTimestamp(Date.now());
+          } catch (error) {
+            console.error('Auto-calculation failed:', error);
+          }
+        };
+
+        // Small delay to ensure user context is ready
+        const timeoutId = setTimeout(autoCalculate, 100);
+        return () => clearTimeout(timeoutId);
+      }
     }
-  }, [isAuthenticated, currentUser, isLoading]);
+  }, [isAuthenticated, currentUser, isLoading]); // Added currentUser back as dependency
 
   if (isLoading) {
     return (
@@ -109,8 +124,7 @@ export default function Home() {
         <div className="lg:hidden mb-6 p-4 bg-gray-50 rounded-lg shadow-sm border">
           <div className="flex flex-col gap-4">
             <div className="flex-grow">
-              {isAdmin && <UserSwitcher refreshTimestamp={refreshTimestamp} onUserChange={triggerDataRefresh} />}
-              {currentUser && <p className="text-sm text-gray-500 mt-2">Now acting as: <span className="font-bold">{currentUser.name}</span></p>}
+              {currentUser && <p className="text-sm text-gray-500">Acting as: <span className="font-bold">{currentUser.name}</span></p>}
             </div>
             <div className="flex gap-2">
               {isAdmin && (
@@ -194,8 +208,7 @@ export default function Home() {
               <div className="hidden lg:block p-4 bg-gray-50 rounded-lg shadow-sm border">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div className="flex-grow">
-                    {isAdmin && <UserSwitcher refreshTimestamp={refreshTimestamp} onUserChange={triggerDataRefresh} />}
-                    {currentUser && <p className="text-sm text-gray-500 mt-2">Now acting as: <span className="font-bold">{currentUser.name}</span></p>}
+                    {currentUser && <p className="text-sm text-gray-500">Acting as: <span className="font-bold">{currentUser.name}</span></p>}
                   </div>
                   <div className="flex flex-col items-stretch gap-2 flex-shrink-0">
                     {isAdmin && (
@@ -227,10 +240,10 @@ export default function Home() {
             <button
               onClick={() => setIsMoviesFullWidth(false)}
               className="flex items-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm"
-              title="Return to normal width"
+              title="Minimize movies"
             >
               <Minimize2 size={16} />
-              Normal Width
+              Minimize
             </button>
           </div>
           <MovieList 
@@ -247,7 +260,7 @@ export default function Home() {
       {/* Activity Feed Popup */}
       <ActivityFeedPopup 
         isOpen={showActivityPopup}
-        onClose={() => setShowActivityPopup(false)}
+        onClose={() => setShowActivityPopup(false)} 
       />
     </main>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import type { User } from '@prisma/client';
 
@@ -16,43 +16,30 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { data: session, status } = useSession();
+  const hasInitializedUser = useRef(false);
 
   const isAdmin = session?.user?.role === 'ADMIN';
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user) {
-      // For non-admin users, set their context immediately from the session data
-      if (!isAdmin) {
-        setCurrentUser({
-          id: session.user.id,
-          name: session.user.name || 'User',
-          email: session.user.email || null,
-          image: session.user.image || null,
-          // These are default values, as they exist on the real User model
-          role: 'USER',
-          status: 'ACTIVE',
-          password: null,
-          passwordResetRequired: false,
-          createdAt: new Date(),
-        });
-      } else {
-        // For admin users, set their own user data initially
-        // The UserSwitcher component will allow them to switch to other users
-        setCurrentUser({
-          id: session.user.id,
-          name: session.user.name || 'Admin User',
-          email: session.user.email || null,
-          image: session.user.image || null,
-          role: 'ADMIN',
-          status: 'ACTIVE',
-          password: null,
-          passwordResetRequired: false,
-          createdAt: new Date(),
-        });
-      }
+    if (status === 'authenticated' && session?.user && !hasInitializedUser.current) {
+      // Always set the authenticated user as the current user initially
+      // This ensures admins act as themselves by default
+      setCurrentUser({
+        id: session.user.id,
+        name: session.user.name || (isAdmin ? 'Admin User' : 'User'),
+        email: session.user.email || null,
+        image: session.user.image || null,
+        role: (session.user.role as 'USER' | 'ADMIN') || 'USER',
+        status: 'ACTIVE',
+        password: null,
+        passwordResetRequired: false,
+        createdAt: new Date(),
+      });
+      hasInitializedUser.current = true;
     } else if (status === 'unauthenticated') {
       // Clear user when logged out
       setCurrentUser(null);
+      hasInitializedUser.current = false;
     }
   }, [session, status, isAdmin]);
 

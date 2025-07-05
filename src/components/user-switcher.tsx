@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import type { User } from '@prisma/client';
 import { useUser } from '@/context/user-context';
@@ -15,6 +15,10 @@ export default function UserSwitcher({ refreshTimestamp, onUserChange }: UserSwi
   const { currentUser, setCurrentUser } = useUser();
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
+  
+  // Use refs to prevent unnecessary refreshes
+  const lastUserCountRef = useRef(0);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     async function fetchUsers() {
@@ -26,12 +30,12 @@ export default function UserSwitcher({ refreshTimestamp, onUserChange }: UserSwi
         }
         const data: User[] = await response.json();
 
-        const newUserAdded = data.length > users.length;
+        const userCountChanged = data.length !== lastUserCountRef.current;
+        lastUserCountRef.current = data.length;
         setUsers(data);
         
-        // Only auto-select a user if one isn't already selected,
-        // OR if a new user was just added to the list.
-        if (data.length > 0 && (!currentUser || newUserAdded)) {
+        // Only auto-select user in specific scenarios to reduce refreshes
+        if (data.length > 0 && !hasInitializedRef.current) {
           let userToSelect = null;
           
           // First try to find the session user (logged-in admin) in the list
@@ -47,9 +51,14 @@ export default function UserSwitcher({ refreshTimestamp, onUserChange }: UserSwi
           // Only set the user if it's different from the current one
           if (userToSelect && userToSelect.id !== currentUser?.id) {
             setCurrentUser(userToSelect);
-            if (onUserChange) {
+            hasInitializedRef.current = true;
+            
+            // Only call onUserChange for manual user changes, not initial setup
+            if (onUserChange && userCountChanged && hasInitializedRef.current) {
               onUserChange();
             }
+          } else {
+            hasInitializedRef.current = true;
           }
         }
 
@@ -58,9 +67,10 @@ export default function UserSwitcher({ refreshTimestamp, onUserChange }: UserSwi
       } finally {
         setLoading(false);
       }
-    }
-    fetchUsers();
-  }, [refreshTimestamp, users.length, currentUser, setCurrentUser, session, onUserChange]); // Include session to react to login changes
+                        }
+      fetchUsers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTimestamp]); // Simplified dependencies to prevent cascades
 
   const handleUserChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedUserId = event.target.value;

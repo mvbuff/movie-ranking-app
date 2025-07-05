@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useUser } from '@/context/user-context';
 import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
@@ -58,11 +58,26 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
   const [deletingMovie, setDeletingMovie] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ movieId: string; movieTitle: string; movieYear: number } | null>(null);
 
+  // Add refs to prevent unnecessary fetches
+  const lastFetchParams = useRef<{
+    userId: string | null;
+    timestamp: number | null;
+  }>({ userId: null, timestamp: null });
+
   const fetchMovieData = useCallback(async () => {
+    // Only fetch if parameters have actually changed
+    const shouldFetch = 
+      lastFetchParams.current.userId !== currentUser?.id ||
+      (calculationTimestamp && lastFetchParams.current.timestamp !== calculationTimestamp);
+
+    if (!shouldFetch && movies.length > 0) {
+      return; // Skip fetch if data is already loaded and params haven't changed
+    }
+
     setLoading(true);
     try {
-      // Add cache-busting parameter to force fresh data
-      const cacheBuster = `?t=${Date.now()}`;
+      // Add cache-busting parameter to force fresh data when needed
+      const cacheBuster = calculationTimestamp ? `?t=${calculationTimestamp}` : `?t=${Date.now()}`;
       
       if (readOnlyMode || !currentUser) {
         // Read-only mode: fetch movies with public aggregate scores
@@ -85,6 +100,12 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         }));
 
         setMovies(moviesWithData);
+        
+        // Update last fetch params
+        lastFetchParams.current = {
+          userId: null,
+          timestamp: calculationTimestamp
+        };
       } else {
         // Authenticated mode: fetch with user-specific data
         const [moviesRes, ratingsRes, scoresRes, watchlistRes] = await Promise.all([
@@ -112,17 +133,24 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         }));
 
         setMovies(moviesWithData);
+        
+        // Update last fetch params
+        lastFetchParams.current = {
+          userId: currentUser.id,
+          timestamp: calculationTimestamp
+        };
       }
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [currentUser, readOnlyMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id, readOnlyMode, calculationTimestamp]); // Suppressing movies.length to prevent cascade
 
   useEffect(() => {
     fetchMovieData();
-  }, [fetchMovieData, calculationTimestamp]);
+  }, [fetchMovieData]);
 
   const handleRatingSubmit = async (movieId: string, score: number) => {
     if (!currentUser) return;
