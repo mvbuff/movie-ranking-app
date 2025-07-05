@@ -110,32 +110,29 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         };
       } else {
         // Authenticated mode: fetch with user-specific data
-        const [moviesRes, ratingsRes, scoresRes, watchlistRes, reviewsRes] = await Promise.all([
+        const [moviesRes, ratingsRes, scoresRes, watchlistRes] = await Promise.all([
           fetch(`/api/movies${cacheBuster}`, { cache: 'no-store' }),
           fetch(`/api/ratings?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
           fetch(`/api/aggregate-scores?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
           fetch(`/api/watchlist?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
-          fetch(`/api/reviews?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
         ]);
-        if (!moviesRes.ok || !ratingsRes.ok || !scoresRes.ok || !watchlistRes.ok || !reviewsRes.ok) throw new Error('Failed to fetch data');
+        if (!moviesRes.ok || !ratingsRes.ok || !scoresRes.ok || !watchlistRes.ok) throw new Error('Failed to fetch data');
         
         const allMovies: Movie[] = await moviesRes.json();
         const userRatings: Rating[] = await ratingsRes.json();
         const aggregateScores: AggregateScore[] = await scoresRes.json();
         const watchlistItems: { movieId: string }[] = await watchlistRes.json();
-        const userReviews: { movieId: string; reviewText: string }[] = await reviewsRes.json();
         
         const ratingsMap = new Map(userRatings.map(r => [r.movieId, r.score]));
         const scoresMap = new Map(aggregateScores.map(s => [s.movieId, s.score]));
         const watchlistSet = new Set(watchlistItems.map(w => w.movieId));
-        const reviewsMap = new Map(userReviews.map(r => [r.movieId, r.reviewText]));
 
         const moviesWithData = allMovies.map(movie => ({
           ...movie,
           currentUserRating: ratingsMap.get(movie.id) || 0,
           aggregateScore: scoresMap.get(movie.id) ?? null,
           isInWatchlist: watchlistSet.has(movie.id),
-          currentUserReview: reviewsMap.get(movie.id) || null,
+          currentUserReview: null, // Will fetch when needed for sharing
         }));
 
         setMovies(moviesWithData);
@@ -244,12 +241,29 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     const categoryPrefix = getCategoryPrefix(movie.category);
     const letterRating = movie.currentUserRating > 0 ? getRatingDisplay(movie.currentUserRating) : 'NR';
     
-    // Create the complete message with all available data
+    // Create basic message
     let message = `${categoryPrefix}: ${movie.title} (${movie.year}) .... ${letterRating}`;
     
+    // Try to get user review if user has rated the movie
+    let userReview = null;
+    if (!readOnlyMode && currentUser && movie.currentUserRating > 0) {
+      try {
+        const reviewResponse = await fetch(`/api/reviews?movieId=${movie.id}`, { cache: 'no-store' });
+        if (reviewResponse.ok) {
+          const reviews: { userId: string; text: string }[] = await reviewResponse.json();
+          const userReviewData = reviews.find(review => review.userId === currentUser.id);
+          if (userReviewData?.text) {
+            userReview = userReviewData.text.trim();
+          }
+        }
+      } catch (error) {
+        console.log('Could not fetch review, continuing without it:', error);
+      }
+    }
+    
     // Add review text if available
-    if (!readOnlyMode && currentUser && movie.currentUserRating > 0 && movie.currentUserReview) {
-      message += `.... ${movie.currentUserReview.trim()}`;
+    if (userReview) {
+      message += `.... ${userReview}`;
     }
     
     message += `\n\n--shared via https://peer-movie-rating-app.vercel.app`;
@@ -265,8 +279,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     try {
       await navigator.clipboard.writeText(message);
       const preview = getPreview(message);
-      const hasReview = !readOnlyMode && currentUser && movie.currentUserRating > 0 && movie.currentUserReview;
-      showToast(`${hasReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
+      showToast(`${userReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
     } catch (error) {
       // Comprehensive debug logging for clipboard failures
       const errorInfo = error instanceof Error ? {
@@ -315,8 +328,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         if (successful) {
           console.log('✅ Fallback copy successful using execCommand');
           const preview = getPreview(message);
-          const hasReview = !readOnlyMode && currentUser && movie.currentUserRating > 0 && movie.currentUserReview;
-          showToast(`${hasReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
+          showToast(`${userReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
         } else {
           console.error('❌ Fallback copy failed - execCommand returned false');
           console.log('📋 Attempting manual copy dialog fallback...');
