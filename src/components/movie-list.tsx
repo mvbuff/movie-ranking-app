@@ -261,10 +261,28 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       return lastTwoLines.length > 80 ? lastTwoLines.substring(0, 80) + '...' : lastTwoLines;
     };
 
+    // Helper function to ensure text is properly decoded (fixes iOS URL encoding issues)
+    const ensurePlainText = (text: string) => {
+      try {
+        // Check if text is URL-encoded by looking for common patterns
+        if (text.includes('%20') || text.includes('%3A') || text.includes('%0A')) {
+          return decodeURIComponent(text);
+        }
+        return text;
+      } catch (error) {
+        // If decoding fails, return original text
+        console.log('Text decode failed, using original:', error);
+        return text;
+      }
+    };
+
+    // Ensure our message is plain text
+    const plainMessage = ensurePlainText(message);
+
     // Copy to clipboard IMMEDIATELY to preserve user interaction context (iOS requirement)
     try {
-      await navigator.clipboard.writeText(message);
-      const preview = getPreview(message);
+      await navigator.clipboard.writeText(plainMessage);
+      const preview = getPreview(plainMessage);
       const hasReview = !readOnlyMode && currentUser && movie.currentUserReview;
       showToast(`${hasReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
     } catch (error) {
@@ -292,7 +310,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
         ...errorInfo,
         movieTitle: movie.title,
-        messageLength: message.length,
+        messageLength: plainMessage.length,
         timestamp: new Date().toISOString()
       };
       
@@ -303,7 +321,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       try {
         console.log('🔄 Attempting fallback copy method (execCommand)...');
         const textArea = document.createElement('textarea');
-        textArea.value = message;
+        textArea.value = plainMessage;
         textArea.style.position = 'fixed';
         textArea.style.opacity = '0';
         document.body.appendChild(textArea);
@@ -314,7 +332,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         
         if (successful) {
           console.log('✅ Fallback copy successful using execCommand');
-          const preview = getPreview(message);
+          const preview = getPreview(plainMessage);
           const hasReview = !readOnlyMode && currentUser && movie.currentUserReview;
           showToast(`${hasReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
         } else {
@@ -323,7 +341,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
           
           // Final fallback: Show the text in a prompt
           if (confirm('Copy failed. Would you like to see the text to copy manually?')) {
-            prompt('Copy this text:', message);
+            prompt('Copy this text:', plainMessage);
             console.log('👤 Manual copy dialog shown to user');
           } else {
             showToast('Failed to copy to clipboard', 'error');
@@ -349,7 +367,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
       
         // Final fallback: Show the text in a prompt
         if (confirm('Copy failed. Would you like to see the text to copy manually?')) {
-          prompt('Copy this text:', message);
+          prompt('Copy this text:', plainMessage);
           console.log('👤 Manual copy dialog shown after all methods failed');
         } else {
           showToast('Failed to copy to clipboard', 'error');
