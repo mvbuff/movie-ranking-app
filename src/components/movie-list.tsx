@@ -214,7 +214,11 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     let userReview = '';
     if (currentUser && movie.currentUserRating > 0) {
       try {
-        const reviewResponse = await fetch(`/api/reviews?movieId=${movie.id}`);
+        // Add cache-busting parameter to ensure fresh review data
+        const cacheBuster = `&t=${Date.now()}`;
+        const reviewResponse = await fetch(`/api/reviews?movieId=${movie.id}${cacheBuster}`, {
+          cache: 'no-store'
+        });
         if (reviewResponse.ok) {
           const reviews: { id: string; userId: string; text: string; movieId: string; createdAt: string; user: { name: string } }[] = await reviewResponse.json();
           const userReviewData = reviews.find((review) => review.userId === currentUser.id);
