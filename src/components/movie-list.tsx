@@ -238,11 +238,120 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     const categoryPrefix = getCategoryPrefix(movie.category);
     const letterRating = movie.currentUserRating > 0 ? getRatingDisplay(movie.currentUserRating) : 'NR';
     
-    // Try to fetch user's review for this movie
-    let userReview = '';
+    // Create initial message without review (to copy immediately)
+    let initialMessage = `${categoryPrefix}: ${movie.title} (${movie.year})`;
+    
+    if (!readOnlyMode && currentUser && movie.currentUserRating > 0) {
+      initialMessage += ` .... ${letterRating}\n\n--shared via https://peer-movie-rating-app.vercel.app`;
+    } else {
+      initialMessage += ` .... NR\n\n--shared via https://peer-movie-rating-app.vercel.app`;
+    }
+
+    // Helper function to get preview of copied content (last 2 lines)
+    const getPreview = (text: string) => {
+      const lines = text.split('\n').filter(line => line.trim() !== '');
+      const lastTwoLines = lines.slice(-2).join('\n');
+      return lastTwoLines.length > 80 ? lastTwoLines.substring(0, 80) + '...' : lastTwoLines;
+    };
+
+    // Copy to clipboard IMMEDIATELY to preserve user interaction context (iOS requirement)
+    try {
+      await navigator.clipboard.writeText(initialMessage);
+      const preview = getPreview(initialMessage);
+      showToast(`Copied to clipboard!\n\n${preview}`);
+    } catch (error) {
+      // Comprehensive debug logging for clipboard failures
+      const errorInfo = error instanceof Error ? {
+        errorName: error.name,
+        errorMessage: error.message,
+        errorStack: error.stack
+      } : {
+        errorName: 'Unknown',
+        errorMessage: String(error),
+        errorStack: undefined
+      };
+
+      const debugInfo = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        isSecureContext: window.isSecureContext,
+        protocol: window.location.protocol,
+        hasClipboardAPI: !!navigator.clipboard,
+        hasClipboardWriteText: !!navigator.clipboard?.writeText,
+        documentHasFocus: document.hasFocus(),
+        documentVisibilityState: document.visibilityState,
+        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+        isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
+        ...errorInfo,
+        movieTitle: movie.title,
+        messageLength: initialMessage.length,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.error('🚨 CLIPBOARD COPY FAILED - Debug Info:', debugInfo);
+      console.error('Original error:', error);
+      
+      // Fallback for iOS/Safari: Use deprecated execCommand
+      try {
+        console.log('🔄 Attempting fallback copy method (execCommand)...');
+        const textArea = document.createElement('textarea');
+        textArea.value = initialMessage;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (successful) {
+          console.log('✅ Fallback copy successful using execCommand');
+          const preview = getPreview(initialMessage);
+          showToast(`Copied to clipboard!\n\n${preview}`);
+        } else {
+          console.error('❌ Fallback copy failed - execCommand returned false');
+          console.log('📋 Attempting manual copy dialog fallback...');
+          
+          // Final fallback: Show the text in a prompt
+          if (confirm('Copy failed. Would you like to see the text to copy manually?')) {
+            prompt('Copy this text:', initialMessage);
+            console.log('👤 Manual copy dialog shown to user');
+          } else {
+            showToast('Failed to copy to clipboard', 'error');
+            console.log('👤 User declined manual copy dialog');
+          }
+        }
+              } catch (fallbackError) {
+          const fallbackErrorInfo = fallbackError instanceof Error ? {
+            fallbackErrorName: fallbackError.name,
+            fallbackErrorMessage: fallbackError.message,
+            fallbackErrorStack: fallbackError.stack
+          } : {
+            fallbackErrorName: 'Unknown',
+            fallbackErrorMessage: String(fallbackError),
+            fallbackErrorStack: undefined
+          };
+
+          console.error('🚨 FALLBACK COPY ALSO FAILED:', {
+            ...debugInfo,
+            ...fallbackErrorInfo
+          });
+          console.error('Fallback error:', fallbackError);
+        
+        // Final fallback: Show the text in a prompt
+        if (confirm('Copy failed. Would you like to see the text to copy manually?')) {
+          prompt('Copy this text:', initialMessage);
+          console.log('👤 Manual copy dialog shown after all methods failed');
+        } else {
+          showToast('Failed to copy to clipboard', 'error');
+          console.log('👤 User declined manual copy dialog after all methods failed');
+        }
+      }
+    }
+
+    // Optionally fetch user review and update clipboard if available (background operation)
     if (currentUser && movie.currentUserRating > 0) {
       try {
-        // Add cache-busting parameter to ensure fresh review data
         const cacheBuster = `&t=${Date.now()}`;
         const reviewResponse = await fetch(`/api/reviews?movieId=${movie.id}${cacheBuster}`, {
           cache: 'no-store'
@@ -251,32 +360,24 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
           const reviews: { id: string; userId: string; text: string; movieId: string; createdAt: string; user: { name: string } }[] = await reviewResponse.json();
           const userReviewData = reviews.find((review) => review.userId === currentUser.id);
           if (userReviewData && userReviewData.text) {
-            userReview = userReviewData.text.trim();
+            const userReview = userReviewData.text.trim();
+            const enhancedMessage = `${categoryPrefix}: ${movie.title} (${movie.year}) .... ${letterRating}.... ${userReview}\n\n--shared via https://peer-movie-rating-app.vercel.app`;
+            
+                         // Try to update clipboard with enhanced message (might fail on iOS, but that's OK)
+             try {
+               await navigator.clipboard.writeText(enhancedMessage);
+               const enhancedPreview = getPreview(enhancedMessage);
+               showToast(`Updated with your review!\n\n${enhancedPreview}`);
+             } catch {
+               // Silent failure is OK here - user already has basic message copied
+               console.log('Could not update clipboard with review (iOS limitation)');
+             }
           }
         }
       } catch (error) {
-        console.error('Failed to fetch user review:', error);
+        // Silent failure for review fetch - user still has basic message
+        console.error('Failed to fetch user review for enhancement:', error);
       }
-    }
-    
-    // Format the message according to the specified pattern
-    let message = `${categoryPrefix}: ${movie.title} (${movie.year})`;
-    
-    if (!readOnlyMode && currentUser && movie.currentUserRating > 0) {
-      message += ` .... ${letterRating}`;
-      if (userReview) {
-        message += `.... ${userReview}\n\n--shared via https://peer-movie-rating-app.vercel.app`;
-      }
-    } else {
-      message += ` .... NR\n\n--shared via https://peer-movie-rating-app.vercel.app`; // Not rated
-    }
-    
-    try {
-      await navigator.clipboard.writeText(message);
-      showToast('Movie details copied to clipboard!');
-    } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
-      showToast('Failed to copy to clipboard', 'error');
     }
   };
 

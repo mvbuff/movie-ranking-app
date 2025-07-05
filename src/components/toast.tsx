@@ -9,7 +9,7 @@ interface ToastProps {
 }
 
 export default function Toast({ message, type, onClose }: ToastProps) {
-  const baseClasses = 'fixed top-5 right-5 w-auto max-w-sm p-4 rounded-lg shadow-lg text-white flex items-center justify-between animate-fade-in-down';
+  const baseClasses = 'fixed top-5 right-5 w-auto max-w-md p-4 rounded-lg shadow-lg text-white flex items-start justify-between animate-fade-in-down';
   const typeClasses = {
     success: 'bg-green-500',
     error: 'bg-red-500',
@@ -18,9 +18,15 @@ export default function Toast({ message, type, onClose }: ToastProps) {
 
   return (
     <div className={`${baseClasses} ${typeClasses[type]}`}>
-      <span>{message}</span>
-      <button onClick={onClose} className="ml-4 p-1 rounded-full hover:bg-white/20">
-        <X size={20} />
+      <div className="flex-1 whitespace-pre-line text-sm leading-relaxed pr-2">
+        {message}
+      </div>
+      <button 
+        onClick={onClose} 
+        className="flex-shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"
+        aria-label="Close notification"
+      >
+        <X size={16} />
       </button>
     </div>
   );
