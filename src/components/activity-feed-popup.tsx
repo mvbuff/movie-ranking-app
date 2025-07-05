@@ -11,9 +11,12 @@ import {
   Users,
   UserPlus,
   Calendar,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import { useUser } from '@/context/user-context';
+import { useToast } from '@/context/toast-context';
 
 interface ActivityItem {
   id: string;
@@ -45,6 +48,10 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingActivity, setDeletingActivity] = useState<string | null>(null);
+  
+  const { isAdmin } = useUser();
+  const { showToast } = useToast();
 
   // Click outside to close functionality
   const modalContentRef = useClickOutside<HTMLDivElement>({
@@ -107,6 +114,43 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
     if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d`;
     
     return date.toLocaleDateString();
+  };
+
+  const handleDeleteActivity = async (activityId: string) => {
+    if (!isAdmin) {
+      showToast('Admin access required', 'error');
+      return;
+    }
+
+    setDeletingActivity(activityId);
+
+    // Optimistically remove from UI
+    const previousActivities = [...activities];
+    setActivities(activities.filter(a => a.id !== activityId));
+
+    try {
+      const response = await fetch('/api/activities', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activityId }),
+      });
+
+      if (response.ok) {
+        showToast('Activity deleted successfully', 'success');
+      } else {
+        // Revert optimistic update on failure
+        setActivities(previousActivities);
+        const result = await response.json();
+        showToast(`Failed to delete activity: ${result.error}`, 'error');
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setActivities(previousActivities);
+      console.error('Failed to delete activity:', error);
+      showToast('Failed to delete activity', 'error');
+    } finally {
+      setDeletingActivity(null);
+    }
   };
 
   if (!isOpen) return null;
@@ -175,7 +219,7 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
               {activities.map((activity) => (
                 <div 
                   key={activity.id} 
-                  className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                  className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group"
                 >
                   {/* User Avatar */}
                   <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -228,11 +272,29 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
                           </div>
                         )}
                         
-                        <div className="flex items-center gap-1 mt-2">
-                          <Calendar size={10} className="text-gray-400 flex-shrink-0" />
-                          <span className="text-xs text-gray-500">
-                            {formatTimeAgo(activity.createdAt)}
-                          </span>
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center gap-1">
+                            <Calendar size={10} className="text-gray-400 flex-shrink-0" />
+                            <span className="text-xs text-gray-500">
+                              {formatTimeAgo(activity.createdAt)}
+                            </span>
+                          </div>
+                          
+                          {/* Admin Delete Button */}
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleDeleteActivity(activity.id)}
+                              disabled={deletingActivity === activity.id}
+                              className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 transition-all disabled:opacity-50"
+                              title="Delete activity (Admin only)"
+                            >
+                              {deletingActivity === activity.id ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-500"></div>
+                              ) : (
+                                <Trash2 size={12} />
+                              )}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

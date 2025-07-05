@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { ACTIVITY_FEED_LIMIT } from '@/lib/activity-logger';
+import { getServerSession } from 'next-auth';
 
 interface RawActivity {
   id: string;
@@ -114,5 +115,60 @@ export async function GET(request: NextRequest) {
     ];
     
     return NextResponse.json(errorActivities);
+  }
+}
+
+// DELETE: Admin-only activity deletion
+export async function DELETE(request: NextRequest) {
+  try {
+    // Check authentication
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const user = await prisma.user.findUnique({
+      where: { name: session.user?.name || '' },
+      select: { role: true, id: true, name: true }
+    });
+
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
+    const { activityId } = await request.json();
+
+    if (!activityId) {
+      return NextResponse.json({ error: 'Activity ID is required' }, { status: 400 });
+    }
+
+    // Get activity details before deletion for logging
+    const activity = await prisma.activity.findUnique({
+      where: { id: activityId },
+      select: { id: true, type: true, description: true }
+    });
+
+    if (!activity) {
+      return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
+    }
+
+    // Delete the activity
+    await prisma.activity.delete({
+      where: { id: activityId }
+    });
+
+    console.log(`🗑️ Admin ${user.name} deleted activity: ${activity.type} - ${activity.description}`);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Activity deleted successfully'
+    }, { status: 200 });
+
+  } catch (error) {
+    console.error('Activity deletion error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error during activity deletion' 
+    }, { status: 500 });
   }
 } 

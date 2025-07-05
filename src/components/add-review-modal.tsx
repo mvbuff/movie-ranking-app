@@ -10,7 +10,7 @@ interface AddReviewModalProps {
   movieTitle: string;
   userId: string;
   onClose: () => void;
-  onReviewAdded: () => void;
+  onReviewAdded: (reviewText: string) => void;
 }
 
 export default function AddReviewModal({ 
@@ -50,7 +50,7 @@ export default function AddReviewModal({
 
       if (response.ok) {
         showToast('Review added successfully!', 'success');
-        onReviewAdded();
+        onReviewAdded(reviewText.trim());
         onClose();
       } else {
         const error = await response.json();

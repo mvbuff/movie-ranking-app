@@ -247,8 +247,8 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     // Create the complete message with all available data
     let message = `${categoryPrefix}: ${movie.title} (${movie.year}) .... ${letterRating}`;
     
-    // Add review text if available
-    if (!readOnlyMode && currentUser && movie.currentUserRating > 0 && movie.currentUserReview) {
+    // Add review text if available (regardless of rating status)
+    if (!readOnlyMode && currentUser && movie.currentUserReview) {
       message += `.... ${movie.currentUserReview.trim()}`;
     }
     
@@ -265,7 +265,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     try {
       await navigator.clipboard.writeText(message);
       const preview = getPreview(message);
-      const hasReview = !readOnlyMode && currentUser && movie.currentUserRating > 0 && movie.currentUserReview;
+      const hasReview = !readOnlyMode && currentUser && movie.currentUserReview;
       showToast(`${hasReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
     } catch (error) {
       // Comprehensive debug logging for clipboard failures
@@ -315,7 +315,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         if (successful) {
           console.log('✅ Fallback copy successful using execCommand');
           const preview = getPreview(message);
-          const hasReview = !readOnlyMode && currentUser && movie.currentUserRating > 0 && movie.currentUserReview;
+          const hasReview = !readOnlyMode && currentUser && movie.currentUserReview;
           showToast(`${hasReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
         } else {
           console.error('❌ Fallback copy failed - execCommand returned false');
@@ -509,9 +509,22 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
           movieTitle={activeReviews.movieTitle}
           currentUserId={readOnlyMode ? undefined : currentUser?.id}
           onClose={() => setActiveReviews(null)}
-          onReviewDeleted={() => {
-            // Refresh movie data to update review counts
-            fetchMovieData();
+          onReviewDeleted={(userId: string) => {
+            // Optimistically update the UI immediately
+            setMovies(movies.map(m => 
+              m.id === activeReviews.movieId 
+                ? { 
+                    ...m, 
+                    currentUserReview: userId === currentUser?.id ? null : m.currentUserReview,
+                    reviewsCount: m.reviewsCount - 1 
+                  }
+                : m
+            ));
+            
+            // Refresh movie data after a short delay to ensure DB is updated
+            setTimeout(() => {
+              fetchMovieData();
+            }, 500);
           }}
         />
       )}
@@ -521,9 +534,22 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
           movieTitle={addReviewModal.movieTitle}
           userId={currentUser.id}
           onClose={() => setAddReviewModal(null)}
-          onReviewAdded={() => {
-            // Refresh movie data to show the new review
-            fetchMovieData();
+          onReviewAdded={(reviewText: string) => {
+            // Optimistically update the UI immediately
+            setMovies(movies.map(m => 
+              m.id === addReviewModal.movieId 
+                ? { 
+                    ...m, 
+                    currentUserReview: reviewText.trim(),
+                    reviewsCount: m.reviewsCount + 1 
+                  }
+                : m
+            ));
+            
+            // Refresh movie data after a short delay to ensure DB is updated
+            setTimeout(() => {
+              fetchMovieData();
+            }, 500);
           }}
         />
       )}

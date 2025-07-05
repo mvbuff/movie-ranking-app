@@ -35,7 +35,7 @@ interface ReviewsModalProps {
   movieTitle: string;
   currentUserId?: string;
   onClose: () => void;
-  onReviewDeleted?: () => void;
+  onReviewDeleted?: (userId: string) => void;
 }
 
 interface MovieInfo {
@@ -115,7 +115,7 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
 
       if (response.ok) {
         // Success - the optimistic update was correct
-        onReviewDeleted?.();
+        onReviewDeleted?.(currentUserId);
         
         // Fetch fresh data to ensure consistency
         await fetchReviewsAndRatings();
