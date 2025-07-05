@@ -316,17 +316,27 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     };
 
     // Debug logging to see what's happening (will appear in Vercel logs)
-    await serverLog('log', 'COPY DEBUG v2.0 - Original message:', message);
-    await serverLog('log', 'COPY DEBUG v2.0 - Plain message:', plainMessage);
-    await serverLog('log', 'COPY DEBUG v2.0 - Message contains URL encoding:', message.includes('%20') || message.includes('%3A') || message.includes('%0A'));
-    await serverLog('log', 'COPY DEBUG v2.0 - Fix is active!', { movieTitle: movie.title });
+    const debugVersion = 'v2.1-' + Date.now();
+    await serverLog('log', `COPY DEBUG ${debugVersion} - Original message:`, message);
+    await serverLog('log', `COPY DEBUG ${debugVersion} - Plain message:`, plainMessage);
+    await serverLog('log', `COPY DEBUG ${debugVersion} - Message contains URL encoding:`, message.includes('%20') || message.includes('%3A') || message.includes('%0A'));
+    await serverLog('log', `COPY DEBUG ${debugVersion} - Fix is active!`, { movieTitle: movie.title });
 
     // Copy to clipboard IMMEDIATELY to preserve user interaction context (iOS requirement)
     try {
-      await navigator.clipboard.writeText(plainMessage);
+      // For iOS: Clear clipboard first, then write clean text (double-write to force refresh)
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        await navigator.clipboard.writeText(''); // Clear first
+        await new Promise(resolve => setTimeout(resolve, 10)); // Brief pause
+        await navigator.clipboard.writeText(plainMessage); // First write
+        await new Promise(resolve => setTimeout(resolve, 10)); // Another brief pause
+      }
+      
+      await navigator.clipboard.writeText(plainMessage); // Final write (works for all browsers)
       await serverLog('log', '✅ Successfully copied to clipboard', { 
         messageLength: plainMessage.length,
-        movieTitle: movie.title 
+        movieTitle: movie.title,
+        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent)
       });
       const preview = getPreview(plainMessage);
       const hasReview = !readOnlyMode && currentUser && movie.currentUserReview;
