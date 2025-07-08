@@ -12,9 +12,9 @@ import {
   Minus,
   Users,
   UserPlus,
-  Calendar,
-  ExternalLink
+  Calendar
 } from 'lucide-react';
+import TmdbLink from './tmdb-link';
 
 interface ActivityItem {
   id: string;
@@ -264,14 +264,7 @@ export default function ActivityFeed({ limit }: ActivityFeedProps) {
                           </span>
                         </div>
                         {activity.movie.tmdbId && (
-                          <a
-                            href={`https://www.themoviedb.org/movie/${activity.movie.tmdbId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-gray-400 hover:text-gray-600"
-                          >
-                            <ExternalLink size={12} />
-                          </a>
+                          <TmdbLink tmdbId={activity.movie.tmdbId} />
                         )}
                       </div>
                     )}

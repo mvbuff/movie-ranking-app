@@ -10,6 +10,7 @@ import ReviewsModal from './reviews-modal';
 import AddReviewModal from './add-review-modal';
 import { getRatingDisplay } from '@/lib/rating-system';
 import { useToast } from '@/context/toast-context';
+import MovieTitleLink from './movie-title-link';
 
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
@@ -25,6 +26,7 @@ interface Movie {
   tmdbRating: number | null;
   tmdbVoteCount: number | null;
   category: Category;
+  mediaType: string;
   createdAt: string;
   ratingsCount: number;
   reviewsCount: number;
@@ -708,23 +710,13 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
             <div className="p-4 flex flex-col flex-1">
               {/* Mobile-first responsive layout for title and buttons */}
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
-                <a
-                  href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <MovieTitleLink
+                  tmdbId={movie.tmdbId}
+                  title={movie.title}
+                  year={movie.year}
+                  mediaType={movie.mediaType}
                   className="font-bold text-base sm:text-lg text-gray-900 hover:text-indigo-600 transition-colors line-clamp-2 sm:line-clamp-1 sm:flex-1 sm:min-w-0"
-                  title={`${movie.title} (${movie.year > 0 ? movie.year : 'N/A'})`}
-                  style={{
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                    wordBreak: 'break-word',
-                    hyphens: 'auto'
-                  }}
-                >
-                  {movie.title} ({movie.year > 0 ? movie.year : 'N/A'})
-                </a>
+                />
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
                   {/* Action buttons */}
                   <div className="flex gap-1">

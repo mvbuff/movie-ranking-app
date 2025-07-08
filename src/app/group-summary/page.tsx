@@ -7,6 +7,7 @@ import { Star, Share2, ExternalLink } from 'lucide-react';
 import { Suspense } from 'react';
 import { getRatingDisplay } from '@/lib/rating-system';
 import { useToast } from '@/context/toast-context';
+import TmdbLink from '@/components/tmdb-link';
 
 interface MovieSummary {
   id: string;
@@ -209,15 +210,10 @@ function GroupSummaryContent() {
                           </div>
                         ))}
                       </div>
-                      <a
-                        href={`https://www.themoviedb.org/movie/${movie.tmdbId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-3 inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
-                      >
-                        <ExternalLink size={14} />
-                        View on TMDB
-                      </a>
+                      <div className="mt-3 inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm">
+                        <TmdbLink tmdbId={movie.tmdbId} size={14} className="text-blue-600 hover:text-blue-800" />
+                        <span>View on TMDB</span>
+                      </div>
                     </div>
                   </div>
                 ))}

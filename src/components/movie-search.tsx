@@ -102,6 +102,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
           category: category,
           tmdbRating: itemToReview.vote_average,
           tmdbVoteCount: itemToReview.vote_count,
+          mediaType: itemToReview.media_type, // Pass the media type from TMDB
           userId: currentUser.id,
         }),
       });

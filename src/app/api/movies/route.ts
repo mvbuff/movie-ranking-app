@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { safeDeleteMovie } from '@/lib/safe-movie-deletion';
 import { invalidateMovieCache } from '@/lib/cache';
+import { cacheMediaType } from '@/lib/tmdb-utils';
 
 // Disable static generation to ensure fresh data
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,7 @@ export async function GET() {
         tmdbRating: true,
         tmdbVoteCount: true,
         category: true,
+        mediaType: true,
         createdAt: true,
         _count: {
           select: {
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { tmdbId, title, year, posterUrl, category, tmdbRating, tmdbVoteCount, userId } = await request.json();
+    const { tmdbId, title, year, posterUrl, category, tmdbRating, tmdbVoteCount, mediaType, userId } = await request.json();
 
     if (!title || !category) {
       return NextResponse.json({ error: 'Missing required movie fields' }, { status: 400 });
@@ -92,9 +94,15 @@ export async function POST(request: Request) {
         category,
         tmdbRating,
         tmdbVoteCount,
+        mediaType: mediaType || 'movie', // Store media type or default to 'movie'
         ...(userId && { addedById: userId }),
       },
     });
+
+    // Cache the media type if provided
+    if (mediaType && !finalTmdbId.startsWith('manual_')) {
+      cacheMediaType(finalTmdbId, mediaType as 'movie' | 'tv');
+    }
 
     // Log the activity when a new movie is added
     if (userId) {

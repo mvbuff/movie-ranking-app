@@ -75,6 +75,7 @@ model Movie {
   tmdbRating      Float?
   tmdbVoteCount   Int?
   category        Category         @default(MOVIE)
+  mediaType       String?          @default("movie") // 'movie' or 'tv' from TMDB
   addedBy         User?            @relation("MovieAddedBy", fields: [addedById], references: [id])
   addedById       String?
   createdAt       DateTime         @default(now())

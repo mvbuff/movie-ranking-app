@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { MessageSquare, Calendar, User } from 'lucide-react';
+import MovieTitleLink from './movie-title-link';
 
 interface ReviewSearchItem {
   id: string;
@@ -119,15 +120,18 @@ export default function ReviewSearchResults({ searchTerm }: ReviewSearchResultsP
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <a
-                      href={review.movie.tmdbId ? `https://www.themoviedb.org/movie/${review.movie.tmdbId}` : '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold text-gray-900 hover:text-indigo-600 transition-colors block truncate"
-                      title={review.movie.title}
-                    >
-                      {review.movie.title}
-                    </a>
+                    {review.movie.tmdbId ? (
+                      <MovieTitleLink
+                        tmdbId={review.movie.tmdbId}
+                        title={review.movie.title}
+                        year={review.movie.year}
+                        className="font-semibold text-gray-900 hover:text-indigo-600 transition-colors block truncate"
+                      />
+                    ) : (
+                      <span className="font-semibold text-gray-900 block truncate">
+                        {review.movie.title}
+                      </span>
+                    )}
                     <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                       <span>{review.movie.year > 0 ? review.movie.year : 'N/A'}</span>
                       <span>•</span>
