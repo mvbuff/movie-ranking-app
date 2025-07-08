@@ -644,7 +644,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
             key={movie.id} 
             className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col"
           >
-            <div className="relative h-80"> 
+            <div className="relative h-48"> 
                 <Image
                   src={movie.posterUrl || '/placeholder.png'}
                   alt={`Poster for ${movie.title}`}
