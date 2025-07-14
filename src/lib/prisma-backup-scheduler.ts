@@ -161,7 +161,13 @@ export const prismaBackupScheduler = new PrismaBackupScheduler();
 // Export the class for custom instances
 export { PrismaBackupScheduler };
 
-// Auto-start if configured
-if (process.env.NODE_ENV !== 'test') {
+// Use global object to prevent multiple initializations during build
+declare global {
+  var __PRISMA_BACKUP_SCHEDULER_INITIALIZED__: boolean | undefined;
+}
+
+// Auto-start if configured (only once across all imports)
+if (process.env.NODE_ENV !== 'test' && !global.__PRISMA_BACKUP_SCHEDULER_INITIALIZED__) {
+  global.__PRISMA_BACKUP_SCHEDULER_INITIALIZED__ = true;
   prismaBackupScheduler.start();
 } 

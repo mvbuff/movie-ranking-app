@@ -20,6 +20,7 @@ interface SearchResult {
   media_type: 'movie' | 'tv' | 'person';
   vote_average?: number;
   vote_count?: number;
+  original_language?: string; // For detecting language/origin
   // TMDb 'multi' search can also return 'person'. We'll filter them out.
 }
 
@@ -156,6 +157,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
       setItemToReview(null); // Reset the selection view
       setReviewText('');
       setResults([]); // Clear search results from the UI
+      setQuery(''); // Clear search query
       onItemAdded(); // Trigger the main movie list to refresh
     } catch (error: unknown) {
        if (error instanceof Error) {
@@ -282,13 +284,29 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
         </form>
       )}
 
+      {results.length > 0 && (
+        <div className="mb-6 text-center">
+          <button 
+            onClick={() => {
+              setResults([]);
+              setQuery('');
+              setItemToReview(null);
+              setReviewText('');
+            }}
+            className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+          >
+            Close Search Results
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {results.map((item) => {
             const title = item.title || item.name;
             const year = item.release_date || item.first_air_date;
             return (
               <div key={item.id} className="bg-white border rounded-lg shadow-md overflow-hidden flex flex-col">
-                <div className="relative h-80">
+                <div className="relative h-48">
                   <Image
                     src={`https://image.tmdb.org/t/p/w500${item.poster_path}`} 
                     alt={title ?? 'Movie Poster'}
