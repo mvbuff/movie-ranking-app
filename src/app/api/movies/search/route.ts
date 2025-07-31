@@ -34,24 +34,36 @@ function getYear(item: { release_date?: string; first_air_date?: string }): numb
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
+  const year = searchParams.get('year'); // Optional year filter
 
   if (!query) {
     return NextResponse.json({ error: 'Query parameter is required' }, { status: 400 });
   }
 
   try {
-    const [movieRes, tvRes] = await Promise.all([
-      fetch(`${TMDB_API_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`),
-      fetch(`${TMDB_API_URL}/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`)
+    // Build search URLs with optional year filter
+    const movieUrl = `${TMDB_API_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}${year ? `&year=${year}` : ''}`;
+    const tvUrl = `${TMDB_API_URL}/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}${year ? `&first_air_date_year=${year}` : ''}`;
+    
+    // Fetch both page 1 and page 2 for more comprehensive results
+    const [movieRes1, tvRes1, movieRes2, tvRes2] = await Promise.all([
+      fetch(`${movieUrl}&page=1`),
+      fetch(`${tvUrl}&page=1`),
+      fetch(`${movieUrl}&page=2`),
+      fetch(`${tvUrl}&page=2`)
     ]);
 
-    if (!movieRes.ok || !tvRes.ok) {
-        console.error("TMDb API error:", { movieStatus: movieRes.status, tvStatus: tvRes.status });
+    if (!movieRes1.ok || !tvRes1.ok) {
+        console.error("TMDb API error:", { movieStatus: movieRes1.status, tvStatus: tvRes1.status });
         return NextResponse.json({ error: 'Failed to fetch from TMDb' }, { status: 500 });
     }
 
-    const movies = await movieRes.json();
-    const tvShows = await tvRes.json();
+    const [movies1, tvShows1, movies2, tvShows2] = await Promise.all([
+      movieRes1.json(),
+      tvRes1.json(),
+      movieRes2.ok ? movieRes2.json() : { results: [] },
+      tvRes2.ok ? tvRes2.json() : { results: [] }
+    ]);
 
     interface MediaItem {
         id: number;
@@ -61,23 +73,44 @@ export async function GET(request: Request) {
         first_air_date?: string;
     }
 
-    const combinedResults = [
-        ...movies.results.map((m: MediaItem) => ({ ...m, media_type: 'movie' })),
-        ...tvShows.results.map((t: MediaItem) => ({ ...t, media_type: 'tv' }))
+    // Combine results from both pages and remove duplicates
+    const allResults = [
+        ...movies1.results.map((m: MediaItem) => ({ ...m, media_type: 'movie' })),
+        ...tvShows1.results.map((t: MediaItem) => ({ ...t, media_type: 'tv' })),
+        ...movies2.results.map((m: MediaItem) => ({ ...m, media_type: 'movie' })),
+        ...tvShows2.results.map((t: MediaItem) => ({ ...t, media_type: 'tv' }))
     ];
+    
+    // Remove duplicates by ID
+    const seenIds = new Set();
+    const combinedResults = allResults.filter((item: MediaItem) => {
+        if (seenIds.has(item.id)) {
+            return false;
+        }
+        seenIds.add(item.id);
+        return true;
+    });
 
-    // Custom sorting: Indian content first, then by year (descending), then by popularity
+    // Improved sorting: Recent Indian content first, then by popularity and year
     combinedResults.sort((a: MediaItem, b: MediaItem) => {
         const aIsIndian = isIndianContent(a);
         const bIsIndian = isIndianContent(b);
-        
-        // If one is Indian and the other isn't, prioritize Indian content
-        if (aIsIndian && !bIsIndian) return -1;
-        if (!aIsIndian && bIsIndian) return 1;
-        
-        // If both are Indian or both are not Indian, sort by year (descending)
         const aYear = getYear(a);
         const bYear = getYear(b);
+        const currentYear = new Date().getFullYear();
+        
+        // Check if content is recent (within last 25 years)
+        const aIsRecent = aYear >= currentYear - 25;
+        const bIsRecent = bYear >= currentYear - 25;
+        
+        // Prioritize recent Indian content over everything
+        const aIsRecentIndian = aIsIndian && aIsRecent;
+        const bIsRecentIndian = bIsIndian && bIsRecent;
+        
+        if (aIsRecentIndian && !bIsRecentIndian) return -1;
+        if (!aIsRecentIndian && bIsRecentIndian) return 1;
+        
+        // If both or neither are recent Indian, sort by year (descending)
         if (aYear !== bYear) return bYear - aYear;
         
         // If years are the same, sort by popularity (descending)
