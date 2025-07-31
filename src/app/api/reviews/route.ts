@@ -59,8 +59,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    if (text.length > 100) {
-      return NextResponse.json({ error: 'Review text must be 100 characters or less' }, { status: 400 });
+    if (text.length > 200) {
+      return NextResponse.json({ error: 'Review text must be 200 characters or less' }, { status: 400 });
     }
 
     // Get movie details for activity logging

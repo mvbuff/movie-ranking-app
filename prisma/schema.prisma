@@ -140,7 +140,7 @@ model AggregateScore {
 
 model Review {
   id        String   @id @default(cuid())
-  text      String   @db.VarChar(100)
+  text      String   @db.VarChar(200)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String

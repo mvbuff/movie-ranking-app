@@ -326,10 +326,10 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
                         value={reviewText}
                         onChange={(e) => setReviewText(e.target.value)}
                         placeholder="Add a note (optional)..."
-                        maxLength={100}
+                        maxLength={200}
                         className="w-full p-2 border rounded-md text-sm"
                       />
-                      <div className="text-right text-xs text-gray-400">{reviewText.length}/100</div>
+                      <div className="text-right text-xs text-gray-400">{reviewText.length}/200</div>
                       
                       <div className="my-4">
                         <p className="text-sm font-medium text-gray-700 mb-2 text-center">Rate it (optional):</p>

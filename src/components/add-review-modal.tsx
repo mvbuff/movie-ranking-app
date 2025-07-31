@@ -107,14 +107,14 @@ export default function AddReviewModal({
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
                 placeholder="What did you think about this movie? Share your review..."
-                maxLength={100}
+                maxLength={200}
                 className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={4}
                 disabled={isSubmitting}
               />
               <div className="flex justify-between items-center mt-2">
-                <span className={`text-xs ${reviewText.length > 90 ? 'text-red-600' : 'text-gray-500'}`}>
-                  {reviewText.length}/100 characters
+                <span className={`text-xs ${reviewText.length > 180 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {reviewText.length}/200 characters
                 </span>
               </div>
             </div>
