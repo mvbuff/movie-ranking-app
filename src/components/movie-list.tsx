@@ -39,6 +39,10 @@ interface MovieWithRatingsAndScores extends Movie {
   aggregateScore: number | null;
   isInWatchlist: boolean;
   currentUserReview: string | null;
+  // Season-specific fields from updated Prisma schema
+  seasonNumber?: number | null;
+  episodeCount?: number | null;
+  parentShowId?: string | null;
 }
 
 interface MovieListProps {
@@ -704,6 +708,13 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                 <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
                   <Star size={12} className="text-yellow-400" />
                   <span>{movie.tmdbRating.toFixed(1)}</span>
+                </div>
+              )}
+
+              {/* Season badge - positioned below TMDb rating or top-right if no rating */}
+              {movie.seasonNumber && (
+                <div className={`absolute ${movie.tmdbRating ? 'top-10' : 'top-2'} right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded`}>
+                  S{movie.seasonNumber}
                 </div>
               )}
             </div>

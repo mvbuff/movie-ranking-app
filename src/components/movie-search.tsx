@@ -9,6 +9,15 @@ import CustomRatingInput from './custom-rating';
 import { getScore, getGradeFromScore, LetterGrade, Modifier } from '@/lib/rating-system';
 import { X } from 'lucide-react';
 
+// TMDb Season data structure
+interface TMDbSeason {
+  season_number: number;
+  name: string;
+  air_date: string;
+  episode_count: number;
+  poster_path: string | null;
+}
+
 // Combined type for movies and TV shows from TMDb
 interface SearchResult {
   id: number;
@@ -17,10 +26,16 @@ interface SearchResult {
   release_date?: string; // For movies
   first_air_date?: string; // For TV shows
   poster_path: string | null;
-  media_type: 'movie' | 'tv' | 'person';
+  media_type: 'movie' | 'tv' | 'person' | 'season'; // Added 'season' type
   vote_average?: number;
   vote_count?: number;
   original_language?: string; // For detecting language/origin
+  // Season-specific fields
+  season_number?: number;
+  episode_count?: number;
+  air_date?: string;
+  parent_show_id?: number; // Reference to the main show
+  parent_show_name?: string; // Name of the parent show
   // TMDb 'multi' search can also return 'person'. We'll filter them out.
 }
 
@@ -80,6 +95,59 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
     }
   };
 
+  const handleShowSeasons = async (item: SearchResult) => {
+    if (item.media_type !== 'tv') return;
+    
+    setLoading(true);
+    
+    try {
+      // Fetch season data from TMDB
+      const response = await fetch(`https://api.themoviedb.org/3/tv/${item.id}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY || 'bd2956b340db3fe2173a5423cc908c84'}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch season data');
+      }
+      
+      const showData = await response.json();
+      const showTitle = item.title || item.name || 'Unknown Show';
+      
+      // Convert seasons to SearchResult format
+      const seasonResults: SearchResult[] = showData.seasons
+        .filter((season: TMDbSeason) => season.season_number > 0) // Skip season 0 (specials)
+        .map((season: TMDbSeason) => ({
+          id: parseInt(`${item.id}${season.season_number.toString().padStart(2, '0')}`), // Unique ID for season
+          title: `${showTitle} - ${season.name}`,
+          name: `${showTitle} - ${season.name}`,
+          release_date: season.air_date,
+          first_air_date: season.air_date,
+          poster_path: season.poster_path || item.poster_path,
+          media_type: 'season' as const,
+          vote_average: item.vote_average,
+          vote_count: item.vote_count,
+          original_language: item.original_language,
+          season_number: season.season_number,
+          episode_count: season.episode_count,
+          air_date: season.air_date,
+          parent_show_id: item.id,
+          parent_show_name: showTitle
+        }));
+      
+      // Replace search results with seasons
+      setResults(seasonResults);
+      setItemToReview(null); // Close any open review modal
+      // Clear rating state when showing seasons
+      setSelectedGrade(null);
+      setSelectedModifier(null);
+      
+      showToast(`Found ${seasonResults.length} seasons for ${showTitle}`, 'success');
+      
+    } catch (error) {
+      console.error('Failed to fetch seasons:', error);
+      showToast('Failed to load seasons', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (category: Category) => {
     if (!itemToReview || !currentUser) {
       showToast('Something went wrong, please try again.', 'error');
@@ -87,8 +155,14 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
     }
     
     const title = itemToReview.title || itemToReview.name;
-    const releaseDate = itemToReview.release_date || itemToReview.first_air_date;
+    const releaseDate = itemToReview.release_date || itemToReview.first_air_date || itemToReview.air_date;
     const ratingScore = selectedGrade ? getScore(selectedGrade, selectedModifier) : 0;
+    
+    // Handle season entries differently
+    const isSeasonEntry = itemToReview.media_type === 'season';
+    const tmdbId = isSeasonEntry 
+      ? `${itemToReview.parent_show_id}-s${itemToReview.season_number}` 
+      : String(itemToReview.id);
 
     try {
       // Step 1: Add the movie to the global database.
@@ -96,7 +170,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tmdbId: String(itemToReview.id),
+          tmdbId: tmdbId,
           title: title,
           year: releaseDate ? parseInt(releaseDate.substring(0, 4), 10) : 0,
           posterUrl: itemToReview.poster_path ? `https://image.tmdb.org/t/p/w500${itemToReview.poster_path}` : null,
@@ -104,6 +178,11 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
           tmdbRating: itemToReview.vote_average,
           tmdbVoteCount: itemToReview.vote_count,
           mediaType: itemToReview.media_type, // Pass the media type from TMDB
+          // Season-specific fields
+          ...(isSeasonEntry && {
+            seasonNumber: itemToReview.season_number,
+            episodeCount: itemToReview.episode_count,
+          }),
           userId: currentUser.id,
         }),
       });
@@ -156,6 +235,9 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
       showToast(`'${title}' was added successfully!`, 'success');
       setItemToReview(null); // Reset the selection view
       setReviewText('');
+      // Clear rating state after successful submission
+      setSelectedGrade(null);
+      setSelectedModifier(null);
       setResults([]); // Clear search results from the UI
       setQuery(''); // Clear search query
       onItemAdded(); // Trigger the main movie list to refresh
@@ -292,6 +374,9 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
               setQuery('');
               setItemToReview(null);
               setReviewText('');
+              // Clear rating state when closing search results
+              setSelectedGrade(null);
+              setSelectedModifier(null);
             }}
             className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
           >
@@ -303,7 +388,9 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {results.map((item) => {
             const title = item.title || item.name;
-            const year = item.release_date || item.first_air_date;
+            const year = item.release_date || item.first_air_date || item.air_date;
+            const isSeasonEntry = item.media_type === 'season';
+            
             return (
               <div key={item.id} className="bg-white border rounded-lg shadow-md overflow-hidden flex flex-col">
                 <div className="relative h-48">
@@ -313,10 +400,21 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
                     layout="fill"
                     objectFit="cover"
                   />
+                  {/* Season indicator badge */}
+                  {isSeasonEntry && (
+                    <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">
+                      S{item.season_number}
+                    </div>
+                  )}
                 </div>
                   <div className="p-4">
                     <h3 className="font-bold text-lg truncate" title={title}>{title}</h3>
-                    <p className="text-gray-500">{year?.substring(0, 4)}</p>
+                    <p className="text-gray-500">
+                      {year?.substring(0, 4)}
+                      {isSeasonEntry && item.episode_count && (
+                        <span className="ml-2">• {item.episode_count} episodes</span>
+                      )}
+                    </p>
                   </div>
 
                 <div className="p-4 border-t mt-auto">
@@ -344,14 +442,43 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
                         />
                       </div>
 
-                      <button onClick={() => handleSubmit('MOVIE')} className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Add as Movie</button>
-                      <button onClick={() => handleSubmit('SERIES')} className="px-3 py-2 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-700">Add as Series</button>
-                      <button onClick={() => handleSubmit('DOCUMENTARY')} className="px-3 py-2 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-700">Add as Documentary</button>
-                      <button onClick={() => { setItemToReview(null); setReviewText(''); }} className="px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">Cancel</button>
+                      {/* Different buttons for season entries vs regular content */}
+                      {isSeasonEntry ? (
+                        <button onClick={() => handleSubmit('SERIES')} className="px-3 py-2 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-700">
+                          Add Season {item.season_number}
+                        </button>
+                      ) : (
+                        <>
+                          <button onClick={() => handleSubmit('MOVIE')} className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Add as Movie</button>
+                          <button onClick={() => handleSubmit('SERIES')} className="px-3 py-2 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-700">Add as Series</button>
+                          <button onClick={() => handleSubmit('DOCUMENTARY')} className="px-3 py-2 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-700">Add as Documentary</button>
+                          {/* Add Season Rating button for TV shows */}
+                          {item.media_type === 'tv' && (
+                            <button 
+                              onClick={() => handleShowSeasons(item)}
+                              className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700"
+                            >
+                              📺 Show Individual Seasons
+                            </button>
+                          )}
+                        </>
+                      )}
+                      <button onClick={() => { 
+                        setItemToReview(null); 
+                        setReviewText(''); 
+                        // Clear rating state when canceling
+                        setSelectedGrade(null);
+                        setSelectedModifier(null);
+                      }} className="px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">Cancel</button>
                     </div>
                   ) : (
                     <button
-                      onClick={() => setItemToReview(item)}
+                      onClick={() => {
+                        setItemToReview(item);
+                        // Clear rating state when selecting a new item
+                        setSelectedGrade(null);
+                        setSelectedModifier(null);
+                      }}
                       className="w-full p-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
                     >
                       Add to List

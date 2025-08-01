@@ -29,6 +29,10 @@ export async function GET() {
         category: true,
         mediaType: true,
         createdAt: true,
+        // Season-specific fields
+        seasonNumber: true,
+        episodeCount: true,
+        parentShowId: true,
         _count: {
           select: {
             ratings: true,
@@ -65,7 +69,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { tmdbId, title, year, posterUrl, category, tmdbRating, tmdbVoteCount, mediaType, userId } = await request.json();
+    const { tmdbId, title, year, posterUrl, category, tmdbRating, tmdbVoteCount, mediaType, userId, seasonNumber, episodeCount } = await request.json();
 
     if (!title || !category) {
       return NextResponse.json({ error: 'Missing required movie fields' }, { status: 400 });
@@ -95,6 +99,9 @@ export async function POST(request: Request) {
         tmdbRating,
         tmdbVoteCount,
         mediaType: mediaType || 'movie', // Store media type or default to 'movie'
+        // Season-specific fields
+        ...(seasonNumber && { seasonNumber: parseInt(String(seasonNumber), 10) }),
+        ...(episodeCount && { episodeCount: parseInt(String(episodeCount), 10) }),
         ...(userId && { addedById: userId }),
       },
     });
