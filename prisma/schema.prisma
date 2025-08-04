@@ -31,6 +31,10 @@ enum ActivityType {
   FORUM_THREAD_CREATED
   FORUM_POST_ADDED
   USER_REGISTERED
+  RESTAURANT_ADDED
+  RESTAURANT_RATED
+  RESTAURANT_REVIEW_ADDED
+  RESTAURANT_REVIEW_LIKED
 }
 
 model User {
@@ -58,6 +62,14 @@ model User {
   activities         Activity[]
   userSessions       UserSession[]
   pageSessions       PageSession[]
+  // Restaurant relationships
+  restaurantRatings  RestaurantRating[]
+  addedRestaurants   Restaurant[]        @relation("RestaurantAddedBy")
+  restaurantReviews  RestaurantReview[]
+  restaurantReviewLikes RestaurantReviewLike[]
+  restaurantAggregateScores RestaurantAggregateScore[]
+  restaurantWeightPreferences  RestaurantWeightPreference[]  @relation("RestaurantWeightSetter")
+  restaurantWeightsAboutMe     RestaurantWeightPreference[]  @relation("RestaurantWeightedFriend")
 }
 
 enum Category {
@@ -109,6 +121,17 @@ model WeightPreference {
   user     User   @relation("WeightSetter", fields: [userId], references: [id])
   userId   String
   friend   User   @relation("WeightedFriend", fields: [friendId], references: [id])
+  friendId String
+
+  @@unique([userId, friendId])
+}
+
+model RestaurantWeightPreference {
+  id       String @id @default(cuid())
+  weight   Float  @default(1.0)
+  user     User   @relation("RestaurantWeightSetter", fields: [userId], references: [id])
+  userId   String
+  friend   User   @relation("RestaurantWeightedFriend", fields: [friendId], references: [id])
   friendId String
 
   @@unique([userId, friendId])
@@ -241,6 +264,12 @@ model Activity {
   reviewId    String?      // For review-related activities  
   threadId    String?      // For forum thread activities
   postId      String?      // For forum post activities
+  restaurantId String?     // For restaurant-related activities
+  restaurantReviewId String? // For restaurant review activities
+  
+  // Foreign key relationships (optional)
+  restaurant  Restaurant?     @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  restaurantReview RestaurantReview? @relation(fields: [restaurantReviewId], references: [id], onDelete: SetNull)
   
   // Additional metadata as JSON (for extensibility)
   metadata    Json?
@@ -280,4 +309,98 @@ model PageSession {
   @@index([userId, startTime(sort: Desc)]) // For user-specific analytics
   @@index([page, startTime(sort: Desc)])   // For page-specific analytics
   @@index([startTime(sort: Desc)])         // For overall analytics
+}
+
+// Restaurant Models
+model Restaurant {
+  id            String              @id @default(cuid())
+  name          String
+  address       String?
+  googleMapsUrl String?             // Google Maps link
+  cuisine       String?             // Type of cuisine
+  location      String?             // City/Area
+  description   String?
+  imageUrl      String?
+  metadata      Json?               // Google Places data (photos, ratings, etc.)
+  createdAt     DateTime            @default(now())
+  addedBy       User?               @relation("RestaurantAddedBy", fields: [addedById], references: [id])
+  addedById     String?
+  
+  // Relations
+  ratings       RestaurantRating[]
+  reviews       RestaurantReview[]
+  aggregateScores RestaurantAggregateScore[]
+  activities    Activity[]          // Activities related to this restaurant
+}
+
+enum RatingType {
+  VEG
+  NON_VEG
+}
+
+enum RestaurantAvailability {
+  AVAILABLE
+  NOT_AVAILABLE
+}
+
+model RestaurantRating {
+  id           String                   @id @default(cuid())
+  score        Float?                   // Rating score (1-10) - null if not available
+  ratingType   RatingType               // VEG or NON_VEG
+  availability RestaurantAvailability   @default(AVAILABLE) // Whether this option is available at restaurant
+  createdAt    DateTime                 @default(now())
+  
+  // Relations
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  
+  @@unique([userId, restaurantId, ratingType]) // One rating per user per restaurant per type
+}
+
+model RestaurantReview {
+  id           String                 @id @default(cuid())
+  text         String                 @db.VarChar(500) // Longer than movie reviews
+  createdAt    DateTime               @default(now())
+  
+  // Relations
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  restaurant   Restaurant             @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  likes        RestaurantReviewLike[]
+  activities   Activity[]             // Activities related to this review
+}
+
+model RestaurantReviewLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  review    RestaurantReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewId  String
+  
+  @@unique([userId, reviewId])
+}
+
+model RestaurantAggregateScore {
+  id           String      @id @default(cuid())
+  vegScore     Float?      // Aggregate score for veg food
+  nonVegScore  Float?      // Aggregate score for non-veg food
+  vegCount     Int         @default(0) // Number of veg ratings
+  nonVegCount  Int         @default(0) // Number of non-veg ratings
+  confidence   Float?      // Confidence score based on number of ratings
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  
+  // Relations
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  
+  @@unique([userId, restaurantId])
 }

@@ -14,8 +14,8 @@ import Script from 'next/script';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Movie Ranking App",
-  description: "Rank and review movies with friends",
+  title: "Movie & Restaurant Ranking App",
+  description: "Rank and review movies, TV shows, and restaurants with friends",
 };
 
 export default function RootLayout({

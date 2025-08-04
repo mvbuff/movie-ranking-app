@@ -12,7 +12,11 @@ type ActivityType =
   | 'REVIEW_LIKED'
   | 'FORUM_THREAD_CREATED'
   | 'FORUM_POST_ADDED'
-  | 'USER_REGISTERED';
+  | 'USER_REGISTERED'
+  | 'RESTAURANT_ADDED'
+  | 'RESTAURANT_RATED'
+  | 'RESTAURANT_REVIEW_ADDED'
+  | 'RESTAURANT_REVIEW_LIKED';
 
 interface ActivityLogOptions {
   userId: string;
@@ -22,6 +26,8 @@ interface ActivityLogOptions {
   reviewId?: string;
   threadId?: string;
   postId?: string;
+  restaurantId?: string;
+  restaurantReviewId?: string;
   metadata?: Record<string, string | number | boolean>;
 }
 
@@ -40,6 +46,8 @@ export async function logActivity(options: ActivityLogOptions) {
         "reviewId", 
         "threadId", 
         "postId", 
+        "restaurantId",
+        "restaurantReviewId",
         metadata, 
         "createdAt"
       ) VALUES (
@@ -51,6 +59,8 @@ export async function logActivity(options: ActivityLogOptions) {
         ${options.reviewId},
         ${options.threadId},
         ${options.postId},
+        ${options.restaurantId},
+        ${options.restaurantReviewId},
         ${JSON.stringify(options.metadata || {})}::jsonb,
         NOW()
       )
@@ -134,6 +144,50 @@ export const ActivityLogger = {
       type: 'USER_REGISTERED',
       description: `${userName} joined Movie Ranking!`,
       metadata: { userName }
+    });
+  },
+
+  // Restaurant activities
+  restaurantAdded: async (userId: string, restaurantId: string, restaurantName: string) => {
+    await logActivity({
+      userId,
+      type: 'RESTAURANT_ADDED',
+      description: `Added "${restaurantName}" to the restaurant database`,
+      restaurantId,
+      metadata: { restaurantName }
+    });
+  },
+
+  restaurantRated: async (userId: string, restaurantId: string, restaurantName: string, score: number, ratingType: 'VEG' | 'NON_VEG') => {
+    const customRating = getRatingDisplay(score);
+    const typeLabel = ratingType === 'VEG' ? 'veg' : 'non-veg';
+    await logActivity({
+      userId,
+      type: 'RESTAURANT_RATED',
+      description: `Rated "${restaurantName}" ${customRating} for ${typeLabel} food`,
+      restaurantId,
+      metadata: { restaurantName, score, customRating, ratingType, typeLabel }
+    });
+  },
+
+  restaurantReviewAdded: async (userId: string, restaurantReviewId: string, restaurantId: string, restaurantName: string) => {
+    await logActivity({
+      userId,
+      type: 'RESTAURANT_REVIEW_ADDED',
+      description: `Added a review for "${restaurantName}"`,
+      restaurantId,
+      restaurantReviewId,
+      metadata: { restaurantName }
+    });
+  },
+
+  restaurantReviewLiked: async (userId: string, restaurantReviewId: string, reviewAuthor: string, restaurantName: string) => {
+    await logActivity({
+      userId,
+      type: 'RESTAURANT_REVIEW_LIKED',
+      description: `Liked ${reviewAuthor}'s review of "${restaurantName}"`,
+      restaurantReviewId,
+      metadata: { reviewAuthor, restaurantName }
     });
   }
 }; 

@@ -15,7 +15,7 @@ import MovieTitleLink from './movie-title-link';
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
 type FilterCategory = Category | 'ALL' | 'WATCHLIST' | 'YET_TO_RATE';
-type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore';
+type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore' | 'releaseYearThenScore';
 
 interface Movie {
   id: string;
@@ -512,6 +512,20 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
           }
           
           // If dates are the same, sort by aggregate score (highest first)
+          const scoreA = a.aggregateScore ?? -1;
+          const scoreB = b.aggregateScore ?? -1;
+          return scoreB - scoreA;
+        }
+        if (sortBy === 'releaseYearThenScore') {
+          // First sort by release year (newest first)
+          const yearDiff = b.year - a.year;
+          
+          // If years are different, use year sorting
+          if (yearDiff !== 0) {
+            return yearDiff;
+          }
+          
+          // If years are the same, sort by aggregate score (highest first)
           const scoreA = a.aggregateScore ?? -1;
           const scoreB = b.aggregateScore ?? -1;
           return scoreB - scoreA;

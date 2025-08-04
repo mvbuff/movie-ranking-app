@@ -11,6 +11,12 @@ const nextConfig = {
         port: '',
         pathname: '/t/p/w500/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'maps.googleapis.com',
+        port: '',
+        pathname: '/maps/api/place/photo**',
+      },
     ],
   },
   // Force HTTPS redirects for security

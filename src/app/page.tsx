@@ -24,7 +24,7 @@ export default function Home() {
   const [scoreThreshold, setScoreThreshold] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewSearchTerm, setReviewSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore'>('addedDateThenScore');
+  const [sortBy, setSortBy] = useState<'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore' | 'releaseYearThenScore'>('addedDateThenScore');
   const [isMoviesFullWidth, setIsMoviesFullWidth] = useState(true);
   const [showActivityPopup, setShowActivityPopup] = useState(false);
 
@@ -88,7 +88,13 @@ export default function Home() {
         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
           Your personalized movie and series leaderboard.
         </p>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap gap-3 justify-center">
+          <Link 
+            href="/food"
+            className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+          >
+            🍽️ Restaurant Ranking (Beta)
+          </Link>
           <Link 
             href="/forum"
             className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
