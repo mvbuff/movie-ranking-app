@@ -13,8 +13,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // Allow read-only access to movies for everyone
+    // Allow read-only access to movies for everyone, excluding hidden parent shows
     const movies = await prisma.movie.findMany({
+      where: {
+        isHidden: false, // Exclude hidden parent shows from main list
+      },
       orderBy: {
         createdAt: 'desc',
       } as any,

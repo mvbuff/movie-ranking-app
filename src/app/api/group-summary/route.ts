@@ -6,8 +6,11 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const userIds = searchParams.get('userIds')?.split(',') || [];
     
-    // Get all movies with their ratings and aggregate scores
+    // Get all movies with their ratings and aggregate scores, excluding hidden parent shows
     const movies = await prisma.movie.findMany({
+      where: {
+        isHidden: false, // Exclude hidden parent shows from group summary
+      },
       include: {
         ratings: {
           include: {

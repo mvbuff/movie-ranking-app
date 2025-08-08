@@ -1,6 +1,7 @@
 'use client';
 
 import { useTmdbUrl } from '@/hooks/useTmdbUrl';
+import { generateTmdbUrlWithFallback } from '@/lib/tmdb-utils';
 
 interface MovieTitleLinkProps {
   tmdbId: string;
@@ -13,9 +14,21 @@ interface MovieTitleLinkProps {
 export default function MovieTitleLink({ tmdbId, title, year, mediaType, className }: MovieTitleLinkProps) {
   // Always call the hook, but use stored media type if available
   const fallbackTmdbUrl = useTmdbUrl(tmdbId);
-  const tmdbUrl = mediaType 
-    ? `https://www.themoviedb.org/${mediaType}/${tmdbId}`
-    : fallbackTmdbUrl;
+  
+  // Handle season IDs correctly
+  let tmdbUrl: string;
+  if (mediaType) {
+    // If this is a season ID, use enhanced URL generation with show title
+    if (tmdbId.includes('-s')) {
+      // Extract parent show title from season title (e.g., "Modern Family - Season 3" -> "Modern Family")
+      const parentShowTitle = title.split(' - ')[0];
+      tmdbUrl = generateTmdbUrlWithFallback(tmdbId, mediaType, parentShowTitle);
+    } else {
+      tmdbUrl = `https://www.themoviedb.org/${mediaType}/${tmdbId}`;
+    }
+  } else {
+    tmdbUrl = fallbackTmdbUrl;
+  }
 
   return (
     <a

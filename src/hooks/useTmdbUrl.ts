@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getParentShowTmdbId } from '@/lib/tmdb-utils';
 
 /**
  * Custom hook to generate the correct TMDB URL for a given TMDB ID
@@ -12,6 +13,13 @@ export function useTmdbUrl(tmdbId: string): string {
     // Skip API call for manual entries
     if (tmdbId.startsWith('manual_')) {
       setUrl(`https://www.themoviedb.org/movie/${tmdbId}`);
+      return;
+    }
+
+    // Handle season IDs immediately - they should point to the parent show
+    if (tmdbId.includes('-s')) {
+      const parentTmdbId = getParentShowTmdbId(tmdbId);
+      setUrl(`https://www.themoviedb.org/tv/${parentTmdbId}`);
       return;
     }
 

@@ -16,7 +16,8 @@
     "backup:prisma:sql": "node scripts/prisma-backup.js --sql",
     "backup:prisma:help": "node scripts/prisma-backup.js --help",
     "backup:list": "ls -la backups/ 2>/dev/null || echo 'No backups directory found'",
-    "backup:clean": "find backups/ -name '*.sql*' -mtime +30 -delete 2>/dev/null || echo 'No old backups to clean'"
+    "backup:clean": "find backups/ -name '*.sql*' -mtime +30 -delete 2>/dev/null || echo 'No old backups to clean'",
+    "fix-season-links": "node scripts/fix-season-tmdb-links.js"
   },
   "prisma": {
     "seed": "ts-node --project prisma/tsconfig.seed.json prisma/seed.ts"

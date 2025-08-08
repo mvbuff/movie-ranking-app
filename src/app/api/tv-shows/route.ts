@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
     const showData = await response.json();
     
-    // Create the main TV show entry
+    // Create the main TV show entry - this will be visible in the main list
     const mainShow = await prisma.movie.create({
       data: {
         tmdbId: String(tmdbId),
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
         mediaType: 'tv',
         tmdbRating: showData.vote_average,
         tmdbVoteCount: showData.vote_count,
+        isHidden: false, // Main show should be visible
         ...(userId && { addedById: userId }),
       },
     });

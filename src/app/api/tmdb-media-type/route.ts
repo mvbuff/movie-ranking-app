@@ -12,6 +12,11 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Handle season IDs - they should always be 'tv' type
+    if (tmdbId.includes('-s')) {
+      return NextResponse.json({ mediaType: 'tv', isSeason: true });
+    }
+
     // Handle force parameter
     if (forceType && (forceType === 'movie' || forceType === 'tv')) {
       forceMediaType(tmdbId, forceType);

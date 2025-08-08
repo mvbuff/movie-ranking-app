@@ -22,7 +22,7 @@ const execAsync = promisify(exec);
 const args = process.argv.slice(2);
 const options = {
   compress: !args.includes('--no-compress'),
-  maxBackups: 4,
+  maxBackups: 20,
   outputDir: 'backups',
   format: args.includes('--sql') ? 'sql' : 'json'
 };
@@ -30,7 +30,7 @@ const options = {
 // Parse custom options
 args.forEach((arg, index) => {
   if (arg === '--max-backups' && args[index + 1]) {
-    options.maxBackups = parseInt(args[index + 1]) || 4;
+    options.maxBackups = parseInt(args[index + 1]) || 20;
   }
   if (arg === '--output-dir' && args[index + 1]) {
     options.outputDir = args[index + 1];
@@ -357,7 +357,7 @@ Options:
   --help, -h          Show this help message
   --no-compress       Don't compress the backup file
   --sql               Export as SQL instead of JSON
-  --max-backups N     Keep maximum N backups (default: 4)
+  --max-backups N     Keep maximum N backups (default: 20)
   --output-dir DIR    Output directory for backups (default: backups)
 
 Examples:

@@ -127,12 +127,153 @@ export async function generateTmdbUrl(tmdbId: string): Promise<string> {
 }
 
 /**
+ * Extracts the parent show TMDB ID from a season TMDB ID
+ * @param tmdbId - The TMDB ID (could be season format like "12345-s1")
+ * @returns The parent show TMDB ID
+ */
+export function getParentShowTmdbId(tmdbId: string): string {
+  // Check if this is a season ID format (e.g., "12345-s1")
+  const seasonMatch = tmdbId.match(/^(\d+)-s\d+$/);
+  if (seasonMatch) {
+    return seasonMatch[1]; // Return the parent show ID
+  }
+  return tmdbId; // Return as-is if not a season ID
+}
+
+// Known shows that require slug format URLs
+const SHOWS_REQUIRING_SLUG_FORMAT = new Set([
+  '1421', // Modern Family
+  // Add more as discovered
+]);
+
+/**
+ * Generates TMDB URL with fallback for shows that need slug format
+ * @param tmdbId - The TMDB ID
+ * @param mediaType - The media type ('movie' or 'tv')
+ * @param showTitle - Optional show title for slug format fallback
+ * @returns The TMDB URL with fallback handling
+ */
+export function generateTmdbUrlWithFallback(tmdbId: string, mediaType: string = 'tv', showTitle?: string): string {
+  const parentTmdbId = getParentShowTmdbId(tmdbId);
+  
+  // Check if this show is known to require slug format
+  if (mediaType === 'tv' && SHOWS_REQUIRING_SLUG_FORMAT.has(parentTmdbId) && showTitle) {
+    // Extract just the show name (remove season info if present)
+    const cleanShowTitle = showTitle.includes(' - ') ? showTitle.split(' - ')[0] : showTitle;
+    
+    // Convert title to slug format (lowercase, spaces to hyphens, remove special chars)
+    const slug = cleanShowTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+    
+    return `https://www.themoviedb.org/${mediaType}/${parentTmdbId}-${slug}`;
+  }
+  
+  // Default format (works for most shows)
+  return `https://www.themoviedb.org/${mediaType}/${parentTmdbId}`;
+}
+
+/**
+ * Generates a proper TMDB URL, handling season IDs correctly
+ * @param tmdbId - The TMDB ID (could be season format)
+ * @param mediaType - The media type ('movie' or 'tv')
+ * @returns The correct TMDB URL
+ */
+export function generateTmdbUrlForSeason(tmdbId: string, mediaType?: string): string {
+  const parentTmdbId = getParentShowTmdbId(tmdbId);
+  const finalMediaType = mediaType || (tmdbId.includes('-s') ? 'tv' : 'movie');
+  return `https://www.themoviedb.org/${finalMediaType}/${parentTmdbId}`;
+}
+
+/**
+ * Gets or creates a hidden parent show record for TMDB link resolution
+ * @param parentTmdbId - The parent show TMDB ID
+ * @returns Promise<Movie | null> - The parent show record or null if creation fails
+ */
+export async function getOrCreateHiddenParentShow(parentTmdbId: string): Promise<{
+  id: string;
+  title: string;
+  tmdbId: string;
+  year: number;
+  posterUrl: string | null;
+  category: string;
+  mediaType: string | null;
+  tmdbRating: number | null;
+  tmdbVoteCount: number | null;
+  isHidden: boolean;
+} | null> {
+  const { PrismaClient } = await import('@prisma/client');
+  const prisma = new PrismaClient();
+  
+  try {
+    // First check if parent show already exists (hidden or visible)
+    let parentShow = await prisma.movie.findUnique({
+      where: { tmdbId: parentTmdbId }
+    });
+    
+    if (parentShow) {
+      return parentShow;
+    }
+    
+    // If parent show doesn't exist, create a hidden one
+    const TMDB_API_KEY = process.env.TMDB_API_KEY;
+    if (!TMDB_API_KEY) {
+      console.warn('TMDB_API_KEY not found, cannot create parent show');
+      return null;
+    }
+    
+    // Fetch show data from TMDB API
+    const response = await fetch(`https://api.themoviedb.org/3/tv/${parentTmdbId}?api_key=${TMDB_API_KEY}`);
+    
+    if (!response.ok) {
+      console.warn(`Failed to fetch show data from TMDB for ID ${parentTmdbId}`);
+      return null;
+    }
+    
+    const showData = await response.json();
+    
+    // Create hidden parent show record
+    parentShow = await prisma.movie.create({
+      data: {
+        tmdbId: parentTmdbId,
+        title: showData.name,
+        year: showData.first_air_date ? parseInt(showData.first_air_date.substring(0, 4)) : 0,
+        posterUrl: showData.poster_path ? `https://image.tmdb.org/t/p/w500${showData.poster_path}` : null,
+        category: 'SERIES',
+        mediaType: 'tv',
+        tmdbRating: showData.vote_average,
+        tmdbVoteCount: showData.vote_count,
+        isHidden: true, // Mark as hidden so it doesn't appear in main list
+      }
+    });
+    
+    console.log(`Created hidden parent show: ${parentShow.title} (${parentTmdbId})`);
+    return parentShow;
+    
+  } catch (error) {
+    console.error(`Error getting/creating parent show ${parentTmdbId}:`, error);
+    return null;
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
  * Client-side version that uses a fallback approach
  * @param tmdbId - The TMDB ID
  * @returns Promise<string> - The correct TMDB URL
  */
 export async function generateTmdbUrlClient(tmdbId: string): Promise<string> {
   try {
+    // For season IDs, extract parent show ID and use 'tv' media type
+    if (tmdbId.includes('-s')) {
+      const parentTmdbId = getParentShowTmdbId(tmdbId);
+      return `https://www.themoviedb.org/tv/${parentTmdbId}`;
+    }
+
     // For client-side, we'll make a request to our API endpoint
     const response = await fetch(`/api/tmdb-media-type?tmdbId=${tmdbId}`);
     

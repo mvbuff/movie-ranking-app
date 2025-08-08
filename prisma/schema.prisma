@@ -94,6 +94,7 @@ model Movie {
   parentShowId    String?          // Reference to the main show if this is a season
   parentShow      Movie?           @relation("ShowSeasons", fields: [parentShowId], references: [id])
   seasons         Movie[]          @relation("ShowSeasons")
+  isHidden        Boolean          @default(false) // Hide from main movie list (for parent shows created for TMDB link resolution)
   addedBy         User?            @relation("MovieAddedBy", fields: [addedById], references: [id])
   addedById       String?
   createdAt       DateTime         @default(now())
