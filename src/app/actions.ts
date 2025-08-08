@@ -21,10 +21,11 @@ export async function calculateUserAggregateScores(userId: string) {
   const friendWeights = new Map(weightPreferences.map(p => [p.friendId, p.weight]));
   const friendIds = Array.from(friendWeights.keys());
 
-  // 2. Get all ratings from those friends
+  // 2. Get all ratings from those friends AND the user themselves
+  const allFriendIds = [...friendIds, userId]; // Include user's own ratings
   const friendRatings = await prisma.rating.findMany({
     where: {
-      userId: { in: friendIds },
+      userId: { in: allFriendIds },
     },
   });
 
@@ -48,7 +49,15 @@ export async function calculateUserAggregateScores(userId: string) {
     let totalWeight = 0;
 
     for (const rating of relevantRatings) {
-      const weight = friendWeights.get(rating.userId);
+      let weight;
+      if (rating.userId === userId) {
+        // User's own rating gets 100% weight (1.0)
+        weight = 1.0;
+      } else {
+        // Friend's rating gets their configured weight
+        weight = friendWeights.get(rating.userId);
+      }
+      
       if (weight !== undefined) {
         totalWeightedScore += rating.score * weight;
         totalWeight += weight;

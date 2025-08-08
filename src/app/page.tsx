@@ -66,7 +66,7 @@ export default function Home() {
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [isAuthenticated, currentUser, isLoading]); // Added currentUser back as dependency
+  }, [isAuthenticated, isLoading]); // Removed currentUser to prevent double refresh
 
   if (isLoading) {
     return (
