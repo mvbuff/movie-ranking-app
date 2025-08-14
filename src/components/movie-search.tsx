@@ -165,34 +165,45 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
       : String(itemToReview.id);
 
     try {
-      // Step 1: Add the movie to the global database.
-      const movieResponse = await fetch('/api/movies', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tmdbId: tmdbId,
-          title: title,
-          year: releaseDate ? parseInt(releaseDate.substring(0, 4), 10) : 0,
-          posterUrl: itemToReview.poster_path ? `https://image.tmdb.org/t/p/w500${itemToReview.poster_path}` : null,
-          category: category,
-          tmdbRating: itemToReview.vote_average,
-          tmdbVoteCount: itemToReview.vote_count,
-          mediaType: itemToReview.media_type, // Pass the media type from TMDB
-          // Season-specific fields
-          ...(isSeasonEntry && {
+      let movieResponse;
+      
+      if (isSeasonEntry) {
+        // Step 1: Add season using the tv-seasons endpoint
+        movieResponse = await fetch('/api/tv-seasons', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            parentTmdbId: String(itemToReview.parent_show_id),
             seasonNumber: itemToReview.season_number,
-            episodeCount: itemToReview.episode_count,
+            userId: currentUser.id,
           }),
-          userId: currentUser.id,
-        }),
-      });
+        });
+      } else {
+        // Step 1: Add the movie to the global database.
+        movieResponse = await fetch('/api/movies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tmdbId: tmdbId,
+            title: title,
+            year: releaseDate ? parseInt(releaseDate.substring(0, 4), 10) : 0,
+            posterUrl: itemToReview.poster_path ? `https://image.tmdb.org/t/p/w500${itemToReview.poster_path}` : null,
+            category: category,
+            tmdbRating: itemToReview.vote_average,
+            tmdbVoteCount: itemToReview.vote_count,
+            mediaType: itemToReview.media_type,
+            userId: currentUser.id,
+          }),
+        });
+      }
 
       const movieData = await movieResponse.json();
       if (!movieResponse.ok && movieResponse.status !== 409) {
         throw new Error(movieData.error || 'Failed to add item');
       }
 
-      const movieId = movieData.id;
+      // Handle different response structures for seasons vs movies
+      const movieId = isSeasonEntry ? movieData.season?.id || movieData.id : movieData.id;
       const isNewMovie = movieResponse.status === 201;
       
       // Log activity on client side for debugging
