@@ -140,6 +140,33 @@ export function getParentShowTmdbId(tmdbId: string): string {
   return tmdbId; // Return as-is if not a season ID
 }
 
+/**
+ * Generates the canonical TMDB URL for a show/movie/season
+ * @param tmdbId - The TMDB ID (can include season suffix like "12345-s2")
+ * @param showName - The show/movie name  
+ * @param mediaType - The media type ('movie' or 'tv')
+ * @returns The canonical TMDB URL
+ */
+export function generateCanonicalTmdbUrl(tmdbId: string, showName: string, mediaType: string = 'tv'): string {
+  const cleanId = tmdbId.includes('-s') ? tmdbId.split('-s')[0] : tmdbId;
+  
+  // For TV shows, always use slug format for better URLs
+  if (mediaType === 'tv') {
+    const slug = showName
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+    
+    // Always return the main show URL (even for seasons)
+    return `https://www.themoviedb.org/${mediaType}/${cleanId}-${slug}`;
+  }
+  
+  // For movies, use numeric format (can add slug support later if needed)
+  return `https://www.themoviedb.org/${mediaType}/${cleanId}`;
+}
+
 // Known shows that require slug format URLs
 const SHOWS_REQUIRING_SLUG_FORMAT = new Set([
   '1421', // Modern Family
@@ -244,6 +271,7 @@ export async function getOrCreateHiddenParentShow(parentTmdbId: string): Promise
         posterUrl: showData.poster_path ? `https://image.tmdb.org/t/p/w500${showData.poster_path}` : null,
         category: 'SERIES',
         mediaType: 'tv',
+        tmdbUrl: generateCanonicalTmdbUrl(parentTmdbId, showData.name, 'tv'), // Store canonical URL for parent show
         tmdbRating: showData.vote_average,
         tmdbVoteCount: showData.vote_count,
         isHidden: true, // Mark as hidden so it doesn't appear in main list

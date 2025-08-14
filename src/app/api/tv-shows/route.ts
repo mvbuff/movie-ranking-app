@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
+import { generateCanonicalTmdbUrl } from '@/lib/tmdb-utils';
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
         posterUrl: showData.poster_path ? `https://image.tmdb.org/t/p/w500${showData.poster_path}` : null,
         category: 'SERIES',
         mediaType: 'tv',
+        tmdbUrl: generateCanonicalTmdbUrl(String(tmdbId), showData.name, 'tv'), // Store canonical URL
         tmdbRating: showData.vote_average,
         tmdbVoteCount: showData.vote_count,
         isHidden: false, // Main show should be visible
@@ -72,6 +74,7 @@ export async function POST(request: Request) {
             posterUrl: season.poster_path ? `https://image.tmdb.org/t/p/w500${season.poster_path}` : mainShow.posterUrl,
             category: 'SERIES',
             mediaType: 'tv',
+            tmdbUrl: generateCanonicalTmdbUrl(`${tmdbId}-s${season.season_number}`, showData.name, 'tv'), // Main show URL
             seasonNumber: season.season_number,
             episodeCount: season.episode_count,
             parentShowId: mainShow.id,

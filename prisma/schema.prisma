@@ -84,6 +84,7 @@ model Movie {
   year            Int
   posterUrl       String?
   tmdbId          String           @unique
+  tmdbUrl         String?          // Canonical TMDB URL for this show/movie/season
   tmdbRating      Float?
   tmdbVoteCount   Int?
   category        Category         @default(MOVIE)

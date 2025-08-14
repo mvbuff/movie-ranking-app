@@ -8,17 +8,21 @@ interface MovieTitleLinkProps {
   title: string;
   year: number;
   mediaType?: string; // Optional for backward compatibility
+  tmdbUrl?: string | null; // Optional stored canonical URL
   className?: string;
 }
 
-export default function MovieTitleLink({ tmdbId, title, year, mediaType, className }: MovieTitleLinkProps) {
+export default function MovieTitleLink({ tmdbId, title, year, mediaType, tmdbUrl: storedTmdbUrl, className }: MovieTitleLinkProps) {
   // Always call the hook, but use stored media type if available
   const fallbackTmdbUrl = useTmdbUrl(tmdbId);
   
-  // Handle season IDs correctly
+  // Use stored URL if available, otherwise generate
   let tmdbUrl: string;
-  if (mediaType) {
-    // If this is a season ID, use enhanced URL generation with show title
+  if (storedTmdbUrl) {
+    // Use the canonical URL stored in database (most reliable)
+    tmdbUrl = storedTmdbUrl;
+  } else if (mediaType) {
+    // Fallback to generated URL
     if (tmdbId.includes('-s')) {
       // Extract parent show title from season title (e.g., "Modern Family - Season 3" -> "Modern Family")
       const parentShowTitle = title.split(' - ')[0];

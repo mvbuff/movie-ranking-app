@@ -27,6 +27,7 @@ export async function GET() {
         year: true,
         posterUrl: true,
         tmdbId: true,
+        tmdbUrl: true, // Include stored canonical URL
         tmdbRating: true,
         tmdbVoteCount: true,
         category: true,

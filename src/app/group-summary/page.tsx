@@ -15,6 +15,7 @@ interface MovieSummary {
   year: number;
   posterUrl: string | null;
   tmdbId: string;
+  tmdbUrl: string | null; // Canonical TMDB URL
   tmdbRating: number | null;
   category: string;
   ratings: Array<{

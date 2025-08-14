@@ -23,6 +23,7 @@ interface Movie {
   year: number;
   posterUrl: string | null;
   tmdbId: string;
+  tmdbUrl: string | null; // Canonical TMDB URL
   tmdbRating: number | null;
   tmdbVoteCount: number | null;
   category: Category;
@@ -740,6 +741,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                   title={movie.title}
                   year={movie.year}
                   mediaType={movie.mediaType}
+                  tmdbUrl={movie.tmdbUrl}
                   className="font-bold text-base sm:text-lg text-gray-900 hover:text-indigo-600 transition-colors line-clamp-2 sm:line-clamp-1 sm:flex-1 sm:min-w-0"
                 />
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">

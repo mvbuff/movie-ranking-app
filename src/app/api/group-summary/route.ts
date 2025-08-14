@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
         year: movie.year,
         posterUrl: movie.posterUrl,
         tmdbId: movie.tmdbId,
+        tmdbUrl: movie.tmdbUrl, // Include stored canonical URL
         tmdbRating: movie.tmdbRating,
         category: movie.category,
         createdAt: movie.createdAt,

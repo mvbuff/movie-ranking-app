@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { getOrCreateHiddenParentShow } from '@/lib/tmdb-utils';
+import { getOrCreateHiddenParentShow, generateCanonicalTmdbUrl } from '@/lib/tmdb-utils';
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_API_URL = 'https://api.themoviedb.org/3';
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         posterUrl: seasonData.poster_path ? `https://image.tmdb.org/t/p/w500${seasonData.poster_path}` : parentShow.posterUrl,
         category: 'SERIES',
         mediaType: 'tv',
+        tmdbUrl: generateCanonicalTmdbUrl(seasonTmdbId, parentShow.title, 'tv'), // Main show URL
         seasonNumber: seasonNumber,
         episodeCount: seasonData.episodes?.length || 0,
         parentShowId: parentShow.id,
