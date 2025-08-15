@@ -326,7 +326,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for movies or series to add to the database..."
+            placeholder="Add movie/series to database..."
             className="w-full p-2 pr-8 border rounded-l-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
           {query && (
