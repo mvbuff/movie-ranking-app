@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/context/user-context';
 import { useDebounce } from '@/hooks/useDebounce';
 
-import { MapPin, Star, MessageSquare, Leaf, Utensils, Trash2, User, Info, Share2 } from 'lucide-react';
+import { MapPin, Star, MessageSquare, Leaf, Utensils, Trash2, User, Info, Share2, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { getRatingDisplay } from '@/lib/rating-system';
 import { useToast } from '@/context/toast-context';
 import RestaurantRatingModal from './restaurant-rating-modal';
 import AddRestaurantReviewModal from './add-restaurant-review-modal';
 import RestaurantReviewsModal from './restaurant-reviews-modal';
+import RestaurantImageManager from './restaurant-image-manager';
 import { Scorecard } from './score-components';
 import { DietaryFilter, RestaurantSortKey } from './restaurant-filter-controls';
 import { getDisplayAddress } from '@/lib/address-utils';
@@ -92,6 +93,7 @@ export default function RestaurantList({
   const [deletingRestaurant, setDeletingRestaurant] = useState<string | null>(null);
   const [addReviewModal, setAddReviewModal] = useState<{ restaurantId: string; restaurantName: string; } | null>(null);
   const [activeReviews, setActiveReviews] = useState<{ restaurantId: string; restaurantName: string; } | null>(null);
+  const [imageManager, setImageManager] = useState<{ restaurantId: string; restaurantName: string; } | null>(null);
 
   // Debounce filter values to prevent excessive API calls
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
@@ -504,17 +506,24 @@ export default function RestaurantList({
           const photos = restaurant.metadata?.photos || [];
           const firstPhoto = photos.length > 0 ? photos[0] : null;
           
+          // Add cache-busting timestamp for images to ensure fresh updates
+          const imageWithCacheBust = firstPhoto && refreshTimestamp 
+            ? `${firstPhoto}${firstPhoto.includes('?') ? '&' : '?'}v=${refreshTimestamp}` 
+            : firstPhoto;
+          
           return (
             <div key={restaurant.id} className="bg-white border rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
               {/* Restaurant Image - Much smaller */}
               <div className="aspect-[3/2] relative bg-gradient-to-br from-green-100 to-orange-100">
-                {firstPhoto ? (
+                {imageWithCacheBust ? (
                   <Image
-                    src={firstPhoto}
+                    src={imageWithCacheBust}
                     alt={restaurant.name}
                     fill
                     className="object-cover"
                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                    key={`${restaurant.id}-${refreshTimestamp || 'default'}`} // Force re-render on refresh
+                    unoptimized={imageWithCacheBust.includes('v=')} // Disable Next.js optimization for cache-busted images
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
@@ -562,10 +571,11 @@ export default function RestaurantList({
                 </div>
 
                 {/* Added by */}
-                <div className="flex items-center gap-1 mb-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded min-w-0">
+                <div className="flex items-center gap-1 mb-2 text-xs text-blue-600 min-w-0">
                   <User size={10} className="flex-shrink-0" />
-                  <span className="truncate font-medium">
-                    by {restaurant.addedBy ? restaurant.addedBy.name : 'System'}
+                  <span className="text-gray-600">by</span>
+                  <span className="truncate font-medium bg-blue-50 px-2 py-1 rounded">
+                    {restaurant.addedBy ? restaurant.addedBy.name : 'System'}
                   </span>
                 </div>
 
@@ -655,6 +665,17 @@ export default function RestaurantList({
                   >
                     <Share2 size={16} />
                   </button>
+
+                  {/* Admin Image Management */}
+                  {isAdmin && (
+                    <button
+                      onClick={() => setImageManager({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
+                      className="p-1 text-gray-400 hover:text-purple-600"
+                      title="Manage restaurant images (Admin only)"
+                    >
+                      <ImageIcon size={16} />
+                    </button>
+                  )}
 
                   {/* Admin Delete */}
                   {isAdmin && (
@@ -759,6 +780,18 @@ export default function RestaurantList({
           initialNonVegRating={restaurants.find(r => r.id === ratingModal.restaurantId)?.userNonVegRating}
           initialVegAvailability={restaurants.find(r => r.id === ratingModal.restaurantId)?.userVegAvailability}
           initialNonVegAvailability={restaurants.find(r => r.id === ratingModal.restaurantId)?.userNonVegAvailability}
+        />
+      )}
+
+      {/* Image Manager Modal */}
+      {imageManager && (
+        <RestaurantImageManager
+          restaurantId={imageManager.restaurantId}
+          restaurantName={imageManager.restaurantName}
+          onClose={() => setImageManager(null)}
+          onImagesUpdated={() => {
+            fetchRestaurantData(); // Refresh to show updated images
+          }}
         />
       )}
     </div>

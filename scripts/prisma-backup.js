@@ -156,6 +156,88 @@ async function exportDataWithPrisma() {
     exportData.data.forumPosts = forumPosts;
     exportData.metadata.tables.push(`forumPosts (${forumPosts.length} records)`);
 
+    // Export Forum Post Likes
+    console.log('   └── Forum Post Likes...');
+    const forumPostLikes = await prisma.forumPostLike.findMany();
+    exportData.data.forumPostLikes = forumPostLikes;
+    exportData.metadata.tables.push(`forumPostLikes (${forumPostLikes.length} records)`);
+
+    // Export Review Likes
+    console.log('   └── Review Likes...');
+    const reviewLikes = await prisma.reviewLike.findMany();
+    exportData.data.reviewLikes = reviewLikes;
+    exportData.metadata.tables.push(`reviewLikes (${reviewLikes.length} records)`);
+
+    // Export Restaurant data
+    console.log('   └── Restaurants...');
+    const restaurants = await prisma.restaurant.findMany({
+      include: {
+        ratings: true,
+        reviews: true,
+        aggregateScores: true
+      }
+    });
+    exportData.data.restaurants = restaurants;
+    exportData.metadata.tables.push(`restaurants (${restaurants.length} records)`);
+
+    // Export Restaurant Ratings
+    console.log('   └── Restaurant Ratings...');
+    const restaurantRatings = await prisma.restaurantRating.findMany();
+    exportData.data.restaurantRatings = restaurantRatings;
+    exportData.metadata.tables.push(`restaurantRatings (${restaurantRatings.length} records)`);
+
+    // Export Restaurant Reviews
+    console.log('   └── Restaurant Reviews...');
+    const restaurantReviews = await prisma.restaurantReview.findMany();
+    exportData.data.restaurantReviews = restaurantReviews;
+    exportData.metadata.tables.push(`restaurantReviews (${restaurantReviews.length} records)`);
+
+    // Export Restaurant Review Likes
+    console.log('   └── Restaurant Review Likes...');
+    const restaurantReviewLikes = await prisma.restaurantReviewLike.findMany();
+    exportData.data.restaurantReviewLikes = restaurantReviewLikes;
+    exportData.metadata.tables.push(`restaurantReviewLikes (${restaurantReviewLikes.length} records)`);
+
+    // Export Restaurant Aggregate Scores
+    console.log('   └── Restaurant Aggregate Scores...');
+    const restaurantAggregateScores = await prisma.restaurantAggregateScore.findMany();
+    exportData.data.restaurantAggregateScores = restaurantAggregateScores;
+    exportData.metadata.tables.push(`restaurantAggregateScores (${restaurantAggregateScores.length} records)`);
+
+    // Export Restaurant Weight Preferences
+    console.log('   └── Restaurant Weight Preferences...');
+    const restaurantWeightPreferences = await prisma.restaurantWeightPreference.findMany();
+    exportData.data.restaurantWeightPreferences = restaurantWeightPreferences;
+    exportData.metadata.tables.push(`restaurantWeightPreferences (${restaurantWeightPreferences.length} records)`);
+
+    // Export User Sessions (Analytics)
+    console.log('   └── User Sessions...');
+    const userSessions = await prisma.userSession.findMany();
+    exportData.data.userSessions = userSessions;
+    exportData.metadata.tables.push(`userSessions (${userSessions.length} records)`);
+
+    // Export Page Sessions (Analytics)
+    console.log('   └── Page Sessions...');
+    const pageSessions = await prisma.pageSession.findMany();
+    exportData.data.pageSessions = pageSessions;
+    exportData.metadata.tables.push(`pageSessions (${pageSessions.length} records)`);
+
+    // Export Friend Groups
+    console.log('   └── Friend Groups...');
+    const friendGroups = await prisma.friendGroup.findMany({
+      include: {
+        members: true
+      }
+    });
+    exportData.data.friendGroups = friendGroups;
+    exportData.metadata.tables.push(`friendGroups (${friendGroups.length} records)`);
+
+    // Export Friend Group Members
+    console.log('   └── Friend Group Members...');
+    const friendGroupMembers = await prisma.friendGroupMember.findMany();
+    exportData.data.friendGroupMembers = friendGroupMembers;
+    exportData.metadata.tables.push(`friendGroupMembers (${friendGroupMembers.length} records)`);
+
     await prisma.$disconnect();
 
     // Write backup to file
