@@ -22,7 +22,13 @@ interface RestaurantRatingComponentProps {
   restaurantId: string;
   restaurantName: string;
   readOnlyMode?: boolean;
-  onRatingUpdate?: (restaurantId: string, vegScore: number | null, nonVegScore: number | null) => void;
+  onRatingUpdate?: (
+    restaurantId: string, 
+    vegScore: number | null, 
+    nonVegScore: number | null,
+    vegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE' | null,
+    nonVegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE' | null
+  ) => void;
   initialVegRating?: number | null;
   initialNonVegRating?: number | null;
   initialVegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE' | null;
@@ -115,7 +121,9 @@ export default function RestaurantRatingComponent({
           // Update parent component with optimistic update
           const vegScore = ratingType === 'VEG' ? null : ratings.VEG?.score || null;
           const nonVegScore = ratingType === 'NON_VEG' ? null : ratings.NON_VEG?.score || null;
-          onRatingUpdate?.(restaurantId, vegScore, nonVegScore);
+          const vegAvailability = ratingType === 'VEG' ? null : ratings.VEG?.availability || null;
+          const nonVegAvailability = ratingType === 'NON_VEG' ? null : ratings.NON_VEG?.availability || null;
+          onRatingUpdate?.(restaurantId, vegScore, nonVegScore, vegAvailability, nonVegAvailability);
         } else {
           const errorData = await response.json();
           showToast(errorData.error || 'Failed to remove rating', 'error');
@@ -148,7 +156,9 @@ export default function RestaurantRatingComponent({
           // Update parent component with optimistic update
           const vegScore = ratingType === 'VEG' ? score : ratings.VEG?.score || null;
           const nonVegScore = ratingType === 'NON_VEG' ? score : ratings.NON_VEG?.score || null;
-          onRatingUpdate?.(restaurantId, vegScore, nonVegScore);
+          const vegAvailability = ratingType === 'VEG' ? 'AVAILABLE' : ratings.VEG?.availability || null;
+          const nonVegAvailability = ratingType === 'NON_VEG' ? 'AVAILABLE' : ratings.NON_VEG?.availability || null;
+          onRatingUpdate?.(restaurantId, vegScore, nonVegScore, vegAvailability, nonVegAvailability);
         } else {
           const errorData = await response.json();
           showToast(errorData.error || 'Failed to save rating', 'error');
@@ -200,7 +210,9 @@ export default function RestaurantRatingComponent({
         // Update parent component with optimistic update
         const vegScore = ratingType === 'VEG' ? null : ratings.VEG?.score || null;
         const nonVegScore = ratingType === 'NON_VEG' ? null : ratings.NON_VEG?.score || null;
-        onRatingUpdate?.(restaurantId, vegScore, nonVegScore);
+        const vegAvailability = ratingType === 'VEG' ? 'NOT_AVAILABLE' : ratings.VEG?.availability || null;
+        const nonVegAvailability = ratingType === 'NON_VEG' ? 'NOT_AVAILABLE' : ratings.NON_VEG?.availability || null;
+        onRatingUpdate?.(restaurantId, vegScore, nonVegScore, vegAvailability, nonVegAvailability);
       } else {
         const errorData = await response.json();
         showToast(errorData.error || 'Failed to save rating', 'error');

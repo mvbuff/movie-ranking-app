@@ -21,15 +21,24 @@ export async function GET(request: Request) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const posts = await (prisma as any).forumPost.findMany({
-      where: { threadId },
+      where: { 
+        threadId,
+        parentId: null // Only get top-level posts (not replies)
+      },
       include: {
         author: {
           select: { id: true, name: true }
+        },
+        postLikes: {
+          select: { userId: true }
         },
         replies: {
           include: {
             author: {
               select: { id: true, name: true }
+            },
+            postLikes: {
+              select: { userId: true }
             }
           },
           orderBy: { createdAt: 'asc' }
@@ -121,6 +130,60 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Failed to create forum post:", error);
     return NextResponse.json({ error: 'Failed to create forum post' }, { status: 500 });
+  }
+}
+
+// PATCH: Edit a forum post - require authentication (author only)
+export async function PATCH(request: Request) {
+  try {
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const { postId, content, userId } = await request.json();
+
+    if (!postId || !content || !userId) {
+      return NextResponse.json({ 
+        error: 'Post ID, content, and user ID are required' 
+      }, { status: 400 });
+    }
+
+    // Verify post exists and check ownership
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const existingPost = await (prisma as any).forumPost.findUnique({
+      where: { id: postId },
+      include: { author: true }
+    });
+
+    if (!existingPost) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+    }
+
+    // Only the author can edit their post (not even admins for content integrity)
+    if (existingPost.authorId !== userId) {
+      return NextResponse.json({ error: 'You can only edit your own posts' }, { status: 403 });
+    }
+
+    // Update the post
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updatedPost = await (prisma as any).forumPost.update({
+      where: { id: postId },
+      data: { 
+        content: content.trim(),
+        updatedAt: new Date()
+      },
+      include: {
+        author: {
+          select: { id: true, name: true }
+        }
+      }
+    });
+
+    return NextResponse.json(updatedPost);
+  } catch (error) {
+    console.error("Failed to edit forum post:", error);
+    return NextResponse.json({ error: 'Failed to edit forum post' }, { status: 500 });
   }
 }
 

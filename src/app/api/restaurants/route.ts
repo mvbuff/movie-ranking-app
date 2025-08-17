@@ -138,15 +138,30 @@ export async function POST(request: Request) {
       location, 
       description, 
       imageUrl, 
-      userId 
+      userId,
+      metadata,
+      googlePlaceId
     } = await request.json();
 
     if (!name) {
       return NextResponse.json({ error: 'Restaurant name is required' }, { status: 400 });
     }
 
-    // Check for duplicate restaurant (same name and location)
-    if (name && location) {
+    // Check for duplicate restaurant (Google Place ID takes priority, then name + location)
+    if (googlePlaceId) {
+      const existingRestaurant = await prisma.restaurant.findFirst({
+        where: { 
+          metadata: {
+            path: ['googlePlaceId'],
+            equals: googlePlaceId
+          }
+        },
+      });
+      if (existingRestaurant) {
+        // Return existing restaurant data but indicate it's a duplicate
+        return NextResponse.json(existingRestaurant, { status: 200 });
+      }
+    } else if (name && location) {
       const existingRestaurant = await prisma.restaurant.findFirst({
         where: { 
           name: { contains: name, mode: 'insensitive' },
@@ -168,6 +183,7 @@ export async function POST(request: Request) {
         location,
         description,
         imageUrl,
+        metadata,
         ...(userId && { addedById: userId }),
       },
     });

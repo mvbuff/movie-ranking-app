@@ -9,6 +9,7 @@ import FilterControls from '@/components/filter-controls';
 import FriendList from '@/components/friend-list';
 import ReviewSearchResults from '@/components/review-search-results';
 import ActivityFeedPopup from '@/components/activity-feed-popup';
+import ContributionPopup from '@/components/contribution-popup';
 import { useUser } from '@/context/user-context';
 import { calculateUserAggregateScores } from '@/app/actions';
 import { Maximize2, Minimize2 } from 'lucide-react';
@@ -27,6 +28,7 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore' | 'releaseYearThenScore'>('addedDateThenScore');
   const [isMoviesFullWidth, setIsMoviesFullWidth] = useState(true);
   const [showActivityPopup, setShowActivityPopup] = useState(false);
+  const [showContributionPopup, setShowContributionPopup] = useState(false);
 
   // Use ref to prevent auto-calculation from running multiple times
   const autoCalculationRef = useRef<{ hasRun: boolean; lastUserId: string | null }>({
@@ -66,7 +68,7 @@ export default function Home() {
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [isAuthenticated, isLoading]); // Removed currentUser to prevent double refresh
+  }, [isAuthenticated, isLoading, currentUser]); // Added currentUser back to dependencies
 
   if (isLoading) {
     return (
@@ -101,6 +103,12 @@ export default function Home() {
           >
             💬 Discussion Forum
           </Link>
+          <button
+            onClick={() => setShowContributionPopup(true)}
+            className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+          >
+            📊 Contribution
+          </button>
         </div>
         {!isAuthenticated && !isLoading && (
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-md mx-auto">
@@ -267,6 +275,12 @@ export default function Home() {
       <ActivityFeedPopup 
         isOpen={showActivityPopup}
         onClose={() => setShowActivityPopup(false)} 
+      />
+
+      {/* Contribution Popup */}
+      <ContributionPopup 
+        isOpen={showContributionPopup}
+        onClose={() => setShowContributionPopup(false)} 
       />
     </main>
   );

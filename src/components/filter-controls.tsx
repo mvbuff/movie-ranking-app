@@ -121,7 +121,7 @@ export default function FilterControls({
               type="text"
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search by movie title..."
+              placeholder="From already available list..."
               className="w-full p-2 pr-8 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             {searchTerm && (
@@ -147,7 +147,7 @@ export default function FilterControls({
               type="text"
               value={reviewSearchTerm}
               onChange={(e) => onReviewSearchChange(e.target.value)}
-              placeholder="Search review content..."
+              placeholder="From added reviews..."
               className="w-full p-2 pr-8 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
             {reviewSearchTerm && (

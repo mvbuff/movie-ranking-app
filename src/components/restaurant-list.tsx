@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/context/user-context';
 import { useDebounce } from '@/hooks/useDebounce';
 
-import { MapPin, Star, MessageSquare, Leaf, Utensils, Trash2, User, Info } from 'lucide-react';
+import { MapPin, Star, MessageSquare, Leaf, Utensils, Trash2, User, Info, Share2 } from 'lucide-react';
 import Image from 'next/image';
 import { getRatingDisplay } from '@/lib/rating-system';
 import { useToast } from '@/context/toast-context';
@@ -101,15 +101,22 @@ export default function RestaurantList({
   const [debouncedNonVegScoreThreshold] = useDebounce(nonVegScoreThreshold, 500);
 
   // Handle optimistic rating updates without full refresh
-  const handleRatingUpdate = useCallback((restaurantId: string, vegScore: number | null, nonVegScore: number | null) => {
+  const handleRatingUpdate = useCallback((
+    restaurantId: string, 
+    vegScore: number | null, 
+    nonVegScore: number | null,
+    vegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE' | null,
+    nonVegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE' | null
+  ) => {
     setRestaurants(prev => prev.map(restaurant => 
       restaurant.id === restaurantId 
         ? { 
             ...restaurant, 
             userVegRating: vegScore, 
             userNonVegRating: nonVegScore,
-            userVegAvailability: vegScore === null ? 'NOT_AVAILABLE' : 'AVAILABLE',
-            userNonVegAvailability: nonVegScore === null ? 'NOT_AVAILABLE' : 'AVAILABLE'
+            // Only update availability if explicitly provided, otherwise keep existing
+            userVegAvailability: vegAvailability !== undefined ? vegAvailability : restaurant.userVegAvailability,
+            userNonVegAvailability: nonVegAvailability !== undefined ? nonVegAvailability : restaurant.userNonVegAvailability
           }
         : restaurant
     ));
@@ -253,6 +260,99 @@ export default function RestaurantList({
       showToast('Failed to delete restaurant', 'error');
     } finally {
       setDeletingRestaurant(null);
+    }
+  };
+
+  const shareRestaurant = async (restaurant: RestaurantWithRatings) => {
+    // Create rating display for veg and non-veg
+    const getRestaurantRatingDisplay = () => {
+      const vegRating = restaurant.userVegRating && restaurant.userVegAvailability === 'AVAILABLE' 
+        ? getRatingDisplay(restaurant.userVegRating) 
+        : (restaurant.userVegAvailability === 'NOT_AVAILABLE' ? 'NA' : 'NR');
+      
+      const nonVegRating = restaurant.userNonVegRating && restaurant.userNonVegAvailability === 'AVAILABLE'
+        ? getRatingDisplay(restaurant.userNonVegRating)
+        : (restaurant.userNonVegAvailability === 'NOT_AVAILABLE' ? 'NA' : 'NR');
+
+      return `V:${vegRating} | NV:${nonVegRating}`;
+    };
+
+    const ratingDisplay = getRestaurantRatingDisplay();
+    const location = restaurant.location || 'Location not specified';
+    
+    // Create the complete message
+    let message = `RReco: ${restaurant.name} (${location}) \n ${ratingDisplay}`;
+    
+    // Fetch user's review if available
+    if (!readOnlyMode && currentUser) {
+      try {
+        const reviewResponse = await fetch(`/api/restaurant-reviews?restaurantId=${restaurant.id}&userId=${currentUser.id}`);
+        if (reviewResponse.ok) {
+          const reviews = await reviewResponse.json();
+          if (reviews.length > 0) {
+            // Get the most recent review from this user
+            const userReview = reviews[0];
+            message += `\n ${userReview.text.trim()}`;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user review:', error);
+        // Continue without review if fetch fails
+      }
+    }
+    
+    message += `\n\n--shared via https://peer-movie-rating-app.vercel.app/food`;
+
+    // Helper function to get preview of copied content
+    const getPreview = (text: string) => {
+      const lines = text.split('\n').filter(line => line.trim() !== '');
+      const lastTwoLines = lines.slice(-2).join('\n');
+      return lastTwoLines.length > 80 ? lastTwoLines.substring(0, 80) + '...' : lastTwoLines;
+    };
+
+    // Helper function to ensure text is properly decoded (fixes iOS URL encoding issues)
+    const ensurePlainText = (text: string) => {
+      try {
+        let decodedText = text;
+        
+        if (text.includes('%20') || text.includes('%3A') || text.includes('%0A')) {
+          decodedText = decodeURIComponent(text);
+        }
+        
+        decodedText = decodedText
+          .replace(/%20/g, ' ')
+          .replace(/%3A/g, ':')
+          .replace(/%0A/g, '\n')
+          .replace(/%2F/g, '/')
+          .replace(/%2E/g, '.')
+          .replace(/%2D/g, '-');
+        
+        return decodedText;
+      } catch (error) {
+        console.log('Text decode failed, using original:', error);
+        return text;
+      }
+    };
+
+    const plainMessage = ensurePlainText(message);
+
+    // Copy to clipboard
+    try {
+      // For iOS: Clear clipboard first, then write clean text
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        await navigator.clipboard.writeText('');
+        await new Promise(resolve => setTimeout(resolve, 10));
+        await navigator.clipboard.writeText(plainMessage);
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      
+      await navigator.clipboard.writeText(plainMessage);
+      const preview = getPreview(plainMessage);
+      const hasReview = !readOnlyMode && currentUser && plainMessage.includes('....') && plainMessage.split('....').length > 2;
+      showToast(`${hasReview ? 'Copied with review!' : 'Copied to clipboard!'}\n\n${preview}`);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      showToast('Failed to copy to clipboard. Please try again.', 'error');
     }
   };
 
@@ -545,6 +645,15 @@ export default function RestaurantList({
                     title="Show user reviews and ratings"
                   >
                     <Info size={16} />
+                  </button>
+
+                  {/* Share Button */}
+                  <button 
+                    onClick={() => shareRestaurant(restaurant)}
+                    className="p-1 text-gray-400 hover:text-green-600"
+                    title="Copy restaurant details"
+                  >
+                    <Share2 size={16} />
                   </button>
 
                   {/* Admin Delete */}

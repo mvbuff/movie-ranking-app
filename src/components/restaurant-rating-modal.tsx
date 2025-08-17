@@ -23,7 +23,13 @@ interface RestaurantRatingModalProps {
   restaurantId: string;
   restaurantName: string;
   onClose: () => void;
-  onRatingUpdate?: (restaurantId: string, vegScore: number | null, nonVegScore: number | null) => void;
+  onRatingUpdate?: (
+    restaurantId: string, 
+    vegScore: number | null, 
+    nonVegScore: number | null,
+    vegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE' | null,
+    nonVegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE' | null
+  ) => void;
   initialVegRating?: number | null;
   initialNonVegRating?: number | null;
   initialVegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE' | null;
@@ -156,7 +162,9 @@ export default function RestaurantRatingModal({
       if (onRatingUpdate) {
         const vegScore = ratingType === 'VEG' ? score : ratings.VEG?.score || null;
         const nonVegScore = ratingType === 'NON_VEG' ? score : ratings.NON_VEG?.score || null;
-        onRatingUpdate(restaurantId, vegScore, nonVegScore);
+        const vegAvailability = ratingType === 'VEG' ? availability.VEG : (ratings.VEG ? 'AVAILABLE' : null);
+        const nonVegAvailability = ratingType === 'NON_VEG' ? availability.NON_VEG : (ratings.NON_VEG ? 'AVAILABLE' : null);
+        onRatingUpdate(restaurantId, vegScore, nonVegScore, vegAvailability, nonVegAvailability);
       }
 
       showToast(score === 0 ? 'Rating removed!' : 'Rating submitted!', 'success');

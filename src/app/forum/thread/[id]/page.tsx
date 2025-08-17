@@ -18,9 +18,11 @@ interface ForumPost {
   isFirstPost: boolean;
   likes: number;
   createdAt: string;
+  updatedAt: string;
   author: Author;
   parentId?: string;
-  replies: ForumPost[];
+  replies?: ForumPost[];
+  postLikes?: { userId: string }[];
 }
 
 interface ForumThread {
@@ -52,6 +54,8 @@ export default function ThreadPage() {
   const [newPostContent, setNewPostContent] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
+  const [editingPost, setEditingPost] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
   const [deletingPost, setDeletingPost] = useState<string | null>(null);
   const [deletingThread, setDeletingThread] = useState(false);
 
@@ -120,6 +124,8 @@ export default function ThreadPage() {
         setNewPostContent('');
         setReplyContent('');
         setReplyingTo(null);
+        setEditingPost(null);
+        setEditContent('');
         fetchPosts();
       } else {
         const error = await response.json();
@@ -128,6 +134,54 @@ export default function ThreadPage() {
     } catch (error) {
       console.error('Failed to create post:', error);
       showToast('Failed to create post', 'error');
+    }
+  };
+
+  const startEditingPost = (post: ForumPost) => {
+    setEditingPost(post.id);
+    setEditContent(post.content);
+    setReplyingTo(null); // Close any open reply forms
+  };
+
+  const cancelEditing = () => {
+    setEditingPost(null);
+    setEditContent('');
+  };
+
+  const editPost = async (postId: string, content: string) => {
+    if (!session || !currentUser) {
+      showToast('Please sign in to edit posts', 'error');
+      return;
+    }
+
+    if (!content.trim()) {
+      showToast('Please enter a message', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/forum/posts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId,
+          content: content.trim(),
+          userId: currentUser.id
+        })
+      });
+
+      if (response.ok) {
+        showToast('Post updated successfully!', 'success');
+        setEditingPost(null);
+        setEditContent('');
+        fetchPosts();
+      } else {
+        const error = await response.json();
+        showToast(error.error || 'Failed to edit post', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to edit post:', error);
+      showToast('Failed to edit post', 'error');
     }
   };
 
@@ -161,6 +215,71 @@ export default function ThreadPage() {
       showToast('Failed to delete post', 'error');
     } finally {
       setDeletingPost(null);
+    }
+  };
+
+  const likePost = async (postId: string) => {
+    if (!session || !currentUser) {
+      showToast('Please sign in to like posts', 'error');
+      return;
+    }
+
+    // Optimistic update: Update UI immediately
+    const updatedPosts = posts.map(post => {
+      const updatePostLikes = (p: ForumPost): ForumPost => {
+        if (p.id === postId) {
+          const postLikes = p.postLikes || [];
+          const hasLiked = postLikes.some(like => like.userId === currentUser.id);
+          if (hasLiked) {
+            // Remove like
+            return {
+              ...p,
+              likes: p.likes - 1,
+              postLikes: postLikes.filter(like => like.userId !== currentUser.id)
+            };
+          } else {
+            // Add like
+            return {
+              ...p,
+              likes: p.likes + 1,
+              postLikes: [...postLikes, { userId: currentUser.id }]
+            };
+          }
+        }
+        // Also update nested replies
+        return {
+          ...p,
+          replies: p.replies ? p.replies.map(updatePostLikes) : []
+        };
+      };
+      return updatePostLikes(post);
+    });
+    
+    setPosts(updatedPosts);
+
+    try {
+      const response = await fetch('/api/forum/posts/likes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId,
+          userId: currentUser.id
+        })
+      });
+
+      if (response.ok) {
+        // Successfully liked/unliked - no need to show toast for likes
+      } else {
+        const error = await response.json();
+        showToast(error.error || 'Failed to like post', 'error');
+        // Revert optimistic update on error
+        fetchPosts();
+      }
+    } catch (error) {
+      console.error('Failed to like post:', error);
+      showToast('Failed to like post', 'error');
+      // Revert optimistic update on error
+      fetchPosts();
     }
   };
 
@@ -222,7 +341,14 @@ export default function ThreadPage() {
           </div>
           <div>
             <div className="font-semibold text-gray-900">{post.author.name}</div>
-            <div className="text-sm text-gray-500">{formatDate(post.createdAt)}</div>
+            <div className="text-sm text-gray-500">
+              {formatDate(post.createdAt)}
+              {post.updatedAt && new Date(post.updatedAt).getTime() > new Date(post.createdAt).getTime() + 60000 && (
+                <span className="ml-2 text-xs text-blue-600" title={`Last edited: ${formatDate(post.updatedAt)}`}>
+                  (edited)
+                </span>
+              )}
+            </div>
           </div>
           {post.isFirstPost && (
             <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
@@ -231,39 +357,107 @@ export default function ThreadPage() {
           )}
         </div>
         
-        {/* Delete button - show only to author or admin, but not for first post */}
-        {currentUser && !post.isFirstPost && (post.author.id === currentUser.id || isAdmin) && (
-          <button
-            onClick={() => deletePost(post.id)}
-            disabled={deletingPost === post.id}
-            className="p-1 text-red-500 hover:text-red-700 disabled:opacity-50"
-            title={`Delete post${isAdmin && post.author.id !== currentUser.id ? ' (Admin)' : ''}`}
-          >
-            {deletingPost === post.id ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
-            ) : (
-              '🗑️'
+        {/* Edit and Delete buttons */}
+        {currentUser && (post.author.id === currentUser.id || (!post.isFirstPost && isAdmin)) && (
+          <div className="flex gap-2">
+            {/* Edit button - only for post author */}
+            {post.author.id === currentUser.id && (
+              <button
+                onClick={() => startEditingPost(post)}
+                className="p-1 text-blue-500 hover:text-blue-700"
+                title="Edit post"
+              >
+                ✏️
+              </button>
             )}
-          </button>
+            
+            {/* Delete button - show only to author or admin, but not for first post */}
+            {!post.isFirstPost && (
+              <button
+                onClick={() => deletePost(post.id)}
+                disabled={deletingPost === post.id}
+                className="p-1 text-red-500 hover:text-red-700 disabled:opacity-50"
+                title={`Delete post${isAdmin && post.author.id !== currentUser.id ? ' (Admin)' : ''}`}
+              >
+                {deletingPost === post.id ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                ) : (
+                  '🗑️'
+                )}
+              </button>
+            )}
+          </div>
         )}
       </div>
       
-      <div className="prose max-w-none mb-4">
-        <p className="text-gray-800 whitespace-pre-wrap">{post.content}</p>
-      </div>
+      {/* Post content or edit form */}
+      {editingPost === post.id ? (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="text-sm text-yellow-800 mb-2">
+            Editing post:
+          </div>
+          <textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+            rows={4}
+            placeholder="Edit your post..."
+          />
+          <div className="flex justify-end gap-2 mt-2">
+            <button
+              onClick={cancelEditing}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => editPost(post.id, editContent)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="prose max-w-none mb-4">
+          <p className="text-gray-800 whitespace-pre-wrap">{post.content}</p>
+        </div>
+      )}
 
       <div className="flex items-center gap-4">
-        {session && !thread?.isLocked && (
+        {session && !thread?.isLocked && editingPost !== post.id && (
           <button
-            onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
+            onClick={() => {
+              if (replyingTo === post.id) {
+                setReplyingTo(null);
+              } else {
+                setReplyingTo(post.id);
+                setEditingPost(null); // Close any open edit forms
+                setEditContent('');
+              }
+            }}
             className="text-blue-600 hover:text-blue-800 text-sm font-medium"
           >
             {replyingTo === post.id ? 'Cancel Reply' : '💬 Reply'}
           </button>
         )}
-        <div className="text-sm text-gray-500">
-          ❤️ {post.likes} likes
-        </div>
+        {/* Like button */}
+        {session ? (
+          <button
+            onClick={() => likePost(post.id)}
+            className={`flex items-center gap-1 text-sm transition-colors ${
+              (post.postLikes || []).some(like => like.userId === currentUser?.id)
+                ? 'text-red-600 hover:text-red-700'
+                : 'text-gray-500 hover:text-red-600'
+            }`}
+          >
+            {(post.postLikes || []).some(like => like.userId === currentUser?.id) ? '❤️' : '🤍'} {post.likes}
+          </button>
+        ) : (
+          <div className="text-sm text-gray-500">
+            ❤️ {post.likes} likes
+          </div>
+        )}
       </div>
 
       {/* Reply Form */}
