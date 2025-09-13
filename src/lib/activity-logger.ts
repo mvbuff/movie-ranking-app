@@ -107,13 +107,20 @@ export const ActivityLogger = {
     });
   },
 
-  reviewLiked: async (userId: string, reviewId: string, reviewAuthor: string) => {
+  reviewLiked: async (
+    userId: string,
+    reviewId: string,
+    reviewAuthor: string,
+    movieId: string,
+    movieTitle: string
+  ) => {
     await logActivity({
       userId,
       type: 'REVIEW_LIKED',
-      description: `Liked ${reviewAuthor}'s review`,
+      description: `Liked ${reviewAuthor}'s review of "${movieTitle}"`,
+      movieId,
       reviewId,
-      metadata: { reviewAuthor }
+      metadata: { reviewAuthor, movieTitle }
     });
   },
 

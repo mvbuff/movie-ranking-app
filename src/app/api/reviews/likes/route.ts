@@ -52,13 +52,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Review ID and User ID are required' }, { status: 400 });
     }
 
-    // Check if review exists and get review author info
+    // Check if review exists and get review author + movie info
     const review = await prisma.review.findUnique({
       where: { id: reviewId },
       include: {
-        user: {
-          select: { name: true }
-        }
+        user: { select: { name: true } },
+        movie: { select: { id: true, title: true } }
       }
     });
 
@@ -93,10 +92,16 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Log the review like activity
+    // Log the review like activity (with movie details)
     try {
-      await ActivityLogger.reviewLiked(userId, reviewId, review.user.name || 'Unknown User');
-      console.log(`✅ Review like activity logged: ${like.user.name} liked ${review.user.name}'s review`);
+      await ActivityLogger.reviewLiked(
+        userId,
+        reviewId,
+        review.user.name || 'Unknown User',
+        review.movieId,
+        review.movie?.title || 'Unknown Title'
+      );
+      console.log(`✅ Review like activity logged: ${like.user.name} liked ${review.user.name}'s review of ${review.movie?.title}`);
     } catch (activityError) {
       console.error('❌ Failed to log review like activity:', activityError);
       // Don't fail the like creation if activity logging fails
