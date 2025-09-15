@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/context/user-context';
 import { useDebounce } from '@/hooks/useDebounce';
 
-import { MapPin, Star, MessageSquare, Leaf, Utensils, Trash2, User, Info, Share2, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Star, MessageSquare, Leaf, Utensils, Trash2, User, Info, Share2, Image as ImageIcon, Eye } from 'lucide-react';
 import Image from 'next/image';
 import { getRatingDisplay } from '@/lib/rating-system';
 import { useToast } from '@/context/toast-context';
@@ -29,6 +29,7 @@ interface Restaurant {
     photos?: string[];
     vicinity?: string;
     formatted_address?: string;
+    vegOnly?: boolean;
   } | null; // Contains Google Places data including photos
   createdAt: string;
   addedBy: { id: string; name: string } | null;
@@ -54,6 +55,9 @@ interface RestaurantWithRatings extends Restaurant {
   avgNonVegRating: number | null;
   aggregateVegScore: number | null;
   aggregateNonVegScore: number | null;
+  globalVegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE';
+  globalNonVegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE';
+  isInEatlist?: boolean;
 }
 
 interface RestaurantListProps {
@@ -94,6 +98,7 @@ export default function RestaurantList({
   const [addReviewModal, setAddReviewModal] = useState<{ restaurantId: string; restaurantName: string; } | null>(null);
   const [activeReviews, setActiveReviews] = useState<{ restaurantId: string; restaurantName: string; } | null>(null);
   const [imageManager, setImageManager] = useState<{ restaurantId: string; restaurantName: string; } | null>(null);
+  const [togglingEatlist, setTogglingEatlist] = useState<string | null>(null);
 
   // Debounce filter values to prevent excessive API calls
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
@@ -162,13 +167,14 @@ export default function RestaurantList({
         setRestaurants(restaurantsWithRatings);
       } else {
         // Authenticated mode: fetch with user-specific data
-        const [restaurantsRes, ratingsRes, aggregateScoresRes] = await Promise.all([
+        const [restaurantsRes, ratingsRes, aggregateScoresRes, eatlistRes] = await Promise.all([
           fetch(`/api/restaurants?${params.toString()}`, { cache: 'no-store' }),
           fetch(`/api/restaurant-ratings?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
           fetch(`/api/restaurant-aggregate-scores?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`/api/restaurant-eatlist?userId=${currentUser.id}&t=${Date.now()}`, { cache: 'no-store' }),
         ]);
 
-        if (!restaurantsRes.ok || !ratingsRes.ok || !aggregateScoresRes.ok) {
+        if (!restaurantsRes.ok || !ratingsRes.ok || !aggregateScoresRes.ok || !eatlistRes.ok) {
           throw new Error('Failed to fetch restaurant data');
         }
 
@@ -179,6 +185,8 @@ export default function RestaurantList({
           vegScore: number | null;
           nonVegScore: number | null;
         }[] = await aggregateScoresRes.json();
+        const eatlistItems: { restaurantId: string }[] = await eatlistRes.json();
+        const eatlistSet = new Set(eatlistItems.map(e => e.restaurantId));
 
         // Create maps for quick lookup
         const vegRatingsMap = new Map(
@@ -211,6 +219,7 @@ export default function RestaurantList({
             avgNonVegRating: null, // TODO: Calculate from all users
             aggregateVegScore: aggregateScores?.vegScore || null,
             aggregateNonVegScore: aggregateScores?.nonVegScore || null,
+            isInEatlist: eatlistSet.has(restaurant.id),
           };
         });
 
@@ -268,22 +277,25 @@ export default function RestaurantList({
   const shareRestaurant = async (restaurant: RestaurantWithRatings) => {
     // Create rating display for veg and non-veg
     const getRestaurantRatingDisplay = () => {
-      const vegRating = restaurant.userVegRating && restaurant.userVegAvailability === 'AVAILABLE' 
-        ? getRatingDisplay(restaurant.userVegRating) 
-        : (restaurant.userVegAvailability === 'NOT_AVAILABLE' ? 'NA' : 'NR');
-      
-      const nonVegRating = restaurant.userNonVegRating && restaurant.userNonVegAvailability === 'AVAILABLE'
-        ? getRatingDisplay(restaurant.userNonVegRating)
-        : (restaurant.userNonVegAvailability === 'NOT_AVAILABLE' ? 'NA' : 'NR');
+      const vegNA = restaurant.globalVegAvailability === 'NOT_AVAILABLE' || restaurant.userVegAvailability === 'NOT_AVAILABLE';
+      const nonVegNA = restaurant.globalNonVegAvailability === 'NOT_AVAILABLE' || restaurant.userNonVegAvailability === 'NOT_AVAILABLE';
 
-      return `V:${vegRating} | NV:${nonVegRating}`;
+      const vegRating = vegNA
+        ? 'NA'
+        : (restaurant.userVegRating ? getRatingDisplay(restaurant.userVegRating) : 'NR');
+
+      const nonVegRating = nonVegNA
+        ? 'NA'
+        : (restaurant.userNonVegRating ? getRatingDisplay(restaurant.userNonVegRating) : 'NR');
+
+      return `Veg: ${vegRating} || Non-Veg: ${nonVegRating}`;
     };
 
     const ratingDisplay = getRestaurantRatingDisplay();
     const location = restaurant.location || 'Location not specified';
     
     // Create the complete message
-    let message = `RReco: ${restaurant.name} (${location}) \n ${ratingDisplay}`;
+    let message = `RReco: ${restaurant.name} (${location}) \n\n${ratingDisplay}`;
     
     // Fetch user's review if available
     if (!readOnlyMode && currentUser) {
@@ -294,7 +306,7 @@ export default function RestaurantList({
           if (reviews.length > 0) {
             // Get the most recent review from this user
             const userReview = reviews[0];
-            message += `\n ${userReview.text.trim()}`;
+            message += `\n\n${userReview.text.trim()}`;
           }
         }
       } catch (error) {
@@ -361,21 +373,12 @@ export default function RestaurantList({
   // Apply client-side filtering for dietary options that require user ratings
   const filteredRestaurants = restaurants.filter(restaurant => {
     // Dietary filter based on user ratings and availability
+    if (dietaryFilter === 'EATLIST') {
+      return !!restaurant.isInEatlist;
+    }
     if (dietaryFilter === 'VEG_ONLY') {
-      // Show restaurants that either:
-      // 1. User has marked veg as available and rated it above threshold
-      // 2. Has aggregate veg score above threshold
-      // 3. Has no ratings yet (give benefit of doubt)
-      const hasVegRating = restaurant.userVegAvailability === 'AVAILABLE' && 
-                          (restaurant.userVegRating === null || restaurant.userVegRating >= debouncedVegScoreThreshold);
-      const hasVegAggregateScore = restaurant.aggregateVegScore !== null && 
-                                  restaurant.aggregateVegScore >= debouncedVegScoreThreshold;
-      const hasNoRatings = restaurant.userVegAvailability === null && 
-                          restaurant.userNonVegAvailability === null && 
-                          restaurant.aggregateVegScore === null && 
-                          restaurant.aggregateNonVegScore === null;
-      
-      return hasVegRating || hasVegAggregateScore || hasNoRatings;
+      // New rule: show restaurants explicitly marked veg-only via metadata
+      return restaurant.metadata?.vegOnly === true;
     }
     
     if (dietaryFilter === 'NON_VEG_ONLY') {
@@ -512,9 +515,90 @@ export default function RestaurantList({
             : firstPhoto;
           
           return (
-            <div key={restaurant.id} className="bg-white border rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+            <div 
+              key={restaurant.id} 
+              className="bg-white border rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+              data-restaurant-id={restaurant.id}
+              data-veg-only={restaurant.metadata?.vegOnly ? 'true' : 'false'}
+            >
               {/* Restaurant Image - Much smaller */}
               <div className="aspect-[3/2] relative bg-gradient-to-br from-green-100 to-orange-100">
+                {/* Admin controls - top left corner (delete + veg-only) */}
+                <div className="absolute top-2 left-2 flex gap-2 z-10">
+                  {isAdmin && !readOnlyMode && (
+                    <button
+                      onClick={() => handleDeleteRestaurant(restaurant.id, restaurant.name)}
+                      disabled={deletingRestaurant === restaurant.id}
+                      className="p-2 rounded-full bg-red-600/90 text-white hover:bg-red-700/90 transition-all shadow-lg"
+                      title="Delete restaurant (Admin only)"
+                    >
+                      {deletingRestaurant === restaurant.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      ) : (
+                        <Trash2 size={16} />
+                      )}
+                    </button>
+                  )}
+                  {isAdmin && !readOnlyMode && (
+                    <button
+                      onClick={async () => {
+                        const target = !restaurant.metadata?.vegOnly;
+                        try {
+                          const res = await fetch('/api/restaurants/veg-only', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ restaurantId: restaurant.id, vegOnly: target })
+                          });
+                          if (res.ok) {
+                            setRestaurants(prev => prev.map(r => r.id === restaurant.id ? { ...r, metadata: { ...(r.metadata || {}), vegOnly: target } } : r));
+                            showToast(target ? 'Marked as veg-only' : 'Veg-only removed', 'success');
+                          } else {
+                            const err = await res.json();
+                            showToast(err.error || 'Failed to update veg-only', 'error');
+                          }
+                        } catch (e) {
+                          console.error(e);
+                          showToast('Failed to update veg-only', 'error');
+                        }
+                      }}
+                      className={`${restaurant.metadata?.vegOnly ? 'bg-green-600/90 hover:bg-green-700/90 text-white' : 'bg-gray-600/70 hover:bg-gray-700/70 text-white'} p-2 rounded-full transition-all shadow-lg`}
+                      title={restaurant.metadata?.vegOnly ? 'Veg-only enabled (click to disable)' : 'Mark as veg-only'}
+                    >
+                      <Leaf size={16} />
+                    </button>
+                  )}
+                  {!readOnlyMode && currentUser && (
+                    <button
+                      onClick={async () => {
+                        setTogglingEatlist(restaurant.id);
+                        try {
+                          const method = restaurant.isInEatlist ? 'DELETE' : 'POST';
+                          const res = await fetch('/api/restaurant-eatlist', {
+                            method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: currentUser.id, restaurantId: restaurant.id })
+                          });
+                          if (res.ok) {
+                            setRestaurants(prev => prev.map(r => r.id === restaurant.id ? { ...r, isInEatlist: !restaurant.isInEatlist } : r));
+                          } else {
+                            const err = await res.json();
+                            showToast(err.error || 'Failed to toggle eatlist', 'error');
+                          }
+                        } catch (e) {
+                          console.error('Eatlist toggle failed', e);
+                          showToast('Failed to toggle eatlist', 'error');
+                        } finally {
+                          setTogglingEatlist(null);
+                        }
+                      }}
+                      disabled={togglingEatlist === restaurant.id}
+                      className={`p-2 rounded-full ${restaurant.isInEatlist ? 'bg-blue-600/90 hover:bg-blue-700/90 text-white' : 'bg-gray-600/70 hover:bg-gray-700/70 text-white'} transition-all shadow-lg`}
+                      title={restaurant.isInEatlist ? 'Remove from Eat List' : 'Add to Eat List'}
+                    >
+                      <Eye size={16} />
+                    </button>
+                  )}
+                </div>
                 {imageWithCacheBust ? (
                   <Image
                     src={imageWithCacheBust}
@@ -586,28 +670,36 @@ export default function RestaurantList({
                   </div>
                 )}
 
-                {/* User Ratings */}
+                {/* User Ratings - show NA globally if marked */}
                 <div className="space-y-1">
-                  {(restaurant.userVegRating || restaurant.userVegAvailability === 'NOT_AVAILABLE') && (
+                  {(
+                    restaurant.globalVegAvailability === 'NOT_AVAILABLE' ||
+                    restaurant.userVegRating ||
+                    restaurant.userVegAvailability === 'NOT_AVAILABLE'
+                  ) && (
                     <div className="flex items-center gap-1 text-xs">
                       <Leaf className="text-green-600" size={10} />
                       <span className="text-green-700 text-xs">
                         Veg: {
-                          restaurant.userVegAvailability === 'NOT_AVAILABLE' 
-                            ? 'N/A' 
-                            : getRatingDisplay(restaurant.userVegRating!)
+                          restaurant.globalVegAvailability === 'NOT_AVAILABLE' || restaurant.userVegAvailability === 'NOT_AVAILABLE'
+                            ? 'N/A'
+                            : (restaurant.userVegRating ? getRatingDisplay(restaurant.userVegRating) : 'NR')
                         }
                       </span>
                     </div>
                   )}
-                  {(restaurant.userNonVegRating || restaurant.userNonVegAvailability === 'NOT_AVAILABLE') && (
+                  {(
+                    restaurant.globalNonVegAvailability === 'NOT_AVAILABLE' ||
+                    restaurant.userNonVegRating ||
+                    restaurant.userNonVegAvailability === 'NOT_AVAILABLE'
+                  ) && (
                     <div className="flex items-center gap-1 text-xs">
                       <Utensils className="text-red-600" size={10} />
                       <span className="text-red-700 text-xs">
                         Non-Veg: {
-                          restaurant.userNonVegAvailability === 'NOT_AVAILABLE'
+                          restaurant.globalNonVegAvailability === 'NOT_AVAILABLE' || restaurant.userNonVegAvailability === 'NOT_AVAILABLE'
                             ? 'N/A'
-                            : getRatingDisplay(restaurant.userNonVegRating!)
+                            : (restaurant.userNonVegRating ? getRatingDisplay(restaurant.userNonVegRating) : 'NR')
                         }
                       </span>
                     </div>
@@ -666,6 +758,8 @@ export default function RestaurantList({
                     <Share2 size={16} />
                   </button>
 
+                  {/* Eatlist toggle removed from action row (moved to top overlay) */}
+
                   {/* Admin Image Management */}
                   {isAdmin && (
                     <button
@@ -677,21 +771,38 @@ export default function RestaurantList({
                     </button>
                   )}
 
-                  {/* Admin Delete */}
+                  {/* Admin Veg-only toggle */}
                   {isAdmin && (
                     <button
-                      onClick={() => handleDeleteRestaurant(restaurant.id, restaurant.name)}
-                      disabled={deletingRestaurant === restaurant.id}
-                      className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-50"
-                      title="Delete restaurant (Admin only)"
+                      onClick={async () => {
+                        const target = !restaurant.metadata?.vegOnly;
+                        try {
+                          const res = await fetch('/api/restaurants/veg-only', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ restaurantId: restaurant.id, vegOnly: target })
+                          });
+                          if (res.ok) {
+                            await res.json();
+                            setRestaurants(prev => prev.map(r => r.id === restaurant.id ? { ...r, metadata: { ...(r.metadata || {}), vegOnly: target } } : r));
+                            showToast(target ? 'Marked as veg-only' : 'Veg-only removed', 'success');
+                          } else {
+                            const err = await res.json();
+                            showToast(err.error || 'Failed to update veg-only', 'error');
+                          }
+                        } catch (e) {
+                          console.error(e);
+                          showToast('Failed to update veg-only', 'error');
+                        }
+                      }}
+                      className={`p-1 ${restaurant.metadata?.vegOnly ? 'text-green-700 hover:text-green-800' : 'text-gray-400 hover:text-green-600'}`}
+                      title={restaurant.metadata?.vegOnly ? 'Veg-only enabled (click to disable)' : 'Mark as veg-only'}
                     >
-                      {deletingRestaurant === restaurant.id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
-                      ) : (
-                        <Trash2 size={16} />
-                      )}
+                      <Leaf size={16} />
                     </button>
                   )}
+
+                  {/* Admin Delete duplicated in overlay; keeping action row clean */}
                 </div>
                 
                 {/* Rating and Review counts */}
@@ -712,17 +823,19 @@ export default function RestaurantList({
 
             {/* Friend Scores Section - Compact */}
             <div className="p-2 bg-gray-50 border-t">
-              <div className="grid grid-cols-2 gap-1">
+              <div className={`grid ${restaurant.metadata?.vegOnly ? 'grid-cols-1' : 'grid-cols-2'} gap-1`}>
                 <Scorecard 
-                  score={restaurant.aggregateVegScore} 
+                  score={restaurant.globalVegAvailability === 'NOT_AVAILABLE' ? null : restaurant.aggregateVegScore} 
                   label="FRIEND VEG"
                   compact={true}
                 />
-                <Scorecard 
-                  score={restaurant.aggregateNonVegScore} 
-                  label="FRIEND NON-VEG"
-                  compact={true}
-                />
+                {!restaurant.metadata?.vegOnly && (
+                  <Scorecard 
+                    score={restaurant.globalNonVegAvailability === 'NOT_AVAILABLE' ? null : restaurant.aggregateNonVegScore} 
+                    label="FRIEND NON-VEG"
+                    compact={true}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -780,6 +893,7 @@ export default function RestaurantList({
           initialNonVegRating={restaurants.find(r => r.id === ratingModal.restaurantId)?.userNonVegRating}
           initialVegAvailability={restaurants.find(r => r.id === ratingModal.restaurantId)?.userVegAvailability}
           initialNonVegAvailability={restaurants.find(r => r.id === ratingModal.restaurantId)?.userNonVegAvailability}
+          hideNonVeg={restaurants.find(r => r.id === ratingModal.restaurantId)?.metadata?.vegOnly === true}
         />
       )}
 

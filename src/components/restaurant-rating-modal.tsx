@@ -34,6 +34,7 @@ interface RestaurantRatingModalProps {
   initialNonVegRating?: number | null;
   initialVegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE' | null;
   initialNonVegAvailability?: 'AVAILABLE' | 'NOT_AVAILABLE' | null;
+  hideNonVeg?: boolean;
 }
 
 export default function RestaurantRatingModal({ 
@@ -44,7 +45,8 @@ export default function RestaurantRatingModal({
   initialVegRating,
   initialNonVegRating,
   initialVegAvailability,
-  initialNonVegAvailability
+  initialNonVegAvailability,
+  hideNonVeg = false
 }: RestaurantRatingModalProps) {
   const { currentUser } = useUser();
   const { showToast } = useToast();
@@ -261,6 +263,7 @@ export default function RestaurantRatingModal({
           </div>
 
           {/* Non-Vegetarian Rating Section */}
+          {!hideNonVeg && (
           <div className="border rounded-lg p-4 bg-red-50">
             <div className="flex items-center gap-2 mb-3">
               <Utensils className="text-red-600" size={20} />
@@ -306,6 +309,7 @@ export default function RestaurantRatingModal({
               )}
             </div>
           </div>
+          )}
 
           {/* Current Ratings Display */}
           {(ratings.VEG || ratings.NON_VEG) && (

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   try {
     // Allow read-only access for everyone to view reviews and ratings
     // Get all users who have either reviewed or rated this movie, plus movie info
-    const [movieResult, reviews, ratings] = await Promise.all([
+    const [movieResult, reviews, ratings, ratingActivities] = await Promise.all([
       // Fetch movie information including who added it
       prisma.movie.findUnique({
         where: { id: movieId },
@@ -54,6 +54,12 @@ export async function GET(request: Request) {
           },
         },
       }),
+      // Fetch rating activities to infer rating dates per user
+      prisma.activity.findMany({
+        where: { movieId, type: 'MOVIE_RATED' },
+        select: { userId: true, createdAt: true },
+        orderBy: { createdAt: 'desc' }
+      }),
     ]);
 
     if (!movieResult) {
@@ -71,6 +77,13 @@ export async function GET(request: Request) {
     
     // Create a map of userId to rating for quick lookup
     const ratingsMap = new Map(ratings.map(rating => [rating.userId, rating]));
+    // Create a map of userId to latest rating activity date
+    const ratingDateMap = new Map<string, Date>();
+    for (const act of ratingActivities) {
+      if (!ratingDateMap.has(act.userId)) {
+        ratingDateMap.set(act.userId, act.createdAt as unknown as Date);
+      }
+    }
 
     // Get all unique user IDs who have either reviewed or rated this movie
     const allUserIds = new Set([
@@ -106,17 +119,47 @@ export async function GET(request: Request) {
         rating: rating ? {
           id: rating.id,
           score: rating.score,
+          createdAt: ratingDateMap.get(userId) || null,
         } : null,
       };
     });
 
-    // Sort by review creation date (newest first), then by user name
+    // Sort order:
+    // 1) Entries with reviews first, by review date desc
+    // 2) Then by rating score desc
+    // 3) Tie-breaker: rating date desc, then name asc
     combinedData.sort((a, b) => {
-      if (a.review && b.review) {
-        return new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime();
+      const aHasReview = !!a.review;
+      const bHasReview = !!b.review;
+
+      if (aHasReview && bHasReview) {
+        const diff = new Date(b.review!.createdAt).getTime() - new Date(a.review!.createdAt).getTime();
+        if (diff !== 0) return diff;
+        // If same review date, compare rating score if both have ratings
+        if (a.rating && b.rating) {
+          const scoreDiff = (b.rating.score || 0) - (a.rating.score || 0);
+          if (scoreDiff !== 0) return scoreDiff;
+        }
+      } else if (aHasReview !== bHasReview) {
+        return aHasReview ? -1 : 1;
+      } else {
+        // Neither has review → sort by rating score desc
+        if (a.rating && b.rating) {
+          const scoreDiff = (b.rating.score || 0) - (a.rating.score || 0);
+          if (scoreDiff !== 0) return scoreDiff;
+        } else if (a.rating && !b.rating) {
+          return -1;
+        } else if (!a.rating && b.rating) {
+          return 1;
+        }
       }
-      if (a.review && !b.review) return -1;
-      if (!a.review && b.review) return 1;
+
+      // Next tie-breaker: rating date desc if available
+      const aDate = a.rating?.createdAt ? new Date(a.rating.createdAt).getTime() : 0;
+      const bDate = b.rating?.createdAt ? new Date(b.rating.createdAt).getTime() : 0;
+      if (bDate - aDate !== 0) return bDate - aDate;
+
+      // Final tie-breaker: name asc
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return ((a.user as any)?.name || '').localeCompare(((b.user as any)?.name || ''));
     });

@@ -27,6 +27,7 @@ interface UserReviewRating {
   rating: {
     id: string;
     score: number;
+    createdAt?: string | null;
   } | null;
 }
 
@@ -304,6 +305,13 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Rating date if available and no review block showed it */}
+        {hasRating && (
+          <div className="text-xs text-gray-500">
+            Rated on {entry.rating?.createdAt ? new Date(entry.rating.createdAt).toLocaleDateString() : '—'}
           </div>
         )}
 

@@ -296,6 +296,9 @@ export default function RestaurantRatingComponent({
     );
   };
 
+  // Read vegOnly flag from window-injected context on card if present (passed via metadata)
+  const vegOnly = (typeof window !== 'undefined') ? (document.querySelector(`[data-restaurant-id="${restaurantId}"]`) as HTMLElement | null)?.dataset.vegOnly === 'true' : false;
+
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">Rate this Restaurant</h3>
@@ -308,12 +311,14 @@ export default function RestaurantRatingComponent({
           color="bg-green-50"
         />
         
-        <RatingSection
-          ratingType="NON_VEG"
-          icon={<Utensils className="text-red-600" size={20} />}
-          label="Non-Vegetarian Food"
-          color="bg-red-50"
-        />
+        {!vegOnly && (
+          <RatingSection
+            ratingType="NON_VEG"
+            icon={<Utensils className="text-red-600" size={20} />}
+            label="Non-Vegetarian Food"
+            color="bg-red-50"
+          />
+        )}
       </div>
 
       {/* Summary */}

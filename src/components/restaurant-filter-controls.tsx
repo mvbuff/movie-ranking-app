@@ -3,7 +3,7 @@
 import { X, Search, MapPin, Utensils, Leaf, Filter, Loader2 } from 'lucide-react';
 import { useDebounceArray } from '@/hooks/useDebounce';
 
-export type DietaryFilter = 'ALL' | 'VEG_ONLY' | 'NON_VEG_ONLY';
+export type DietaryFilter = 'ALL' | 'VEG_ONLY' | 'NON_VEG_ONLY' | 'EATLIST';
 export type RestaurantSortKey = 'aggregateScore' | 'addedDate' | 'name' | 'vegRating' | 'nonVegRating';
 
 interface RestaurantFilterControlsProps {
@@ -39,6 +39,7 @@ const dietaryOptions = [
   { id: 'ALL' as const, name: 'All Restaurants', icon: '🍽️' },
   { id: 'VEG_ONLY' as const, name: 'Veg Available Only', icon: '🌱' },
   { id: 'NON_VEG_ONLY' as const, name: 'Non-Veg Available Only', icon: '🍖' },
+  { id: 'EATLIST' as const, name: 'Eat List', icon: '📝' },
 ];
 
 export default function RestaurantFilterControls({

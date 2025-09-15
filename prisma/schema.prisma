@@ -71,6 +71,8 @@ model User {
   restaurantAggregateScores RestaurantAggregateScore[]
   restaurantWeightPreferences  RestaurantWeightPreference[]  @relation("RestaurantWeightSetter")
   restaurantWeightsAboutMe     RestaurantWeightPreference[]  @relation("RestaurantWeightedFriend")
+  // Eatlist relation (optional)
+  restaurantEatlists  RestaurantEatlist[]
   forumPostLikes     ForumPostLike[]
 }
 
@@ -351,6 +353,7 @@ model Restaurant {
   reviews       RestaurantReview[]
   aggregateScores RestaurantAggregateScore[]
   activities    Activity[]          // Activities related to this restaurant
+  eatlists      RestaurantEatlist[]
 }
 
 enum RatingType {
@@ -422,5 +425,19 @@ model RestaurantAggregateScore {
   restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   restaurantId String
   
+  @@unique([userId, restaurantId])
+}
+
+// A user's personal list of restaurants to try (similar to movie watchlist)
+model RestaurantEatlist {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+
+  // Relations
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+
   @@unique([userId, restaurantId])
 }

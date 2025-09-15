@@ -25,7 +25,7 @@ export default function Home() {
   const [scoreThreshold, setScoreThreshold] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewSearchTerm, setReviewSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore' | 'releaseYearThenScore'>('addedDateThenScore');
+  const [sortBy, setSortBy] = useState<'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore' | 'releaseYearThenScore' | 'mostFeedback'>('addedDateThenScore');
   const [isMoviesFullWidth, setIsMoviesFullWidth] = useState(true);
   const [showActivityPopup, setShowActivityPopup] = useState(false);
   const [showContributionPopup, setShowContributionPopup] = useState(false);

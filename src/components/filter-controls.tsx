@@ -5,7 +5,7 @@ import { X, Activity } from 'lucide-react';
 // Manually define the Category type for client-side use
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
 type FilterCategory = Category | 'ALL' | 'WATCHLIST' | 'YET_TO_RATE';
-export type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore' | 'releaseYearThenScore';
+export type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore' | 'releaseYearThenScore' | 'mostFeedback';
 
 interface FilterControlsProps {
   activeCategory: FilterCategory;
@@ -179,6 +179,7 @@ export default function FilterControls({
             <option value="addedDate">Added Date</option>
             <option value="addedDateThenScore">Added Date then by Score</option>
             <option value="releaseYearThenScore">Release Year then by Score</option>
+            <option value="mostFeedback">Most feedback received</option>
           </select>
         </div>
 

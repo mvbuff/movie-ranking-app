@@ -38,13 +38,16 @@ export default function GooglePlacesRestaurantSearch({ onRestaurantAdded }: Goog
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<GooglePlacesRestaurant[]>([]);
   const [addingRestaurant, setAddingRestaurant] = useState<string | null>(null);
+  // Per-result veg-only selections
+  const [vegOnlySelection, setVegOnlySelection] = useState<Record<string, boolean>>({});
   const [searchParams, setSearchParams] = useState({
     query: '',
     location: '',
     radius: '5000',
     minPrice: '',
     maxPrice: '',
-    openNow: false
+    openNow: false,
+    vegOnly: false
   });
 
   // Extract location (city/area) from full address
@@ -173,7 +176,9 @@ export default function GooglePlacesRestaurantSearch({ onRestaurantAdded }: Goog
             businessStatus: restaurant.businessStatus,
             userRatingsTotal: restaurant.userRatingsTotal,
             vicinity: restaurant.address, // Store vicinity for location fallback
-            formatted_address: restaurant.address
+            formatted_address: restaurant.address,
+            // Prefer per-card selection; fallback to the global checkbox in filters
+            vegOnly: vegOnlySelection[restaurant.googlePlaceId] ?? searchParams.vegOnly
           }
         }),
       });
@@ -188,6 +193,12 @@ export default function GooglePlacesRestaurantSearch({ onRestaurantAdded }: Goog
       
       // Remove from search results
       setSearchResults(prev => prev.filter(r => r.googlePlaceId !== restaurant.googlePlaceId));
+      // Clean up any tracked selection
+      setVegOnlySelection(prev => {
+        const clone = { ...prev };
+        delete clone[restaurant.googlePlaceId];
+        return clone;
+      });
       
     } catch (error) {
       console.error('Add restaurant error:', error);
@@ -283,7 +294,7 @@ export default function GooglePlacesRestaurantSearch({ onRestaurantAdded }: Goog
         </div>
 
         {/* Advanced Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
           {/* Radius */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -353,6 +364,22 @@ export default function GooglePlacesRestaurantSearch({ onRestaurantAdded }: Goog
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
               />
               <label className="ml-2 text-sm text-gray-600">Only open restaurants</label>
+            </div>
+          </div>
+
+          {/* Veg only flag (applies when adding) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Dietary Preference
+            </label>
+            <div className="flex items-center h-10">
+              <input
+                type="checkbox"
+                checked={searchParams.vegOnly}
+                onChange={(e) => setSearchParams(prev => ({ ...prev, vegOnly: e.target.checked }))}
+                className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+              />
+              <label className="ml-2 text-sm text-gray-600">Veg only (hide non-veg ratings)</label>
             </div>
           </div>
         </div>
@@ -439,6 +466,19 @@ export default function GooglePlacesRestaurantSearch({ onRestaurantAdded }: Goog
                       </span>
                     </div>
                   )}
+
+                  {/* Veg-only per result */}
+                  <div className="flex items-center gap-2 pt-2">
+                    <label className="flex items-center gap-2 text-xs text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={!!vegOnlySelection[restaurant.googlePlaceId]}
+                        onChange={(e) => setVegOnlySelection(prev => ({ ...prev, [restaurant.googlePlaceId]: e.target.checked }))}
+                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+                      />
+                      Veg only
+                    </label>
+                  </div>
 
                   {/* Action Buttons */}
                   <div className="flex gap-2 pt-2">

@@ -103,13 +103,41 @@ export async function GET(request: Request) {
       } as any,
     });
     
-    // Transform the data to flatten the counts
-    const restaurantsWithCounts = restaurants.map((restaurant: any) => ({
-      ...restaurant,
-      ratingsCount: restaurant._count.ratings,
-      reviewsCount: restaurant._count.reviews,
-      _count: undefined, // Remove the nested _count object
-    }));
+    // For each restaurant, determine latest availability flag per type (global NA)
+    const restaurantsWithCounts = await Promise.all(
+      restaurants.map(async (restaurant: any) => {
+        // Find latest VEG availability
+        const latestVeg = await prisma.restaurantRating.findFirst({
+          where: { restaurantId: restaurant.id, ratingType: 'VEG' },
+          orderBy: { createdAt: 'desc' },
+          select: { availability: true, score: true }
+        });
+
+        // Find latest NON_VEG availability
+        const latestNonVeg = await prisma.restaurantRating.findFirst({
+          where: { restaurantId: restaurant.id, ratingType: 'NON_VEG' },
+          orderBy: { createdAt: 'desc' },
+          select: { availability: true, score: true }
+        });
+
+        const globalVegAvailability = latestVeg?.availability === 'NOT_AVAILABLE' && latestVeg?.score === null
+          ? 'NOT_AVAILABLE'
+          : 'AVAILABLE';
+
+        const globalNonVegAvailability = latestNonVeg?.availability === 'NOT_AVAILABLE' && latestNonVeg?.score === null
+          ? 'NOT_AVAILABLE'
+          : 'AVAILABLE';
+
+        return {
+          ...restaurant,
+          ratingsCount: restaurant._count.ratings,
+          reviewsCount: restaurant._count.reviews,
+          _count: undefined,
+          globalVegAvailability,
+          globalNonVegAvailability
+        };
+      })
+    );
     
     // Add cache headers for client-side caching
     const response = NextResponse.json(restaurantsWithCounts);

@@ -15,7 +15,7 @@ import MovieTitleLink from './movie-title-link';
 // Manually define types to avoid server/client type mismatches
 export type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
 type FilterCategory = Category | 'ALL' | 'WATCHLIST' | 'YET_TO_RATE';
-type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore' | 'releaseYearThenScore';
+type SortKey = 'aggregateScore' | 'currentUserRating' | 'title' | 'addedDate' | 'addedDateThenScore' | 'releaseYearThenScore' | 'mostFeedback';
 
 interface Movie {
   id: string;
@@ -31,6 +31,8 @@ interface Movie {
   createdAt: string;
   ratingsCount: number;
   reviewsCount: number;
+  // derived: total feedback
+  // ratingsCount + reviewsCount
 }
 interface Rating { movieId: string; score: number; }
 interface AggregateScore { movieId: string; score: number; }
@@ -530,6 +532,16 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
           const scoreA = a.aggregateScore ?? -1;
           const scoreB = b.aggregateScore ?? -1;
           return scoreB - scoreA;
+        }
+        if (sortBy === 'mostFeedback') {
+          const aFeedback = (a.ratingsCount || 0) + (a.reviewsCount || 0);
+          const bFeedback = (b.ratingsCount || 0) + (b.reviewsCount || 0);
+          if (bFeedback !== aFeedback) return bFeedback - aFeedback;
+          // tie-breaker: added date desc
+          const dateDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          if (dateDiff !== 0) return dateDiff;
+          // final tie: title
+          return a.title.localeCompare(b.title);
         }
         const scoreA = sortBy === 'aggregateScore' ? a.aggregateScore ?? -1 : a.currentUserRating;
         const scoreB = sortBy === 'aggregateScore' ? b.aggregateScore ?? -1 : b.currentUserRating;
