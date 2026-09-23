@@ -10,7 +10,20 @@ import RestaurantFriendList from '@/components/restaurant-friend-list';
 import RestaurantFilterControls, { DietaryFilter, RestaurantSortKey } from '@/components/restaurant-filter-controls';
 import ActivityFeedPopup from '@/components/activity-feed-popup';
 import { useUser } from '@/context/user-context';
-import { Maximize2, Minimize2, ArrowLeft } from 'lucide-react';
+import {
+  Maximize2,
+  Minimize2,
+  ArrowLeft,
+  UtensilsCrossed,
+  MessagesSquare,
+  BarChart3,
+  Lock,
+  Search,
+  Pencil,
+  Leaf,
+  Drumstick,
+  Map,
+} from 'lucide-react';
 
 export default function FoodPage() {
   const { status: sessionStatus } = useSession();
@@ -38,65 +51,92 @@ export default function FoodPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen p-4 sm:p-8 flex items-center justify-center">
+      <main className="min-h-screen bg-paper p-4 sm:p-8 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand mx-auto mb-4"></div>
+          <p className="text-stone-500">Loading...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-8">
+    <main className="min-h-screen bg-paper text-ink p-4 sm:p-8">
       {/* Header */}
-      <div className="text-center mb-10">
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <Link 
+      <div className="relative text-center mb-10">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(234, 88, 12, 0.10), transparent 70%), radial-gradient(ellipse 35% 30% at 15% 20%, rgba(120, 113, 108, 0.16), transparent 70%)',
+          }}
+        />
+        <span className="chip animate-rise inline-flex items-center gap-1.5">
+          <UtensilsCrossed size={14} />
+          Eat with confidence
+        </span>
+        <div
+          className="animate-rise flex flex-wrap items-center justify-center gap-4 mt-4 mb-4"
+          style={{ animationDelay: '80ms' }}
+        >
+          <Link
             href="/"
-            className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="btn-secondary inline-flex items-center gap-2 text-sm"
             title="Back to Movies"
           >
             <ArrowLeft size={18} />
             Movies
           </Link>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-ink">
             Restaurant Ranking
           </h1>
         </div>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
+        <p
+          className="animate-rise mt-4 max-w-2xl mx-auto text-lg text-stone-500"
+          style={{ animationDelay: '160ms' }}
+        >
           Discover and rate restaurants with separate ratings for veg and non-veg food.
         </p>
-        <div className="mt-4 flex flex-wrap gap-3 justify-center">
-          <Link 
+        <div
+          className="animate-rise mt-6 flex flex-wrap gap-3 justify-center"
+          style={{ animationDelay: '240ms' }}
+        >
+          <Link
             href="/forum"
-            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+            className="btn-secondary inline-flex items-center gap-2"
           >
-            💬 Discussion Forum
+            <MessagesSquare size={16} />
+            Discussion Forum
           </Link>
           <button
             onClick={() => setShowActivityPopup(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="btn-secondary inline-flex items-center gap-2"
           >
-            📊 Activity Feed
+            <BarChart3 size={16} />
+            Activity Feed
           </button>
         </div>
-        
+
         {!isAuthenticated && !isLoading && (
-          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg max-w-md mx-auto">
-            <p className="text-green-800 mb-3">
-              You&apos;re viewing in read-only mode. 
+          <div
+            className="card animate-rise mt-8 p-6 max-w-md mx-auto"
+            style={{ animationDelay: '320ms' }}
+          >
+            <p className="text-stone-600 mb-4 flex items-center justify-center gap-2">
+              <Lock size={16} />
+              You&apos;re viewing in read-only mode.
             </p>
             <div className="flex gap-2 justify-center">
               <button
                 onClick={() => signIn()}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium"
+                className="btn-primary text-sm"
               >
                 Sign In
               </button>
               <Link
                 href="/register"
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm font-medium"
+                className="btn-secondary text-sm"
               >
                 Sign Up
               </Link>
@@ -107,20 +147,20 @@ export default function FoodPage() {
 
       {/* Mobile User Controls - Only visible on mobile */}
       {isAuthenticated && (
-        <div className="lg:hidden mb-6 p-4 bg-gray-50 rounded-lg shadow-sm border">
+        <div className="lg:hidden mb-6 card p-4">
           <div className="flex flex-col gap-4">
             <div className="flex-grow">
-              {currentUser && <p className="text-sm text-gray-500">Acting as: <span className="font-bold">{currentUser.name}</span></p>}
+              {currentUser && <p className="text-sm text-stone-500">Acting as: <span className="font-bold text-ink">{currentUser.name}</span></p>}
             </div>
             <div className="flex gap-2">
               {isAdmin && (
-                <Link href="/admin" className="flex-1 px-3 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 text-center">
+                <Link href="/admin" className="btn-secondary flex-1 text-sm text-center">
                   Admin Panel
                 </Link>
               )}
               <button
                 onClick={() => signOut()}
-                className="flex-1 px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 text-center"
+                className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors text-center"
               >
                 Logout
               </button>
@@ -129,41 +169,43 @@ export default function FoodPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-rise" style={{ animationDelay: '360ms' }}>
         {/* Left Column - Controls & Search */}
         <div className="lg:col-span-2 space-y-8">
           {isAuthenticated && (
-            <div className="bg-white rounded-lg shadow-sm border">
+            <div className="card overflow-hidden">
               {/* Tab Headers */}
-              <div className="border-b border-gray-200">
+              <div className="border-b border-stone-200">
                 <nav className="-mb-px flex space-x-8 px-6">
                   <button
                     onClick={() => setActiveTab('google-places')}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    className={`inline-flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                       activeTab === 'google-places'
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'border-brand text-brand'
+                        : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'
                     }`}
                   >
-                    🔍 Search (Google Places)
+                    <Search size={16} />
+                    Search (Google Places)
                   </button>
                   <button
                     onClick={() => setActiveTab('manual')}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    className={`inline-flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                       activeTab === 'manual'
-                        ? 'border-green-500 text-green-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'border-brand text-brand'
+                        : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'
                     }`}
                   >
-                    ✏️ Add Manually
+                    <Pencil size={16} />
+                    Add Manually
                   </button>
                 </nav>
               </div>
 
               {/* Tab Content */}
               <div className="p-6">
-                              {activeTab === 'google-places' && (
-                <GooglePlacesRestaurantSearch onRestaurantAdded={triggerDataRefresh} />
+                {activeTab === 'google-places' && (
+                  <GooglePlacesRestaurantSearch onRestaurantAdded={triggerDataRefresh} />
                 )}
                 {activeTab === 'manual' && (
                   <RestaurantSearch onItemAdded={triggerDataRefresh} />
@@ -171,7 +213,7 @@ export default function FoodPage() {
               </div>
             </div>
           )}
-          
+
           {/* Enhanced Filter Controls */}
           <RestaurantFilterControls
             searchTerm={searchTerm}
@@ -199,17 +241,17 @@ export default function FoodPage() {
           {!isRestaurantsFullWidth && (
             <div className="mt-12">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">Restaurant Rankings</h2>
+                <h2 className="section-title">Restaurant Rankings</h2>
                 <button
                   onClick={() => setIsRestaurantsFullWidth(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+                  className="btn-primary inline-flex items-center gap-2 text-sm"
                   title="Expand restaurants to full width"
                 >
                   <Maximize2 size={16} />
                   Full Width
                 </button>
               </div>
-              <RestaurantList 
+              <RestaurantList
                 searchTerm={searchTerm}
                 cuisineFilter={cuisineFilter}
                 locationFilter={locationFilter}
@@ -232,45 +274,51 @@ export default function FoodPage() {
           {isAuthenticated && (
             <>
               {/* Desktop User Controls - Hidden on mobile */}
-              <div className="hidden lg:block p-4 bg-gray-50 rounded-lg shadow-sm border">
+              <div className="hidden lg:block card p-4">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div className="flex-grow">
-                    {currentUser && <p className="text-sm text-gray-500">Acting as: <span className="font-bold">{currentUser.name}</span></p>}
+                    {currentUser && <p className="text-sm text-stone-500">Acting as: <span className="font-bold text-ink">{currentUser.name}</span></p>}
                   </div>
                   <div className="flex flex-col items-stretch gap-2 flex-shrink-0">
                     {isAdmin && (
-                      <Link href="/admin" className="px-3 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 w-full text-center">
+                      <Link href="/admin" className="btn-secondary text-sm w-full text-center">
                         Admin Panel
                       </Link>
                     )}
                     <button
                       onClick={() => signOut()}
-                      className="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 w-full text-center"
+                      className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors w-full text-center"
                     >
                       Logout
                     </button>
                   </div>
                 </div>
               </div>
-              
+
               <RestaurantFriendList onCalculationComplete={triggerDataRefresh} />
             </>
           )}
-          
+
           {/* Quick Stats */}
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Info</h3>
-            <div className="space-y-3 text-sm text-gray-600">
+          <div className="card p-6">
+            <h3 className="font-display text-lg font-semibold text-ink mb-4">Quick Info</h3>
+            <div className="space-y-3 text-sm text-stone-600">
               <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-green-100 rounded flex items-center justify-center">🌱</span>
+                <span className="w-8 h-8 bg-green-100 text-green-700 rounded-lg flex items-center justify-center shrink-0">
+                  <Leaf size={16} />
+                </span>
                 <span>Rate vegetarian food separately</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-red-100 rounded flex items-center justify-center">🍖</span>
+                <span className="w-8 h-8 bg-red-100 text-red-700 rounded-lg flex items-center justify-center shrink-0">
+                  <Drumstick size={16} />
+                </span>
                 <span>Rate non-vegetarian food separately</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-blue-100 rounded flex items-center justify-center">🗺️</span>
+                <span className="w-8 h-8 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center shrink-0">
+                  <Map size={16} />
+                </span>
                 <span>Add Google Maps links for easy navigation</span>
               </div>
             </div>
@@ -280,19 +328,19 @@ export default function FoodPage() {
 
       {/* Full-Width Restaurant List - Show when in full-width mode */}
       {isRestaurantsFullWidth && (
-        <div className="mt-8">
+        <div className="mt-8 animate-rise">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Restaurant Rankings</h2>
+            <h2 className="section-title">Restaurant Rankings</h2>
             <button
               onClick={() => setIsRestaurantsFullWidth(false)}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm"
+              className="btn-secondary inline-flex items-center gap-2 text-sm"
               title="Minimize restaurants"
             >
               <Minimize2 size={16} />
               Minimize
             </button>
           </div>
-          <RestaurantList 
+          <RestaurantList
             searchTerm={searchTerm}
             cuisineFilter={cuisineFilter}
             locationFilter={locationFilter}
@@ -310,9 +358,9 @@ export default function FoodPage() {
       )}
 
       {/* Activity Feed Popup */}
-      <ActivityFeedPopup 
+      <ActivityFeedPopup
         isOpen={showActivityPopup}
-        onClose={() => setShowActivityPopup(false)} 
+        onClose={() => setShowActivityPopup(false)}
       />
     </main>
   );
