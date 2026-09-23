@@ -7,7 +7,7 @@ import type { Category } from './filter-controls';
 import { useToast } from '@/context/toast-context';
 import CustomRatingInput from './custom-rating';
 import { getScore, getGradeFromScore, LetterGrade, Modifier } from '@/lib/rating-system';
-import { X } from 'lucide-react';
+import { X, Search, ChevronDown } from 'lucide-react';
 
 // TMDb Season data structure
 interface TMDbSeason {
@@ -321,26 +321,27 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
   return (
     <div className="w-full mx-auto">
       <form onSubmit={handleSearch} className="flex gap-2 mb-4">
-        <div className="relative flex-grow">
+        <div className="relative flex-1 min-w-0">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Add new movie/series to database..."
-            className="w-full p-2 pr-8 border rounded-l-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="input-modern w-full pl-10 pr-10"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600 transition-colors"
               title="Clear search"
             >
               <X size={16} />
             </button>
           )}
         </div>
-        <button type="submit" disabled={loading} className="px-6 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 disabled:bg-gray-400">
+        <button type="submit" disabled={loading} className="btn-primary shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">
           {loading ? 'Searching...' : 'Search'}
         </button>
       </form>
@@ -348,32 +349,35 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
       <div className="text-center mb-6">
         <button 
           onClick={() => setShowManualForm(!showManualForm)}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-brand hover:underline font-medium"
         >
           {showManualForm ? 'Cancel Manual Add' : 'Can\'t find a movie? Add it manually.'}
         </button>
       </div>
 
       {showManualForm && (
-        <form onSubmit={handleManualAdd} className="p-4 border rounded-lg bg-gray-50 mb-6 space-y-4">
-          <h3 className="text-lg font-semibold">Manually Add an Entry</h3>
+        <form onSubmit={handleManualAdd} className="p-4 sm:p-6 border border-stone-200/70 rounded-3xl bg-stone-50/50 mb-6 space-y-4 shadow-soft">
+          <h3 className="section-title text-lg">Manually Add an Entry</h3>
           <div>
-            <label htmlFor="title" className="block text-sm font-medium">Title</label>
-            <input type="text" name="title" id="title" required className="w-full p-2 border rounded-md" />
+            <label htmlFor="title" className="block text-sm font-medium text-stone-600">Title</label>
+            <input type="text" name="title" id="title" required className="input-modern w-full" />
           </div>
           <div>
-            <label htmlFor="category" className="block text-sm font-medium">Category</label>
-            <select name="category" id="category" required className="w-full p-2 border rounded-md bg-white">
-              <option value="MOVIE">Movie</option>
-              <option value="SERIES">Series</option>
-              <option value="DOCUMENTARY">Documentary</option>
-            </select>
+            <label htmlFor="category" className="block text-sm font-medium text-stone-600">Category</label>
+            <div className="relative">
+              <select name="category" id="category" required className="input-modern w-full appearance-none pr-10">
+                <option value="MOVIE">Movie</option>
+                <option value="SERIES">Series</option>
+                <option value="DOCUMENTARY">Documentary</option>
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+            </div>
           </div>
            <div>
-            <label htmlFor="review" className="block text-sm font-medium">Review (Optional)</label>
-            <textarea name="review" id="review" maxLength={100} className="w-full p-2 border rounded-md"></textarea>
+            <label htmlFor="review" className="block text-sm font-medium text-stone-600">Review (Optional)</label>
+            <textarea name="review" id="review" maxLength={100} className="input-modern w-full"></textarea>
           </div>
-          <button type="submit" className="w-full px-6 py-2 bg-green-600 text-white font-semibold rounded-lg">Add Manual Entry</button>
+          <button type="submit" className="btn-primary w-full">Add Manual Entry</button>
         </form>
       )}
 
@@ -389,7 +393,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
               setSelectedGrade(null);
               setSelectedModifier(null);
             }}
-            className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+            className="btn-secondary"
           >
             Close Search Results
           </button>
@@ -403,8 +407,8 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
             const isSeasonEntry = item.media_type === 'season';
             
             return (
-              <div key={item.id} className="bg-white border rounded-lg shadow-md overflow-hidden flex flex-col">
-                <div className="relative h-48">
+              <div key={item.id} className="card overflow-hidden flex flex-col">
+                <div className="relative h-48 bg-stone-100">
                   <Image
                     src={`https://image.tmdb.org/t/p/w500${item.poster_path}`} 
                     alt={title ?? 'Movie Poster'}
@@ -419,8 +423,8 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
                   )}
                 </div>
                   <div className="p-4">
-                    <h3 className="font-bold text-lg truncate" title={title}>{title}</h3>
-                    <p className="text-gray-500">
+                    <h3 className="font-bold text-lg truncate text-ink" title={title}>{title}</h3>
+                    <p className="text-stone-500">
                       {year?.substring(0, 4)}
                       {isSeasonEntry && item.episode_count && (
                         <span className="ml-2">• {item.episode_count} episodes</span>
@@ -428,7 +432,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
                     </p>
                   </div>
 
-                <div className="p-4 border-t mt-auto">
+                <div className="p-4 border-t border-stone-100 mt-auto">
                   {itemToReview?.id === item.id ? (
                     <div className="flex flex-col space-y-2 p-2">
                        <textarea
@@ -436,12 +440,12 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
                         onChange={(e) => setReviewText(e.target.value)}
                         placeholder="Add a note (optional)..."
                         maxLength={200}
-                        className="w-full p-2 border rounded-md text-sm"
+                        className="input-modern w-full text-sm"
                       />
-                      <div className="text-right text-xs text-gray-400">{reviewText.length}/200</div>
+                      <div className="text-right text-xs text-stone-400">{reviewText.length}/200</div>
                       
                       <div className="my-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2 text-center">Rate it (optional):</p>
+                        <p className="text-sm font-medium text-stone-600 mb-2 text-center">Rate it (optional):</p>
                         <CustomRatingInput 
                           onRatingSubmit={(score) => {
                             const { grade, modifier } = getGradeFromScore(score);
@@ -455,32 +459,32 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
 
                       {/* Different buttons for season entries vs regular content */}
                       {isSeasonEntry ? (
-                        <button onClick={() => handleSubmit('SERIES')} className="px-3 py-2 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-700">
+                        <button onClick={() => handleSubmit('SERIES')} className="btn-primary w-full text-sm">
                           Add Season {item.season_number}
                         </button>
                       ) : (
                         <>
-                          <button onClick={() => handleSubmit('MOVIE')} className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Add as Movie</button>
-                          <button onClick={() => handleSubmit('SERIES')} className="px-3 py-2 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-700">Add as Series</button>
-                          <button onClick={() => handleSubmit('DOCUMENTARY')} className="px-3 py-2 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-700">Add as Documentary</button>
+                          <button onClick={() => handleSubmit('MOVIE')} className="btn-primary w-full text-sm">Add as Movie</button>
+                          <button onClick={() => handleSubmit('SERIES')} className="btn-secondary w-full text-sm">Add as Series</button>
+                          <button onClick={() => handleSubmit('DOCUMENTARY')} className="btn-secondary w-full text-sm">Add as Documentary</button>
                           {/* Add Season Rating button for TV shows */}
                           {item.media_type === 'tv' && (
-                            <button 
+                            <button
                               onClick={() => handleShowSeasons(item)}
-                              className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700"
+                              className="btn-secondary w-full text-sm"
                             >
-                              📺 Show Individual Seasons
+                              Show Individual Seasons
                             </button>
                           )}
                         </>
                       )}
-                      <button onClick={() => { 
-                        setItemToReview(null); 
-                        setReviewText(''); 
+                      <button onClick={() => {
+                        setItemToReview(null);
+                        setReviewText('');
                         // Clear rating state when canceling
                         setSelectedGrade(null);
                         setSelectedModifier(null);
-                      }} className="px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">Cancel</button>
+                      }} className="w-full px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-full hover:bg-red-100 transition-all">Cancel</button>
                     </div>
                   ) : (
                     <button
@@ -490,7 +494,7 @@ export default function MovieSearch({ onItemAdded }: MovieSearchProps) {
                         setSelectedGrade(null);
                         setSelectedModifier(null);
                       }}
-                      className="w-full p-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                      className="btn-primary w-full"
                     >
                       Add to List
                     </button>
