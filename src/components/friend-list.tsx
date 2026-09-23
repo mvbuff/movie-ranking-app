@@ -190,29 +190,29 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
   // --- Render Logic ---
   if (!currentUser) {
     return (
-      <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
-        <p className="text-yellow-700">Please select a user to manage friends and weights.</p>
+      <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-center">
+        <p className="text-amber-700">Please select a user to manage friends and weights.</p>
       </div>
     );
   }
 
-  if (loading) return <p className="mt-8 text-center text-gray-500">Loading friends...</p>;
+  if (loading) return <p className="mt-8 text-center text-stone-500">Loading friends...</p>;
 
   return (
     <div className="w-full">
       <div className="flex items-center gap-3">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex-1 flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200"
+          className="flex-1 flex items-center justify-between p-4 bg-white border border-stone-200/70 shadow-soft rounded-3xl hover:shadow-lift hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand/40 transition-all duration-200"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <Users className="text-indigo-600" size={20} />
+            <div className="p-2 bg-brand/10 rounded-xl">
+              <Users className="text-brand" size={20} />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">Manage Friend Weights</h2>
+            <h2 className="section-title text-xl">Manage Friend Weights</h2>
           </div>
           <ChevronDown
-            className={`transform transition-transform duration-300 text-indigo-600 ${isOpen ? 'rotate-180' : ''}`}
+            className={`transform transition-transform duration-300 text-stone-400 ${isOpen ? 'rotate-180' : ''}`}
             size={24}
           />
         </button>
@@ -227,28 +227,28 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
         }`}
         style={{ maxHeight: isOpen ? 'none' : '0px' }}
       >
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-soft border border-stone-200/70 overflow-hidden">
           {friends.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <Users className="text-gray-400" size={24} />
+              <div className="mx-auto w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mb-4">
+                <Users className="text-stone-400" size={24} />
               </div>
-              <p className="text-gray-500">No other users found to manage.</p>
+              <p className="text-stone-500">No other users found to manage.</p>
             </div>
           ) : (
             <>
               {/* Action Buttons Header */}
-              <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
+              <div className="bg-stone-50 px-6 py-4 border-b border-stone-100">
                 <div className="flex flex-wrap items-center gap-3">
                   <button 
                     onClick={() => handleSelectAll(true)}
-                    className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
+                    className="px-4 py-2 text-sm font-medium bg-stone-900 text-white rounded-full hover:bg-stone-700 transition-all shadow-sm"
                   >
                     Select All
                   </button>
                   <button 
                     onClick={() => handleSelectAll(false)}
-                    className="px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors shadow-sm"
+                    className="px-4 py-2 text-sm font-medium bg-white text-stone-600 border border-stone-300 rounded-full hover:bg-stone-50 hover:border-stone-400 transition-all shadow-sm"
                   >
                     Unselect All
                   </button>
@@ -257,12 +257,12 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
               </div>
 
               {/* Friends List */}
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-stone-100">
                 {friends.map(friend => {
                   const weightInfo = getWeightInfo(friend.weight);
                   
                   return (
-                    <div key={friend.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                    <div key={friend.id} className="p-4 sm:p-6 hover:bg-stone-50 transition-colors">
                       {/* Mobile Layout - Stacked */}
                       <div className="block sm:hidden space-y-3">
                         {/* Name and Checkbox Row */}
@@ -271,11 +271,14 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
                             type="checkbox"
                             checked={friend.isFriend}
                             onChange={() => handleToggleFriend(friend.id, friend.isFriend)}
-                            className="h-5 w-5 rounded border-2 border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-2 transition-colors"
+                            className="h-5 w-5 rounded border-2 border-stone-300 accent-brand focus:ring-brand/40 focus:ring-2 transition-colors shrink-0"
                           />
+                          <div className="h-10 w-10 shrink-0 rounded-full bg-stone-900 text-white flex items-center justify-center font-semibold">
+                            {friend.name.charAt(0).toUpperCase()}
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className={`text-lg font-medium truncate transition-colors ${
-                              friend.isFriend ? 'text-gray-900' : 'text-gray-400'
+                            <h3 className={`text-lg font-semibold truncate transition-colors ${
+                              friend.isFriend ? 'text-ink' : 'text-stone-400'
                             }`}>
                               {friend.name}
                             </h3>
@@ -292,7 +295,7 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
                               step="0.05"
                               value={friend.weight}
                               onChange={(e) => handleWeightChange(friend.id, parseFloat(e.target.value))}
-                              className="flex-1 h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-modern focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              className="flex-1 h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-modern focus:outline-none focus:ring-2 focus:ring-brand/40"
                               style={{
                                 background: `linear-gradient(to right, 
                                   #ef4444 0%, #ef4444 25%, 
@@ -315,11 +318,14 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
                             type="checkbox"
                             checked={friend.isFriend}
                             onChange={() => handleToggleFriend(friend.id, friend.isFriend)}
-                            className="h-5 w-5 rounded border-2 border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-2 transition-colors"
+                            className="h-5 w-5 rounded border-2 border-stone-300 accent-brand focus:ring-brand/40 focus:ring-2 transition-colors shrink-0"
                           />
+                          <div className="ml-4 h-10 w-10 shrink-0 rounded-full bg-stone-900 text-white flex items-center justify-center font-semibold">
+                            {friend.name.charAt(0).toUpperCase()}
+                          </div>
                           <div className="ml-4 min-w-0 flex-1">
-                            <h3 className={`text-lg font-medium truncate transition-colors ${
-                              friend.isFriend ? 'text-gray-900' : 'text-gray-400'
+                            <h3 className={`text-lg font-semibold truncate transition-colors ${
+                              friend.isFriend ? 'text-ink' : 'text-stone-400'
                             }`}>
                               {friend.name}
                             </h3>
@@ -336,7 +342,7 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
                               step="0.05"
                               value={friend.weight}
                               onChange={(e) => handleWeightChange(friend.id, parseFloat(e.target.value))}
-                              className="flex-1 h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-modern focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              className="flex-1 h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-modern focus:outline-none focus:ring-2 focus:ring-brand/40"
                               style={{
                                 background: `linear-gradient(to right, 
                                   #ef4444 0%, #ef4444 25%, 
@@ -356,7 +362,7 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
               </div>
 
               {/* Bottom Calculate Button */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100">
+              <div className="bg-stone-50 px-6 py-4 border-t border-stone-100">
                 <div className="flex justify-center">
                   <CalculateScoresButton onCalculationComplete={handleCalculationComplete} compact={false} />
                 </div>
@@ -374,13 +380,13 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
           height: 24px;
           border-radius: 50%;
           background: white;
-          border: 3px solid #4f46e5;
+          border: 3px solid #EA580C;
           cursor: pointer;
           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
           transition: all 0.2s ease;
         }
         .slider-modern::-webkit-slider-thumb:hover {
-          border-color: #4338ca;
+          border-color: #C2410C;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
           transform: scale(1.1);
         }
@@ -389,7 +395,7 @@ function FriendList({ onCalculationComplete }: FriendListProps) {
           height: 24px;
           border-radius: 50%;
           background: white;
-          border: 3px solid #4f46e5;
+          border: 3px solid #EA580C;
           cursor: pointer;
           box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
