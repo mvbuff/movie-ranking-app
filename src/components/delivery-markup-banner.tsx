@@ -8,8 +8,8 @@ function formatPrice(n: number | null): string {
   return n === null ? '—' : `$${n.toFixed(2)}`;
 }
 
-export default function DeliveryMarkupBanner({ restaurantName }: { restaurantName: string }) {
-  const markup = getDeliveryMarkup(restaurantName);
+export default function DeliveryMarkupBanner({ restaurantId }: { restaurantId: string }) {
+  const markup = getDeliveryMarkup(restaurantId);
   const [expanded, setExpanded] = useState(false);
 
   // Additive: renders nothing for restaurants without verified markup data.
