@@ -157,23 +157,26 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-backdrop"
+      className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-sm flex items-center justify-center p-4"
       data-modal-backdrop="true"
     >
       <div 
         ref={modalContentRef}
-        className="bg-white rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-fade-in-up"
+        className="bg-white rounded-[1.75rem] shadow-lift w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden"
+        style={{ animation: 'scaleIn .25s cubic-bezier(.22,1,.36,1) both' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-gray-50 rounded-t-lg flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <Activity className="text-gray-600" size={18} />
-            <h2 className="text-lg font-semibold text-gray-800">Recent Updates</h2>
+        <div className="flex items-center justify-between p-5 border-b border-stone-100 flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <span className="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center">
+              <Activity className="text-brand" size={18} />
+            </span>
+            <h2 className="font-display font-bold tracking-tight text-lg text-ink">Recent Updates</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+            className="rounded-full hover:bg-stone-100 p-2 text-stone-500 hover:text-stone-700 transition-colors"
             title="Close"
           >
             <X size={20} />
@@ -181,16 +184,16 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 min-h-0">
+        <div className="flex-1 overflow-y-auto px-5 py-2 min-h-0">
           {loading ? (
-            <div className="space-y-3">
+            <div className="space-y-3 py-3">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="animate-pulse">
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0"></div>
+                    <div className="w-8 h-8 bg-stone-200 rounded-full flex-shrink-0"></div>
                     <div className="flex-1 min-w-0">
-                      <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-2 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-3 bg-stone-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-2 bg-stone-200 rounded w-1/2"></div>
                     </div>
                   </div>
                 </div>
@@ -198,41 +201,41 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
             </div>
           ) : error ? (
             <div className="text-center py-8">
-              <Activity className="mx-auto mb-3 text-gray-400" size={32} />
+              <Activity className="mx-auto mb-3 text-stone-300" size={32} />
               <p className="text-red-600 text-sm mb-2">Error loading activities</p>
-              <p className="text-xs text-gray-500">{error}</p>
+              <p className="text-xs text-stone-400">{error}</p>
               <button
                 onClick={fetchActivities}
-                className="mt-3 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                className="btn-primary mt-4 text-sm"
               >
                 Retry
               </button>
             </div>
           ) : activities.length === 0 ? (
             <div className="text-center py-8">
-              <Activity className="mx-auto mb-3 text-gray-400" size={32} />
-              <p className="text-gray-500 text-sm">No recent activities</p>
-              <p className="text-xs text-gray-400 mt-1">Check back later for community updates</p>
+              <Activity className="mx-auto mb-3 text-stone-300" size={32} />
+              <p className="text-stone-500 text-sm">No recent activities</p>
+              <p className="text-xs text-stone-400 mt-1">Check back later for community updates</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="divide-y divide-stone-100">
               {activities.map((activity) => (
                 <div 
                   key={activity.id} 
-                  className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group"
+                  className="flex items-start gap-3 py-4 group"
                 >
                   {/* User Avatar */}
-                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {activity.user.image ? (
                       <Image
                         src={activity.user.image}
                         alt={activity.user.name || 'User'}
-                        width={32}
-                        height={32}
+                        width={36}
+                        height={36}
                         className="rounded-full"
                       />
                     ) : (
-                      <span className="text-sm font-medium text-gray-600">
+                      <span className="text-sm font-semibold text-stone-500">
                         {(activity.user.name || 'U').charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -241,16 +244,18 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
                   {/* Activity Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2">
-                      <div className="mt-1 flex-shrink-0">{getActivityIcon(activity.type)}</div>
+                      <div className="w-6 h-6 rounded-full bg-stone-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {getActivityIcon(activity.type)}
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-800 leading-relaxed">
-                          <span className="font-medium">{activity.user.name || 'Someone'}</span>{' '}
+                        <p className="text-sm text-stone-700 leading-relaxed">
+                          <span className="font-semibold text-ink">{activity.user.name || 'Someone'}</span>{' '}
                           {activity.description}
                         </p>
                         
                         {/* Movie Info */}
                         {activity.movie && (
-                          <div className="mt-2 flex items-center gap-2 p-2 bg-gray-50 rounded border">
+                          <div className="mt-2 flex items-center gap-2 p-2 bg-stone-50 rounded-xl border border-stone-100">
                             {activity.movie.posterUrl && (
                               <div className="w-6 h-8 relative flex-shrink-0">
                                 <Image
@@ -262,10 +267,10 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-gray-700 truncate">
+                              <p className="text-xs font-semibold text-stone-700 truncate">
                                 {activity.movie.title}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-stone-400">
                                 {activity.movie.year} • {activity.movie.category}
                               </p>
                             </div>
@@ -274,8 +279,8 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
                         
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-1">
-                            <Calendar size={10} className="text-gray-400 flex-shrink-0" />
-                            <span className="text-xs text-gray-500">
+                            <Calendar size={10} className="text-stone-400 flex-shrink-0" />
+                            <span className="text-xs text-stone-400">
                               {formatTimeAgo(activity.createdAt)}
                             </span>
                           </div>
@@ -285,7 +290,7 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
                             <button
                               onClick={() => handleDeleteActivity(activity.id)}
                               disabled={deletingActivity === activity.id}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 transition-all disabled:opacity-50"
+                              className="opacity-0 group-hover:opacity-100 p-1 rounded-full text-red-400 hover:text-red-600 hover:bg-red-50 transition-all disabled:opacity-50"
                               title="Delete activity (Admin only)"
                             >
                               {deletingActivity === activity.id ? (
@@ -306,10 +311,10 @@ export default function ActivityFeedPopup({ isOpen, onClose }: ActivityFeedPopup
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t bg-gray-50 text-center rounded-b-lg flex-shrink-0">
-          <p className="text-xs text-gray-500">Latest community activities • Tap outside to close</p>
+        <div className="p-4 border-t border-stone-100 text-center flex-shrink-0">
+          <p className="text-xs text-stone-400">Latest community activities • Tap outside to close</p>
         </div>
       </div>
     </div>
   );
-} 
+}
