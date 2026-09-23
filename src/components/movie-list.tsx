@@ -5,7 +5,7 @@ import { useUser } from '@/context/user-context';
 import CustomRatingInput from './custom-rating';
 import Image from 'next/image';
 import { Scorecard } from './score-components';
-import { Info, Star, MessageSquare, Eye, Share2, Trash2 } from 'lucide-react';
+import { Info, Star, MessageSquare, Eye, Share2, Trash2, AlertTriangle, PartyPopper, Clapperboard } from 'lucide-react';
 import ReviewsModal from './reviews-modal';
 import AddReviewModal from './add-review-modal';
 import { getRatingDisplay } from '@/lib/rating-system';
@@ -551,13 +551,26 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
 
   if (!currentUser && !readOnlyMode) return null;
   
-  if (loading) return <p className="mt-12 text-center text-gray-500">Loading movie collection...</p>;
+  if (loading) return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-8 gap-6 mt-12" aria-label="Loading movie collection">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="bg-white rounded-[1.75rem] border border-stone-200/70 p-3">
+          <div className="skeleton aspect-[2/3] rounded-[1.25rem]" />
+          <div className="skeleton h-4 rounded-full mt-4 w-3/4" />
+          <div className="skeleton h-8 rounded-full mt-3 w-full" />
+        </div>
+      ))}
+    </div>
+  );
 
   if (movies.length === 0) {
     return (
-      <div className="text-center p-8 my-10 bg-gray-50 rounded-lg border-dashed border-2 border-gray-300">
-        <p className="text-gray-500">No movies have been added yet.</p>
-        <p className="text-sm text-gray-400 mt-2">Use the search bar above to find and add movies to the list.</p>
+      <div className="card bg-white rounded-[1.75rem] border border-stone-200/70 text-center p-10 my-10 animate-rise">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-stone-100">
+          <Clapperboard size={24} className="text-stone-400" />
+        </div>
+        <p className="section-title font-display text-lg text-ink">No movies have been added yet.</p>
+        <p className="text-sm text-stone-500 mt-2">Use the search bar above to find and add movies to the list.</p>
       </div>
     );
   }
@@ -566,10 +579,15 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
     <>
       {/* Delete Confirmation Modal */}
       {deleteConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-red-600 mb-4">⚠️ Delete Movie</h3>
-            <p className="text-gray-700 mb-6">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="card bg-white rounded-[1.75rem] max-w-md w-full p-6 animate-rise">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-red-100">
+                <AlertTriangle size={20} className="text-red-600" />
+              </div>
+              <h3 className="font-display text-lg font-bold text-ink">Delete Movie</h3>
+            </div>
+            <p className="text-stone-600 text-sm mb-6 leading-relaxed">
               Are you sure you want to permanently delete <strong>&quot;{deleteConfirmation.movieTitle}&quot; ({deleteConfirmation.movieYear})</strong>?
               <br /><br />
               This will also delete:
@@ -583,7 +601,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setDeleteConfirmation(null)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+                className="btn-secondary rounded-full px-5 min-h-[44px] text-sm font-semibold"
                 disabled={deletingMovie === deleteConfirmation.movieId}
               >
                 Cancel
@@ -591,7 +609,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
               <button
                 onClick={() => handleMovieDelete(deleteConfirmation.movieId, deleteConfirmation.movieTitle)}
                 disabled={deletingMovie === deleteConfirmation.movieId}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="rounded-full px-5 min-h-[44px] bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
               >
                 {deletingMovie === deleteConfirmation.movieId ? (
                   <>
@@ -661,27 +679,29 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
         />
       )}
       <section className="w-full mx-auto mt-6">
-       <h2 className="text-3xl font-bold mb-6 text-gray-800 border-b pb-2">
-         {categoryFilter === 'YET_TO_RATE' 
-           ? '⭐ Movies You Haven\'t Rated Yet' 
-           : categoryFilter === 'WATCHLIST'
-           ? '👀 Your Watchlist'
-           : 'Your Movie Rankings'
-         }
+       <h2 className="section-title font-display text-2xl sm:text-3xl font-bold mb-6 text-ink border-b border-stone-200/70 pb-3 flex items-center gap-2.5">
+         {categoryFilter === 'YET_TO_RATE' ? (
+           <><Star size={26} className="text-amber-500 fill-current flex-shrink-0" /> Movies You Haven&apos;t Rated Yet</>
+         ) : categoryFilter === 'WATCHLIST' ? (
+           <><Eye size={26} className="text-brand flex-shrink-0" /> Your Watchlist</>
+         ) : (
+           <><Clapperboard size={26} className="text-brand flex-shrink-0" /> Your Movie Rankings</>
+         )}
        </h2>
        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-8 gap-6">
-        {filteredAndSortedMovies.map((movie) => (
+        {filteredAndSortedMovies.map((movie, i) => (
           <div 
             key={movie.id} 
-            className="bg-white border rounded-lg shadow-md overflow-hidden group flex flex-col"
+            className="card group bg-white rounded-[1.75rem] border border-stone-200/70 shadow-sm overflow-hidden hover:-translate-y-1 hover:shadow-lift transition-all duration-300 animate-rise flex flex-col"
+            style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
           >
-            <div className="relative h-48"> 
+            <div className="relative aspect-[2/3] overflow-hidden rounded-[1.25rem] m-3 mb-0 bg-stone-100"> 
                 <Image
                   src={movie.posterUrl || '/placeholder.png'}
                   alt={`Poster for ${movie.title}`}
                 layout="fill"
                 objectFit="cover"
-                className="transition-transform duration-300"
+                className="group-hover:scale-105 transition-transform duration-500"
               />
               {/* Admin delete button - top left corner */}
               {isAdmin && !readOnlyMode && (
@@ -692,7 +712,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                     movieYear: movie.year 
                   })}
                   disabled={deletingMovie === movie.id}
-                  className="absolute top-2 left-2 p-2 rounded-full bg-red-600/90 text-white hover:bg-red-700/90 transition-all z-10 shadow-lg"
+                  className="absolute top-2 left-2 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full bg-red-600/90 text-white hover:bg-red-700/90 transition-all z-10 shadow-lg"
                   title="Delete movie (Admin only)"
                 >
                   {deletingMovie === movie.id ? (
@@ -706,7 +726,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
               {/* Watchlist toggle button - adjusted position for admin delete button */}
               {readOnlyMode ? (
                 <div
-                  className={`absolute ${isAdmin ? 'top-2 left-12' : 'top-2 left-2'} p-2 rounded-full bg-gray-500/70 text-white cursor-not-allowed`}
+                  className={`absolute ${isAdmin ? 'top-2 left-14' : 'top-2 left-2'} min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full bg-stone-500/70 text-white cursor-not-allowed`}
                   title="Sign in to add to watchlist"
                 >
                   <Eye size={16} />
@@ -715,7 +735,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                 <button
                   onClick={() => handleWatchlistToggle(movie.id, movie.isInWatchlist)}
                   disabled={togglingWatchlist === movie.id}
-                  className={`absolute ${isAdmin ? 'top-2 left-12' : 'top-2 left-2'} p-2 rounded-full transition-all ${
+                  className={`absolute ${isAdmin ? 'top-2 left-14' : 'top-2 left-2'} min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full transition-all ${
                     movie.isInWatchlist 
                       ? 'bg-blue-600 text-white shadow-lg' 
                       : 'bg-black/50 text-white hover:bg-black/70'
@@ -732,92 +752,101 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
               
               {/* TMDb rating - top right */}
               {movie.tmdbRating && (
-                <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  <Star size={12} className="text-yellow-400" />
+                <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur">
+                  <Star size={12} className="text-yellow-400 fill-current" />
                   <span>{movie.tmdbRating.toFixed(1)}</span>
                 </div>
               )}
 
               {/* Season badge - positioned below TMDb rating or top-right if no rating */}
               {movie.seasonNumber && (
-                <div className={`absolute ${movie.tmdbRating ? 'top-10' : 'top-2'} right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded`}>
+                <div className={`absolute ${movie.tmdbRating ? 'top-10' : 'top-2'} right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full`}>
                   S{movie.seasonNumber}
                 </div>
               )}
+
+              {/* Floating friend-score pill - bottom left, color-coded by grade band (scale 3-10) */}
+              {movie.aggregateScore !== null && (
+                <div className={`absolute bottom-2 left-2 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-white backdrop-blur ${movie.aggregateScore >= 8 ? 'bg-emerald-500/95' : movie.aggregateScore >= 5 ? 'bg-amber-500/95' : 'bg-stone-500/95'}`}>
+                  <Star size={12} className="fill-current" />
+                  <span>{movie.aggregateScore.toFixed(1)}</span>
+                </div>
+              )}
             </div>
-            <div className="p-4 flex flex-col flex-1">
-              {/* Mobile-first responsive layout for title and buttons */}
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
-                <MovieTitleLink
-                  tmdbId={movie.tmdbId}
-                  title={movie.title}
-                  year={movie.year}
-                  mediaType={movie.mediaType}
-                  tmdbUrl={movie.tmdbUrl}
-                  className="font-bold text-base sm:text-lg text-gray-900 hover:text-indigo-600 transition-colors line-clamp-2 sm:line-clamp-1 sm:flex-1 sm:min-w-0"
-                />
-                <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                  {/* Action buttons */}
-                  <div className="flex gap-1">
-                    {readOnlyMode ? (
-                      <div
-                        className="p-1 text-gray-400 cursor-not-allowed"
-                        title="Sign in to add reviews"
-                      >
-                        <MessageSquare size={18} />
-                      </div>
-                    ) : (
-                      <button 
-                        onClick={() => setAddReviewModal({ movieId: movie.id, movieTitle: movie.title })}
-                        className="p-1 text-gray-400 hover:text-blue-600"
-                        title="Add review"
-                      >
-                        <MessageSquare size={18} />
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
-                      className="p-1 text-gray-400 hover:text-indigo-600"
-                      title="Show user reviews"
-                    >
-                      <Info size={18} />
-                    </button>
-                    {/* Temporarily removed Users/Discussion button - keeping function for future use
-                    <button 
-                      onClick={() => handleDiscussionClick(movie)}
-                      className="p-1 text-gray-400 hover:text-purple-600"
-                      title="Discuss this movie in forum"
-                    >
-                      <Users size={18} />
-                    </button>
-                    */}
-                    <button 
-                      onClick={() => shareToWhatsApp(movie)}
-                      className="p-1 text-gray-400 hover:text-green-600"
-                      title="Copy movie details"
-                    >
-                      <Share2 size={18} />
-                    </button>
+            <div className="p-4 pt-3 flex flex-col flex-1 gap-3">
+              <MovieTitleLink
+                tmdbId={movie.tmdbId}
+                title={movie.title}
+                year={movie.year}
+                mediaType={movie.mediaType}
+                tmdbUrl={movie.tmdbUrl}
+                className="font-display font-bold text-base text-ink hover:text-brand transition-colors line-clamp-2"
+              />
+
+              {/* Action buttons */}
+              <div className="flex flex-wrap gap-1.5">
+                {readOnlyMode ? (
+                  <div
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium text-stone-400 cursor-not-allowed"
+                    title="Sign in to add reviews"
+                  >
+                    <MessageSquare size={14} />
+                    Review
                   </div>
-                  
-                  {/* Rating and Review counts */}
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Star size={12} className="text-yellow-500" />
-                      <span>{movie.ratingsCount}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MessageSquare size={12} className="text-blue-500" />
-                      <span>{movie.reviewsCount}</span>
-                    </div>
-                  </div>
+                ) : (
+                  <button
+                    onClick={() => setAddReviewModal({ movieId: movie.id, movieTitle: movie.title })}
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                    title="Add review"
+                  >
+                    <MessageSquare size={14} />
+                    Review
+                  </button>
+                )}
+                <button
+                  onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                  title="Show user reviews"
+                >
+                  <Info size={14} />
+                  Details
+                </button>
+                {/* Temporarily removed Users/Discussion button - keeping function for future use
+                <button
+                  onClick={() => handleDiscussionClick(movie)}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                  title="Discuss this movie in forum"
+                >
+                  <Users size={18} />
+                  Discuss
+                </button>
+                */}
+                <button
+                  onClick={() => shareToWhatsApp(movie)}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                  title="Copy movie details"
+                >
+                  <Share2 size={14} />
+                  Share
+                </button>
+              </div>
+
+              {/* Rating and Review counts */}
+              <div className="flex items-center gap-3 text-xs text-stone-500">
+                <div className="flex items-center gap-1">
+                  <Star size={12} className="text-amber-400" />
+                  <span>{movie.ratingsCount}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <MessageSquare size={12} className="text-sky-500" />
+                  <span>{movie.reviewsCount}</span>
                 </div>
               </div>
-              
-              <div className="mt-auto pt-4">
+
+              <div className="mt-auto pt-1">
                 {readOnlyMode ? (
-                  <div className="p-3 bg-gray-50 border border-gray-200 rounded text-center">
-                    <p className="text-gray-500 text-sm mb-2">Sign in to rate this movie</p>
+                  <div className="p-3 bg-stone-50 border border-stone-200 rounded-2xl text-center">
+                    <p className="text-stone-500 text-xs mb-2">Sign in to rate this movie</p>
                     <div className="opacity-50 pointer-events-none">
                       <CustomRatingInput
                         initialScore={0}
@@ -836,27 +865,34 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
               </div>
               {/* Old inline review form removed - now using modal */}
             </div>
-            <div className="p-2 bg-gray-50 border-t">
-              <Scorecard 
-                score={movie.aggregateScore} 
-                label={readOnlyMode ? "Community Score" : "Friend Score"} 
-              />
+            <div className="px-4 pb-4">
+              <div className="rounded-2xl bg-stone-50 border border-stone-100 p-2">
+                <Scorecard
+                  score={movie.aggregateScore}
+                  label={readOnlyMode ? "Community Score" : "Friend Score"}
+                />
+              </div>
             </div>
           </div>
         ))}
        </div>
        {filteredAndSortedMovies.length === 0 && movies.length > 0 && (
-         <div className="text-center p-8 my-10 bg-gray-50 rounded-lg border-dashed border-2 border-gray-300">
-           <p className="text-gray-500">
-             {categoryFilter === 'YET_TO_RATE' 
-               ? '🎉 Great job! You\'ve rated all the movies in your collection.'
+         <div className="card bg-white rounded-[1.75rem] border border-stone-200/70 text-center p-10 my-10 animate-rise">
+           {categoryFilter === 'YET_TO_RATE' && (
+             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+               <PartyPopper size={24} className="text-amber-600" />
+             </div>
+           )}
+           <p className="section-title font-display text-lg text-ink">
+             {categoryFilter === 'YET_TO_RATE'
+               ? 'Great job! You\'ve rated all the movies in your collection.'
                : categoryFilter === 'WATCHLIST'
                ? 'Your watchlist is empty. Add movies to watch later!'
                : 'No movies match your current filters.'
              }
            </p>
-           <p className="text-sm text-gray-400 mt-2">
-             {categoryFilter === 'YET_TO_RATE' 
+           <p className="text-sm text-stone-500 mt-2">
+             {categoryFilter === 'YET_TO_RATE'
                ? 'Add more movies to continue rating, or check back after new movies are added.'
                : categoryFilter === 'WATCHLIST'
                ? 'Use the eye icon on movie cards to add them to your watchlist.'
