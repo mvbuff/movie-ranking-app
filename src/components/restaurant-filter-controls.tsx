@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Search, MapPin, Utensils, Leaf, Filter, Loader2 } from 'lucide-react';
+import { X, Search, MapPin, Utensils, UtensilsCrossed, Leaf, Drumstick, ClipboardList, Filter, Loader2, Lock, BarChart3, ChevronDown } from 'lucide-react';
 import { useDebounceArray } from '@/hooks/useDebounce';
 
 export type DietaryFilter = 'ALL' | 'VEG_ONLY' | 'NON_VEG_ONLY' | 'EATLIST';
@@ -36,10 +36,10 @@ const cuisineOptions = [
 ];
 
 const dietaryOptions = [
-  { id: 'ALL' as const, name: 'All Restaurants', icon: '🍽️' },
-  { id: 'VEG_ONLY' as const, name: 'Veg Available Only', icon: '🌱' },
-  { id: 'NON_VEG_ONLY' as const, name: 'Non-Veg Available Only', icon: '🍖' },
-  { id: 'EATLIST' as const, name: 'Eat List', icon: '📝' },
+  { id: 'ALL' as const, name: 'All Restaurants', Icon: UtensilsCrossed },
+  { id: 'VEG_ONLY' as const, name: 'Veg Available Only', Icon: Leaf },
+  { id: 'NON_VEG_ONLY' as const, name: 'Non-Veg Available Only', Icon: Drumstick },
+  { id: 'EATLIST' as const, name: 'Eat List', Icon: ClipboardList },
 ];
 
 export default function RestaurantFilterControls({
@@ -74,11 +74,12 @@ export default function RestaurantFilterControls({
                      currentVegScore !== debouncedVegScore || 
                      currentNonVegScore !== debouncedNonVegScore;
   return (
-    <div className="w-full bg-white rounded-lg shadow-sm border p-6">
+    <div className="w-full bg-white rounded-3xl border border-stone-200/70 shadow-soft p-6">
       {readOnlyMode && (
-        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
+          <Lock size={16} className="text-amber-700 mt-0.5 shrink-0" />
           <p className="text-amber-800 text-sm">
-            🔒 You&apos;re viewing in read-only mode. Sign in to add restaurants and rate them.
+            You&apos;re viewing in read-only mode. Sign in to add restaurants and rate them.
           </p>
         </div>
       )}
@@ -86,30 +87,31 @@ export default function RestaurantFilterControls({
       <div className="space-y-6">
         {/* Search Bar */}
         <div>
-          <label htmlFor="restaurant-search" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="restaurant-search" className="block text-sm font-medium text-stone-600 mb-2">
             <div className="flex items-center gap-2">
-              {isSearching ? (
-                <Loader2 size={16} className="animate-spin text-blue-500" />
-              ) : (
-                <Search size={16} />
-              )}
+              <Search size={16} />
               Search Restaurants
-              {isSearching && <span className="text-xs text-blue-500">(updating...)</span>}
+              {isSearching && <span className="text-xs text-brand">(updating...)</span>}
             </div>
           </label>
           <div className="relative">
+            {isSearching ? (
+              <Loader2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 animate-spin text-brand pointer-events-none" />
+            ) : (
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+            )}
             <input
               id="restaurant-search"
               type="text"
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search by name, cuisine, location, address..."
-              className="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="input-modern w-full pl-10 pr-10"
             />
             {searchTerm && (
               <button
                 onClick={() => onSearchChange('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600 transition-colors"
                 title="Clear search"
               >
                 <X size={16} />
@@ -120,32 +122,25 @@ export default function RestaurantFilterControls({
 
         {/* Dietary Filter Pills */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-stone-600 mb-3">
             <div className="flex items-center gap-2">
               <Filter size={16} />
               Dietary Preferences
             </div>
           </label>
-          <div className="flex items-center gap-2 flex-wrap">
-            {dietaryOptions.map(({ id, name, icon }) => (
+          <div className="flex flex-wrap gap-2">
+            {dietaryOptions.map(({ id, name, Icon }) => (
               <button
                 key={id}
                 onClick={() => onDietaryFilterChange(id)}
-                className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all inline-flex items-center gap-1.5 ${
                   dietaryFilter === id
-                    ? id === 'VEG_ONLY'
-                      ? 'bg-green-600 text-white shadow'
-                      : id === 'NON_VEG_ONLY'
-                      ? 'bg-red-600 text-white shadow'
-                      : 'bg-gray-600 text-white shadow'
-                    : id === 'VEG_ONLY'
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                    : id === 'NON_VEG_ONLY'
-                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-stone-900 text-white border border-stone-900 shadow-sm'
+                    : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-300 hover:-translate-y-px'
                 }`}
               >
-                {icon} {name}
+                <Icon size={14} />
+                {name}
               </button>
             ))}
           </div>
@@ -155,28 +150,31 @@ export default function RestaurantFilterControls({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Cuisine Filter */}
           <div>
-            <label htmlFor="cuisine-filter" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="cuisine-filter" className="block text-sm font-medium text-stone-600 mb-2">
               <div className="flex items-center gap-2">
                 <Utensils size={16} />
                 Cuisine Type
               </div>
             </label>
-            <select
-              id="cuisine-filter"
-              value={cuisineFilter}
-              onChange={(e) => onCuisineFilterChange(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value="">All Cuisines</option>
-              {cuisineOptions.map(cuisine => (
-                <option key={cuisine} value={cuisine}>{cuisine}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                id="cuisine-filter"
+                value={cuisineFilter}
+                onChange={(e) => onCuisineFilterChange(e.target.value)}
+                className="input-modern w-full appearance-none pr-10"
+              >
+                <option value="">All Cuisines</option>
+                {cuisineOptions.map(cuisine => (
+                  <option key={cuisine} value={cuisine}>{cuisine}</option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+            </div>
           </div>
 
           {/* Location Filter */}
           <div>
-            <label htmlFor="location-filter" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="location-filter" className="block text-sm font-medium text-stone-600 mb-2">
               <div className="flex items-center gap-2">
                 <MapPin size={16} />
                 Location
@@ -189,12 +187,12 @@ export default function RestaurantFilterControls({
                 value={locationFilter}
                 onChange={(e) => onLocationFilterChange(e.target.value)}
                 placeholder="Filter by location..."
-                className="w-full p-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="input-modern w-full pr-10"
               />
               {locationFilter && (
                 <button
                   onClick={() => onLocationFilterChange('')}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600 transition-colors"
                   title="Clear location filter"
                 >
                   <X size={16} />
@@ -205,21 +203,27 @@ export default function RestaurantFilterControls({
 
           {/* Sort By */}
           <div>
-            <label htmlFor="sort-by" className="block text-sm font-medium text-gray-700 mb-2">
-              📊 Sort By
+            <label htmlFor="sort-by" className="block text-sm font-medium text-stone-600 mb-2">
+              <span className="flex items-center gap-2">
+                <BarChart3 size={16} />
+                Sort By
+              </span>
             </label>
-            <select 
-              id="sort-by"
-              value={sortBy}
-              onChange={(e) => onSortChange(e.target.value as RestaurantSortKey)}
-              className="w-full p-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value="aggregateScore">{readOnlyMode ? 'Community Score' : 'Friend Score'}</option>
-              <option value="vegRating">Veg Rating</option>
-              <option value="nonVegRating">Non-Veg Rating</option>
-              <option value="name">Name (A-Z)</option>
-              <option value="addedDate">Recently Added</option>
-            </select>
+            <div className="relative">
+              <select
+                id="sort-by"
+                value={sortBy}
+                onChange={(e) => onSortChange(e.target.value as RestaurantSortKey)}
+                className="input-modern w-full appearance-none pr-10"
+              >
+                <option value="aggregateScore">{readOnlyMode ? 'Community Score' : 'Friend Score'}</option>
+                <option value="vegRating">Veg Rating</option>
+                <option value="nonVegRating">Non-Veg Rating</option>
+                <option value="name">Name (A-Z)</option>
+                <option value="addedDate">Recently Added</option>
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+            </div>
           </div>
 
           {/* Clear All Filters */}
@@ -235,7 +239,7 @@ export default function RestaurantFilterControls({
                 onIgnoreNonVegForVegChange(false);
                 onIgnoreVegForNonVegChange(false);
               }}
-              className="w-full p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              className="btn-secondary w-full"
             >
               Clear All
             </button>
@@ -247,7 +251,7 @@ export default function RestaurantFilterControls({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
             {/* Veg Score Threshold */}
             <div>
-              <label htmlFor="veg-score-threshold" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="veg-score-threshold" className="block text-sm font-medium text-stone-600 mb-2">
                 <div className="flex items-center gap-2">
                   <Leaf className="text-green-600" size={16} />
                   Min. Veg Score: {vegScoreThreshold}/10
@@ -266,7 +270,7 @@ export default function RestaurantFilterControls({
                 onChange={(e) => onVegScoreThresholdChange(parseFloat(e.target.value))}
                 className="w-full h-2 bg-green-100 rounded-lg appearance-none cursor-pointer slider-green"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-xs text-stone-500 mt-1">
                 <span>3</span>
                 <span>10</span>
               </div>
@@ -280,7 +284,7 @@ export default function RestaurantFilterControls({
                   onChange={(e) => onIgnoreNonVegForVegChange(e.target.checked)}
                   className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
                 />
-                <label htmlFor="ignore-nonveg-for-veg" className="text-xs text-gray-600">
+                <label htmlFor="ignore-nonveg-for-veg" className="text-xs text-stone-600">
                   Ignore non-veg ratings when filtering veg options
                 </label>
               </div>
@@ -288,7 +292,7 @@ export default function RestaurantFilterControls({
 
             {/* Non-Veg Score Threshold */}
             <div>
-              <label htmlFor="nonveg-score-threshold" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="nonveg-score-threshold" className="block text-sm font-medium text-stone-600 mb-2">
                 <div className="flex items-center gap-2">
                   <Utensils className="text-red-600" size={16} />
                   Min. Non-Veg Score: {nonVegScoreThreshold}/10
@@ -307,7 +311,7 @@ export default function RestaurantFilterControls({
                 onChange={(e) => onNonVegScoreThresholdChange(parseFloat(e.target.value))}
                 className="w-full h-2 bg-red-100 rounded-lg appearance-none cursor-pointer slider-red"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-xs text-stone-500 mt-1">
                 <span>3</span>
                 <span>10</span>
               </div>
@@ -321,7 +325,7 @@ export default function RestaurantFilterControls({
                   onChange={(e) => onIgnoreVegForNonVegChange(e.target.checked)}
                   className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
                 />
-                <label htmlFor="ignore-veg-for-nonveg" className="text-xs text-gray-600">
+                <label htmlFor="ignore-veg-for-nonveg" className="text-xs text-stone-600">
                   Ignore veg ratings when filtering non-veg options
                 </label>
               </div>
