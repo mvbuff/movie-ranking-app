@@ -191,23 +191,23 @@ function RestaurantFriendList({ onCalculationComplete }: RestaurantFriendListPro
     }
   };
 
-  if (loading) return <p className="mt-8 text-center text-gray-500">Loading restaurant friends...</p>;
+  if (loading) return <p className="mt-8 text-center text-stone-500">Loading restaurant friends...</p>;
 
   return (
     <div className="w-full">
       <div className="flex items-center gap-3">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex-1 flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
+          className="flex-1 flex items-center justify-between p-4 bg-white border border-stone-200/70 shadow-soft rounded-3xl hover:shadow-lift hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand/40 transition-all duration-200"
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Users className="text-green-600" size={20} />
+            <div className="p-2 bg-brand/10 rounded-xl">
+              <Users className="text-brand" size={20} />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">Restaurant Friend Weights</h2>
+            <h2 className="section-title text-xl">Restaurant Friend Weights</h2>
           </div>
           <ChevronDown
-            className={`transform transition-transform duration-300 text-green-600 ${isOpen ? 'rotate-180' : ''}`}
+            className={`transform transition-transform duration-300 text-stone-400 ${isOpen ? 'rotate-180' : ''}`}
             size={24}
           />
         </button>
@@ -222,28 +222,28 @@ function RestaurantFriendList({ onCalculationComplete }: RestaurantFriendListPro
         }`}
         style={{ maxHeight: isOpen ? 'none' : '0px' }}
       >
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-3xl shadow-soft border border-stone-200/70 overflow-hidden">
           {friends.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <Users className="text-gray-400" size={24} />
+              <div className="mx-auto w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mb-4">
+                <Users className="text-stone-400" size={24} />
               </div>
-              <p className="text-gray-500">No other users found to manage.</p>
+              <p className="text-stone-500">No other users found to manage.</p>
             </div>
           ) : (
             <>
               {/* Action Buttons Header */}
-              <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
+              <div className="bg-stone-50 px-6 py-4 border-b border-stone-100">
                 <div className="flex flex-wrap items-center gap-3">
                   <button 
                     onClick={() => handleSelectAll(true)}
-                    className="px-4 py-2 text-sm font-medium bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
+                    className="px-4 py-2 text-sm font-medium bg-stone-900 text-white rounded-full hover:bg-stone-700 transition-all shadow-sm"
                   >
                     Select All
                   </button>
                   <button 
                     onClick={() => handleSelectAll(false)}
-                    className="px-4 py-2 text-sm font-medium bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors shadow-sm"
+                    className="px-4 py-2 text-sm font-medium bg-white text-stone-600 border border-stone-300 rounded-full hover:bg-stone-50 hover:border-stone-400 transition-all shadow-sm"
                   >
                     Unselect All
                   </button>
@@ -252,29 +252,32 @@ function RestaurantFriendList({ onCalculationComplete }: RestaurantFriendListPro
               </div>
 
               {/* Friends List */}
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-stone-100">
                 {friends.map((friend) => (
-                  <div key={friend.id} className="p-6 hover:bg-gray-25 transition-colors">
+                  <div key={friend.id} className="p-4 sm:p-6 hover:bg-stone-50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         {/* Friend Toggle Button */}
                         <button
                           onClick={() => handleToggleFriend(friend.id, friend.isFriend)}
-                          className={`p-2 rounded-lg transition-all duration-200 ${
+                          className={`p-2 rounded-xl transition-all duration-200 shrink-0 ${
                             friend.isFriend
-                              ? 'bg-green-100 text-green-600 hover:bg-green-200'
-                              : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                              ? 'bg-brand/10 text-brand hover:bg-brand/20'
+                              : 'bg-stone-100 text-stone-400 hover:bg-stone-200'
                           }`}
                         >
                           {friend.isFriend ? <UserCheck size={20} /> : <UserX size={20} />}
                         </button>
                         
                         {/* Friend Info */}
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-gray-900">{friend.name}</h3>
-                            <span className={`text-xs px-2 py-1 rounded-full ${
-                              friend.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-10 w-10 shrink-0 rounded-full bg-stone-900 text-white flex items-center justify-center font-semibold">
+                            {friend.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <h3 className="font-semibold text-ink truncate">{friend.name}</h3>
+                            <span className={`text-xs px-2 py-1 rounded-full shrink-0 ${
+                              friend.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
                             }`}>
                               {friend.status}
                             </span>
@@ -285,7 +288,7 @@ function RestaurantFriendList({ onCalculationComplete }: RestaurantFriendListPro
                       {/* Weight Slider */}
                       {friend.isFriend && (
                         <div className="flex items-center gap-4">
-                          <div className="text-sm text-gray-600 min-w-[60px]">
+                          <div className="text-sm text-stone-600 font-medium min-w-[60px] text-right">
                             {Math.round(friend.weight * 100)}%
                           </div>
                           <input
@@ -313,6 +316,34 @@ function RestaurantFriendList({ onCalculationComplete }: RestaurantFriendListPro
           )}
         </div>
       </div>
+    </div>
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: white;
+          border: 3px solid #EA580C;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          transition: all 0.2s ease;
+        }
+        .slider::-webkit-slider-thumb:hover {
+          border-color: #C2410C;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          transform: scale(1.1);
+        }
+        .slider::-moz-range-thumb {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: white;
+          border: 3px solid #EA580C;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+      `}</style>
     </div>
   );
 }
