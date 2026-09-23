@@ -215,16 +215,16 @@ export default function RestaurantReviewsModal({
     const isCurrentUser = currentUserId === entry.userId;
 
     return (
-      <li key={`${entry.userId}-${entry.review?.id || 'rating-only'}-${index}`} className="border p-4 rounded-md bg-gray-50 space-y-3">
+      <li key={`${entry.userId}-${entry.review?.id || 'rating-only'}-${index}`} className="rounded-2xl bg-stone-50 border border-stone-100 p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h4 className="font-semibold text-gray-800">{userName}</h4>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h4 className="font-semibold text-ink">{userName}</h4>
             
             {/* Veg Rating */}
             {hasVegRating && (
-              <div className="flex items-center gap-1 bg-green-100 px-2 py-1 rounded-full">
+              <div className="flex items-center gap-1.5 bg-green-100 px-2.5 py-1 rounded-full">
                 <Leaf size={14} className="text-green-600" />
-                <span className="text-sm font-medium text-green-800">
+                <span className="text-sm font-semibold text-green-800">
                   {entry.vegRating!.availability === 'NOT_AVAILABLE' 
                     ? 'N/A' 
                     : getRatingDisplay(entry.vegRating!.score)
@@ -235,9 +235,9 @@ export default function RestaurantReviewsModal({
             
             {/* Non-Veg Rating */}
             {hasNonVegRating && (
-              <div className="flex items-center gap-1 bg-red-100 px-2 py-1 rounded-full">
+              <div className="flex items-center gap-1.5 bg-red-100 px-2.5 py-1 rounded-full">
                 <Utensils size={14} className="text-red-600" />
-                <span className="text-sm font-medium text-red-800">
+                <span className="text-sm font-semibold text-red-800">
                   {entry.nonVegRating!.availability === 'NOT_AVAILABLE' 
                     ? 'N/A' 
                     : getRatingDisplay(entry.nonVegRating!.score)
@@ -247,13 +247,13 @@ export default function RestaurantReviewsModal({
             )}
           </div>
           
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            {hasReview && <MessageSquare size={16} className="text-blue-500" />}
+          <div className="flex items-center gap-2 text-sm text-stone-500">
+            {hasReview && <MessageSquare size={16} className="text-brand" />}
             {hasReview && isCurrentUser && (
               <button
                 onClick={() => handleDeleteReview(entry.review!.id)}
                 disabled={deletingReview === entry.review!.id}
-                className="p-1 text-red-400 hover:text-red-600 disabled:opacity-50"
+                className="p-1.5 rounded-full text-red-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
                 title="Delete your review"
               >
                 {deletingReview === entry.review!.id ? (
@@ -268,11 +268,11 @@ export default function RestaurantReviewsModal({
 
         {/* Display review if available */}
         {hasReview && (
-          <div className="bg-white p-3 rounded-md border-l-4 border-blue-200">
-            <p className="text-gray-700 leading-relaxed">{entry.review!.text}</p>
+          <div className="bg-white p-4 rounded-2xl border border-stone-100">
+            <p className="text-ink/90 leading-relaxed">{entry.review!.text}</p>
             
             {/* Review metadata */}
-            <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
+            <div className="mt-3 flex items-center justify-between text-sm text-stone-400">
               <span>
                 {new Date(entry.review!.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
@@ -289,19 +289,19 @@ export default function RestaurantReviewsModal({
                   <button
                     onClick={() => handleLikeReview(entry.review!.id)}
                     disabled={likingReview === entry.review!.id}
-                    className={`flex items-center gap-1 px-2 py-1 rounded transition-colors disabled:opacity-50 ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors disabled:opacity-50 ${
                       entry.review!.likes.users.some(user => user.id === currentUserId)
-                        ? 'text-blue-600 bg-blue-50'
-                        : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+                        ? 'text-brand bg-brand/10 hover:bg-brand/20'
+                        : 'text-stone-500 bg-stone-100 hover:text-brand hover:bg-brand/10'
                     }`}
                     title={entry.review!.likes.users.some(user => user.id === currentUserId) ? 'Unlike' : 'Like'}
                   >
                     {likingReview === entry.review!.id ? (
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
                     ) : (
-                      <ThumbsUp size={12} />
+                      <ThumbsUp size={12} className={entry.review!.likes.users.some(user => user.id === currentUserId) ? 'fill-current' : ''} />
                     )}
-                    <span className="text-xs">{entry.review!.likes.count}</span>
+                    <span>{entry.review!.likes.count}</span>
                   </button>
                 </div>
               )}
@@ -309,7 +309,7 @@ export default function RestaurantReviewsModal({
             
             {/* Show who liked this review */}
             {entry.review!.likes.count > 0 && (
-              <div className="mt-2 text-xs text-gray-500">
+              <div className="mt-2 text-xs text-stone-400">
                 Liked by: {entry.review!.likes.users.map(user => 
                   user.id === currentUserId ? 'You' : user.name
                 ).join(', ')}
@@ -323,31 +323,32 @@ export default function RestaurantReviewsModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-sm flex items-center justify-center p-4"
       data-modal-backdrop="true"
     >
       <div 
         ref={modalContentRef}
-        className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[85vh] animate-fade-in-up"
+        className="bg-white rounded-[1.75rem] shadow-lift w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden"
+        style={{ animation: 'scaleIn .25s cubic-bezier(.22,1,.36,1) both' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-lg">
+        <div className="flex justify-between items-center p-5 border-b border-stone-100 flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">User Reviews & Ratings</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="font-display font-bold tracking-tight text-lg text-ink">User Reviews & Ratings</h2>
+            <p className="text-sm text-stone-500 mt-0.5">
               {restaurantName}
               {restaurantInfo?.location && ` • ${restaurantInfo.location}`}
               {restaurantInfo?.cuisine && ` • ${restaurantInfo.cuisine}`}
             </p>
             {restaurantInfo?.addedBy && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-stone-400 mt-1">
                 Added by {restaurantInfo.addedBy.name} on {new Date(restaurantInfo.createdAt).toLocaleDateString()}
               </p>
             )}
           </div>
           <button 
             onClick={onClose} 
-            className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+            className="rounded-full hover:bg-stone-100 p-2 text-stone-500 hover:text-stone-700 transition-colors"
             title="Close modal"
           >
             <X size={20} />
@@ -356,32 +357,32 @@ export default function RestaurantReviewsModal({
         
         {/* Delivery markup info — additive: only renders when markup data exists */}
         <DeliveryMarkupBanner restaurantId={restaurantId} />
-        <div className="p-6 overflow-y-auto max-h-[calc(85vh-140px)]">
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              <span className="ml-2 text-gray-600">Loading reviews and ratings...</span>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-stone-900"></div>
+              <span className="ml-2 text-stone-500">Loading reviews and ratings...</span>
             </div>
           ) : userEntries.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-gray-400 mb-2">
+              <div className="text-stone-300 mb-2">
                 <MessageSquare size={48} className="mx-auto mb-4" />
               </div>
-              <p className="text-gray-500">No reviews or ratings yet for this restaurant.</p>
-              <p className="text-sm text-gray-400 mt-2">Be the first to rate and review!</p>
+              <p className="text-stone-500">No reviews or ratings yet for this restaurant.</p>
+              <p className="text-sm text-stone-400 mt-2">Be the first to rate and review!</p>
             </div>
           ) : (
             <div>
-              <div className="mb-4 text-sm text-gray-600 flex items-center gap-4 flex-wrap">
-                <span className="flex items-center gap-1">
-                  <MessageSquare size={14} className="text-blue-500" />
+              <div className="mb-4 text-sm text-stone-500 flex items-center gap-4 flex-wrap">
+                <span className="flex items-center gap-1.5">
+                  <MessageSquare size={14} className="text-brand" />
                   Review
                 </span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   <Leaf size={14} className="text-green-500" />
                   Veg Rating
                 </span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   <Utensils size={14} className="text-red-500" />
                   Non-Veg Rating
                 </span>
