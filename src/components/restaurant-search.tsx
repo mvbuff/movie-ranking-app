@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useUser } from '@/context/user-context';
 import { useToast } from '@/context/toast-context';
-import { X, MapPin, ExternalLink } from 'lucide-react';
+import { X, MapPin, ExternalLink, ChevronDown } from 'lucide-react';
 
 interface RestaurantSearchProps {
   onItemAdded: () => void;
@@ -106,13 +106,13 @@ export default function RestaurantSearch({ onItemAdded }: RestaurantSearchProps)
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
+    <div className="bg-white rounded-3xl border border-stone-200/70 shadow-soft p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">Add Restaurant</h2>
+        <h2 className="section-title text-xl">Add Restaurant</h2>
         {!isFormOpen && (
           <button
             onClick={() => setIsFormOpen(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            className="btn-primary"
           >
             Add New Restaurant
           </button>
@@ -124,7 +124,7 @@ export default function RestaurantSearch({ onItemAdded }: RestaurantSearchProps)
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Restaurant Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="name" className="block text-sm font-medium text-stone-600 mb-1">
                 Restaurant Name *
               </label>
               <div className="relative">
@@ -134,7 +134,7 @@ export default function RestaurantSearch({ onItemAdded }: RestaurantSearchProps)
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="input-modern w-full pr-10"
                   placeholder="Enter restaurant name"
                   required
                 />
@@ -142,7 +142,7 @@ export default function RestaurantSearch({ onItemAdded }: RestaurantSearchProps)
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, name: '' }))}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-stone-400 hover:text-stone-600"
                   >
                     <X size={16} />
                   </button>
@@ -152,21 +152,24 @@ export default function RestaurantSearch({ onItemAdded }: RestaurantSearchProps)
 
             {/* Cuisine Type */}
             <div>
-              <label htmlFor="cuisine" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="cuisine" className="block text-sm font-medium text-stone-600 mb-1">
                 Cuisine Type
               </label>
-              <select
-                id="cuisine"
-                name="cuisine"
-                value={formData.cuisine}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="">Select cuisine type</option>
-                {cuisineOptions.map(cuisine => (
-                  <option key={cuisine} value={cuisine}>{cuisine}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  id="cuisine"
+                  name="cuisine"
+                  value={formData.cuisine}
+                  onChange={handleInputChange}
+                  className="input-modern w-full appearance-none pr-10"
+                >
+                  <option value="">Select cuisine type</option>
+                  {cuisineOptions.map(cuisine => (
+                    <option key={cuisine} value={cuisine}>{cuisine}</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+              </div>
             </div>
           </div>
 
@@ -174,7 +177,7 @@ export default function RestaurantSearch({ onItemAdded }: RestaurantSearchProps)
 
           {/* Google Maps URL */}
           <div>
-            <label htmlFor="googleMapsUrl" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="googleMapsUrl" className="block text-sm font-medium text-stone-600 mb-1">
               <div className="flex items-center gap-2">
                 <MapPin size={16} />
                 Google Maps Link
@@ -187,14 +190,14 @@ export default function RestaurantSearch({ onItemAdded }: RestaurantSearchProps)
                 name="googleMapsUrl"
                 value={formData.googleMapsUrl}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="input-modern w-full pr-10"
                 placeholder="https://maps.google.com/..."
               />
               {formData.googleMapsUrl && (
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, googleMapsUrl: '' }))}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-stone-400 hover:text-stone-600"
                 >
                   <X size={16} />
                 </button>
@@ -206,7 +209,7 @@ export default function RestaurantSearch({ onItemAdded }: RestaurantSearchProps)
 
           {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="description" className="block text-sm font-medium text-stone-600 mb-1">
               Description
             </label>
             <div className="relative">
@@ -216,14 +219,14 @@ export default function RestaurantSearch({ onItemAdded }: RestaurantSearchProps)
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={3}
-                className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="input-modern w-full pr-10"
                 placeholder="Brief description of the restaurant, specialties, etc."
               />
               {formData.description && (
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, description: '' }))}
-                  className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-2 top-3 text-stone-400 hover:text-stone-600"
                 >
                   <X size={16} />
                 </button>
@@ -236,7 +239,7 @@ export default function RestaurantSearch({ onItemAdded }: RestaurantSearchProps)
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+              className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               {isSubmitting ? 'Adding...' : 'Add Restaurant'}
             </button>
@@ -246,7 +249,8 @@ export default function RestaurantSearch({ onItemAdded }: RestaurantSearchProps)
                 setIsFormOpen(false);
                 resetForm();
               }}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+              className="btn-secondary px-4!"
+              title="Cancel"
             >
               <X size={16} />
             </button>
