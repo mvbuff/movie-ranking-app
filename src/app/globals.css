@@ -120,9 +120,12 @@ body {
     @apply sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-stone-200/60;
   }
 
-  /* Staggered entrance — set per-item via inline animationDelay */
+  /* Staggered entrance — set per-item via inline animationDelay.
+     NOTE: fill mode is `backwards`, not `both`. `both` would leave a residual
+     transform on the element forever, which makes it a containing block for
+     position:fixed descendants (modals) and breaks their viewport positioning. */
   .animate-rise {
-    animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
 
   /* Modal entrance */
