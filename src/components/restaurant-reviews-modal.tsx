@@ -5,6 +5,7 @@ import { X, MessageSquare, Trash2, ThumbsUp, Leaf, Utensils } from 'lucide-react
 import { getRatingDisplay } from '@/lib/rating-system';
 import { useToast } from '@/context/toast-context';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import DeliveryMarkupBanner from '@/components/delivery-markup-banner';
 
 interface UserRestaurantReviewRating {
   userId: string;
@@ -353,6 +354,8 @@ export default function RestaurantReviewsModal({
           </button>
         </div>
         
+        {/* Delivery markup info — additive: only renders when markup data exists */}
+        <DeliveryMarkupBanner restaurantId={restaurantId} />
         <div className="p-6 overflow-y-auto max-h-[calc(85vh-140px)]">
           {loading ? (
             <div className="flex items-center justify-center py-8">
