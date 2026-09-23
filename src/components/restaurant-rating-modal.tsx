@@ -190,57 +190,60 @@ export default function RestaurantRatingModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-backdrop"
+      className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-sm flex items-center justify-center p-4"
       data-modal-backdrop="true"
     >
       <div 
         ref={modalContentRef}
-        className="bg-white rounded-lg shadow-2xl w-full max-w-lg max-h-[85vh] animate-fade-in-up"
+        className="bg-white rounded-[1.75rem] shadow-lift w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
+        style={{ animation: 'scaleIn .25s cubic-bezier(.22,1,.36,1) both' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-lg">
-          <h2 className="text-lg font-semibold text-gray-800">Rate Restaurant</h2>
+        <div className="flex justify-between items-center p-5 border-b border-stone-100 flex-shrink-0">
+          <h2 className="font-display font-bold tracking-tight text-lg text-ink">Rate Restaurant</h2>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+            className="rounded-full hover:bg-stone-100 p-2 text-stone-500 hover:text-stone-700 transition-colors"
             title="Close"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-4 space-y-6 max-h-[calc(85vh-8rem)] overflow-y-auto">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
           <div className="text-center">
-            <h3 className="text-xl font-semibold text-gray-900">{restaurantName}</h3>
-            <p className="text-sm text-gray-600 mt-1">Rate the vegetarian and non-vegetarian options</p>
+            <h3 className="font-display text-xl font-bold tracking-tight text-ink">{restaurantName}</h3>
+            <p className="text-sm text-stone-500 mt-1">Rate the vegetarian and non-vegetarian options</p>
           </div>
 
           {/* Vegetarian Rating Section */}
-          <div className="border rounded-lg p-4 bg-green-50">
-            <div className="flex items-center gap-2 mb-3">
-              <Leaf className="text-green-600" size={20} />
+          <div className="rounded-2xl border border-green-200/70 bg-green-50/60 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                <Leaf className="text-green-600" size={18} />
+              </span>
               <h4 className="font-semibold text-green-800">Vegetarian Options</h4>
             </div>
 
             <div className="space-y-3">
-              <div className="flex gap-2">
-                <label className="flex items-center">
+              <div className="flex gap-4">
+                <label className="flex items-center text-sm font-medium text-stone-600 cursor-pointer">
                   <input
                     type="radio"
                     name="veg-availability"
                     checked={availability.VEG === 'AVAILABLE'}
                     onChange={() => handleAvailabilityChange('VEG', 'AVAILABLE')}
-                    className="mr-1"
+                    className="mr-2 accent-green-600"
                   />
                   Available
                 </label>
-                <label className="flex items-center">
+                <label className="flex items-center text-sm font-medium text-stone-600 cursor-pointer">
                   <input
                     type="radio"
                     name="veg-availability"
                     checked={availability.VEG === 'NOT_AVAILABLE'}
                     onChange={() => handleAvailabilityChange('VEG', 'NOT_AVAILABLE')}
-                    className="mr-1"
+                    className="mr-2 accent-green-600"
                   />
                   Not Available
                 </label>
@@ -255,7 +258,7 @@ export default function RestaurantRatingModal({
               )}
 
               {availability.VEG === 'NOT_AVAILABLE' && (
-                <div className="text-sm text-gray-600 italic">
+                <div className="text-sm text-stone-500 italic">
                   Vegetarian options not available at this restaurant
                 </div>
               )}
@@ -264,31 +267,33 @@ export default function RestaurantRatingModal({
 
           {/* Non-Vegetarian Rating Section */}
           {!hideNonVeg && (
-          <div className="border rounded-lg p-4 bg-red-50">
-            <div className="flex items-center gap-2 mb-3">
-              <Utensils className="text-red-600" size={20} />
+          <div className="rounded-2xl border border-red-200/70 bg-red-50/60 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                <Utensils className="text-red-600" size={18} />
+              </span>
               <h4 className="font-semibold text-red-800">Non-Vegetarian Options</h4>
             </div>
 
             <div className="space-y-3">
-              <div className="flex gap-2">
-                <label className="flex items-center">
+              <div className="flex gap-4">
+                <label className="flex items-center text-sm font-medium text-stone-600 cursor-pointer">
                   <input
                     type="radio"
                     name="nonveg-availability"
                     checked={availability.NON_VEG === 'AVAILABLE'}
                     onChange={() => handleAvailabilityChange('NON_VEG', 'AVAILABLE')}
-                    className="mr-1"
+                    className="mr-2 accent-red-600"
                   />
                   Available
                 </label>
-                <label className="flex items-center">
+                <label className="flex items-center text-sm font-medium text-stone-600 cursor-pointer">
                   <input
                     type="radio"
                     name="nonveg-availability"
                     checked={availability.NON_VEG === 'NOT_AVAILABLE'}
                     onChange={() => handleAvailabilityChange('NON_VEG', 'NOT_AVAILABLE')}
-                    className="mr-1"
+                    className="mr-2 accent-red-600"
                   />
                   Not Available
                 </label>
@@ -303,7 +308,7 @@ export default function RestaurantRatingModal({
               )}
 
               {availability.NON_VEG === 'NOT_AVAILABLE' && (
-                <div className="text-sm text-gray-600 italic">
+                <div className="text-sm text-stone-500 italic">
                   Non-vegetarian options not available at this restaurant
                 </div>
               )}
@@ -313,17 +318,17 @@ export default function RestaurantRatingModal({
 
           {/* Current Ratings Display */}
           {(ratings.VEG || ratings.NON_VEG) && (
-            <div className="border-t pt-4">
-              <h5 className="font-medium text-gray-700 mb-2">Your Current Ratings:</h5>
+            <div className="border-t border-stone-100 pt-4">
+              <h5 className="text-sm font-semibold text-stone-600 mb-2">Your Current Ratings:</h5>
               <div className="flex gap-4 text-sm">
                 {ratings.VEG && availability.VEG === 'AVAILABLE' && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 text-stone-700">
                     <Leaf className="text-green-600" size={14} />
                     <span>Veg: {getRatingDisplay(ratings.VEG.score!)}</span>
                   </div>
                 )}
                 {ratings.NON_VEG && availability.NON_VEG === 'AVAILABLE' && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 text-stone-700">
                     <Utensils className="text-red-600" size={14} />
                     <span>Non-Veg: {getRatingDisplay(ratings.NON_VEG.score!)}</span>
                   </div>
@@ -333,10 +338,10 @@ export default function RestaurantRatingModal({
           )}
         </div>
 
-        <div className="p-4 border-t bg-gray-50 rounded-b-lg">
+        <div className="p-4 border-t border-stone-100 flex-shrink-0">
           <button
             onClick={onClose}
-            className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+            className="btn-primary w-full"
           >
             Done
           </button>
