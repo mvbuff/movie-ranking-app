@@ -19,7 +19,7 @@ export interface DeliveryMarkup {
 }
 
 interface DeliveryMarkupEntry {
-  matchKeys: string[]; // lowercase substrings matched against the restaurant name
+  restaurantIds: string[]; // exact app restaurant IDs with verified markup data
   data: DeliveryMarkup;
 }
 
@@ -28,7 +28,7 @@ const MARKUPS: DeliveryMarkupEntry[] = [
     // Dosa Confessions, Milpitas — in-store menu photo vs DoorDash listings,
     // collected 2026-09-20. Prices are pre-tax menu prices; DoorDash's own
     // service/delivery fees sit on top of these.
-    matchKeys: ['dosa confessions'],
+    restaurantIds: ['cmfj7fm1q00032iidvorry43j'], // exact app id for "Dosa Confessions", Milpitas
     data: {
       platform: 'DoorDash',
       collectedAt: '2026-09-20',
@@ -90,8 +90,7 @@ const MARKUPS: DeliveryMarkupEntry[] = [
   },
 ];
 
-export function getDeliveryMarkup(restaurantName: string): DeliveryMarkup | null {
-  const name = restaurantName.toLowerCase();
-  const entry = MARKUPS.find((e) => e.matchKeys.some((k) => name.includes(k)));
+export function getDeliveryMarkup(restaurantId: string): DeliveryMarkup | null {
+  const entry = MARKUPS.find((e) => e.restaurantIds.includes(restaurantId));
   return entry ? entry.data : null;
 }
