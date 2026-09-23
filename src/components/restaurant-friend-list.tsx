@@ -316,7 +316,6 @@ function RestaurantFriendList({ onCalculationComplete }: RestaurantFriendListPro
           )}
         </div>
       </div>
-    </div>
       <style jsx>{`
         .slider::-webkit-slider-thumb {
           appearance: none;
