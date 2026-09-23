@@ -355,7 +355,7 @@ export default function RestaurantReviewsModal({
         </div>
         
         {/* Delivery markup info — additive: only renders when markup data exists */}
-        <DeliveryMarkupBanner restaurantName={restaurantName} />
+        <DeliveryMarkupBanner restaurantId={restaurantId} />
         <div className="p-6 overflow-y-auto max-h-[calc(85vh-140px)]">
           {loading ? (
             <div className="flex items-center justify-center py-8">
