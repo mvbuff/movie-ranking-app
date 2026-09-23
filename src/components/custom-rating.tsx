@@ -50,10 +50,10 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
     handleRatingUpdate(selectedGrade, newModifier);
   };
 
-  const getButtonClass = (isActive: boolean, isDisabled: boolean = false) => 
-    `px-3 py-1 text-sm font-semibold rounded-md transition-colors duration-200 ${
-      isDisabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' :
-      isActive ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+  const getButtonClass = (isActive: boolean, isDisabled: boolean = false) =>
+    `rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+      isDisabled ? 'bg-stone-100 text-stone-400 cursor-not-allowed border border-transparent' :
+      isActive ? 'bg-stone-900 text-white border border-stone-900 shadow-sm' : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-300 hover:-translate-y-px'
     }`;
   
   const displayRating = () => {
@@ -63,10 +63,10 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex justify-between items-center mb-2">
-         <p className="text-sm text-gray-500">Your Rating:</p>
-         <span className="font-bold text-gray-700 text-sm">{displayRating()}</span>
+         <p className="text-sm text-stone-500">Your Rating:</p>
+         <span className="font-bold text-ink text-sm">{displayRating()}</span>
       </div>
       <div className="flex justify-around">
         {letterGrades.map(grade => (
