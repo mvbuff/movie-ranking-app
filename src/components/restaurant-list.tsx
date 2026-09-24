@@ -744,52 +744,59 @@ export default function RestaurantList({
                   </button>
                 )}
 
-                {/* Action buttons */}
-                <div className="flex flex-wrap gap-1.5">
-                  {/* Review Button */}
-                  {readOnlyMode ? (
-                    <div
-                      className="inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium text-stone-400 cursor-not-allowed"
-                      title="Sign in to add reviews"
-                    >
-                      <MessageSquare size={14} />
-                      Review
+                {/* Counts + icon actions on one compact row */}
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-2 text-xs text-stone-500">
+                    <div className="flex items-center gap-1">
+                      <Star size={12} className="text-amber-400" />
+                      <span>{restaurant.ratingsCount}</span>
                     </div>
-                  ) : (
+                    <div className="flex items-center gap-1">
+                      <MessageSquare size={12} className="text-sky-500" />
+                      <span>{restaurant.reviewsCount}</span>
+                    </div>
+                  </div>
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1 flex-shrink-0 -mr-1">
+                    {readOnlyMode ? (
+                      <div
+                        className="p-1 sm:p-2 text-stone-300 cursor-not-allowed"
+                        title="Sign in to add reviews"
+                      >
+                        <MessageSquare className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setAddReviewModal({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
+                        className="p-1 sm:p-2 text-stone-400 hover:text-sky-600 hover:bg-stone-100 rounded-full transition-colors"
+                        title="Add review"
+                        aria-label="Add review"
+                      >
+                        <MessageSquare className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                      </button>
+                    )}
                     <button
-                      onClick={() => setAddReviewModal({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
-                      className="inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
-                      title="Add review"
+                      onClick={() => setActiveReviews({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
+                      className="p-1 sm:p-2 text-stone-400 hover:text-brand hover:bg-stone-100 rounded-full transition-colors"
+                      title="Show user reviews and ratings"
+                      aria-label="Show user reviews and ratings"
                     >
-                      <MessageSquare size={14} />
-                      Review
+                      <Info className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                     </button>
-                  )}
+                    <button
+                      onClick={() => shareRestaurant(restaurant)}
+                      className="p-1 sm:p-2 text-stone-400 hover:text-emerald-600 hover:bg-stone-100 rounded-full transition-colors"
+                      title="Copy restaurant details"
+                      aria-label="Copy restaurant details"
+                    >
+                      <Share2 className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                    </button>
+                  </div>
+                </div>
 
-                  {/* Info Button - Show Reviews and Ratings */}
-                  <button
-                    onClick={() => setActiveReviews({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
-                    title="Show user reviews and ratings"
-                  >
-                    <Info size={14} />
-                    Details
-                  </button>
-
-                  {/* Share Button */}
-                  <button
-                    onClick={() => shareRestaurant(restaurant)}
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
-                    title="Copy restaurant details"
-                  >
-                    <Share2 size={14} />
-                    Share
-                  </button>
-
-                  {/* Eatlist toggle removed from action row (moved to top overlay) */}
-
-                  {/* Admin Image Management */}
-                  {isAdmin && (
+                {/* Admin tools (admin only) */}
+                {isAdmin && (
+                  <div className="flex flex-wrap gap-1.5">
                     <button
                       onClick={() => setImageManager({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
                       className="inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
@@ -798,10 +805,6 @@ export default function RestaurantList({
                       <ImageIcon size={14} />
                       Images
                     </button>
-                  )}
-
-                  {/* Admin Veg-only toggle */}
-                  {isAdmin && (
                     <button
                       onClick={async () => {
                         const target = !restaurant.metadata?.vegOnly;
@@ -830,22 +833,8 @@ export default function RestaurantList({
                       <Leaf size={14} />
                       Veg-only
                     </button>
-                  )}
-
-                  {/* Admin Delete duplicated in overlay; keeping action row clean */}
-                </div>
-
-                {/* Rating and Review counts */}
-                <div className="flex items-center gap-3 text-xs text-stone-500 pt-0.5">
-                  <div className="flex items-center gap-1">
-                    <Star size={12} className="text-amber-400" />
-                    <span>{restaurant.ratingsCount}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <MessageSquare size={12} className="text-sky-500" />
-                    <span>{restaurant.reviewsCount}</span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
