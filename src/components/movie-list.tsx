@@ -775,44 +775,58 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
             </div>
             <div className="p-3 pt-2.5 flex flex-col flex-1 gap-2">
               {/* Mobile-first responsive layout for title and icon buttons */}
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1.5 sm:gap-3">
-                <MovieTitleLink
-                  tmdbId={movie.tmdbId}
-                  title={movie.title}
-                  year={movie.year}
-                  mediaType={movie.mediaType}
-                  tmdbUrl={movie.tmdbUrl}
-                  className="font-display font-bold text-base text-ink hover:text-brand transition-colors line-clamp-2 sm:line-clamp-1 sm:flex-1 sm:min-w-0"
-                />
+              <MovieTitleLink
+                tmdbId={movie.tmdbId}
+                title={movie.title}
+                year={movie.year}
+                mediaType={movie.mediaType}
+                tmdbUrl={movie.tmdbUrl}
+                className="font-display font-bold text-base text-ink hover:text-brand transition-colors line-clamp-2"
+              />
+
+              {/* Counts + icon actions on one compact row */}
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-2 text-xs text-stone-500">
+                  <div className="flex items-center gap-1">
+                    <Star size={12} className="text-amber-400" />
+                    <span>{movie.ratingsCount}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageSquare size={12} className="text-sky-500" />
+                    <span>{movie.reviewsCount}</span>
+                  </div>
+                </div>
                 {/* Action buttons */}
-                <div className="flex items-center gap-0.5 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0 -mr-1">
                   {readOnlyMode ? (
                     <div
-                      className="p-2 text-stone-300 cursor-not-allowed"
+                      className="p-1 sm:p-2 text-stone-300 cursor-not-allowed"
                       title="Sign in to add reviews"
                     >
-                      <MessageSquare size={18} />
+                      <MessageSquare className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                     </div>
                   ) : (
                     <button
                       onClick={() => setAddReviewModal({ movieId: movie.id, movieTitle: movie.title })}
-                      className="p-2 text-stone-400 hover:text-sky-600 hover:bg-stone-100 rounded-full transition-colors"
+                      className="p-1 sm:p-2 text-stone-400 hover:text-sky-600 hover:bg-stone-100 rounded-full transition-colors"
                       title="Add review"
+                      aria-label="Add review"
                     >
-                      <MessageSquare size={18} />
+                      <MessageSquare className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                     </button>
                   )}
                   <button
                     onClick={() => setActiveReviews({ movieId: movie.id, movieTitle: movie.title })}
-                    className="p-2 text-stone-400 hover:text-brand hover:bg-stone-100 rounded-full transition-colors"
+                    className="p-1 sm:p-2 text-stone-400 hover:text-brand hover:bg-stone-100 rounded-full transition-colors"
                     title="Show user reviews"
+                    aria-label="Show user reviews"
                   >
-                    <Info size={18} />
+                    <Info className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                   </button>
                   {/* Temporarily removed Users/Discussion button - keeping function for future use
                   <button
                     onClick={() => handleDiscussionClick(movie)}
-                    className="p-2 text-stone-400 hover:text-purple-600 hover:bg-stone-100 rounded-full transition-colors"
+                    className="p-1 sm:p-2 text-stone-400 hover:text-purple-600 hover:bg-stone-100 rounded-full transition-colors"
                     title="Discuss this movie in forum"
                   >
                     <Users size={18} />
@@ -820,23 +834,12 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
                   */}
                   <button
                     onClick={() => shareToWhatsApp(movie)}
-                    className="p-2 text-stone-400 hover:text-emerald-600 hover:bg-stone-100 rounded-full transition-colors"
+                    className="p-1 sm:p-2 text-stone-400 hover:text-emerald-600 hover:bg-stone-100 rounded-full transition-colors"
                     title="Copy movie details"
+                    aria-label="Copy movie details"
                   >
-                    <Share2 size={18} />
+                    <Share2 className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                   </button>
-                </div>
-              </div>
-
-              {/* Rating and Review counts */}
-              <div className="flex items-center gap-3 text-xs text-stone-500">
-                <div className="flex items-center gap-1">
-                  <Star size={12} className="text-amber-400" />
-                  <span>{movie.ratingsCount}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <MessageSquare size={12} className="text-sky-500" />
-                  <span>{movie.reviewsCount}</span>
                 </div>
               </div>
 
