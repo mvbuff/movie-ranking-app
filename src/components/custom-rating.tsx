@@ -51,7 +51,7 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
   };
 
   const getButtonClass = (isActive: boolean, isDisabled: boolean = false) =>
-    `flex-1 min-w-0 whitespace-nowrap rounded-full px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 ${
+    `flex-1 min-w-0 whitespace-nowrap rounded-full px-1.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium transition-all duration-200 ${
       isDisabled ? 'bg-stone-100 text-stone-400 cursor-not-allowed border border-transparent' :
       isActive ? 'bg-stone-900 text-white border border-stone-900 shadow-sm' : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-300 hover:-translate-y-px'
     }`;
@@ -68,7 +68,7 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
          <p className="text-sm text-stone-500">Your Rating:</p>
          <span className="font-bold text-ink text-sm">{displayRating()}</span>
       </div>
-      <div className="flex gap-1.5 sm:gap-2">
+      <div className="flex gap-1 sm:gap-2">
         {letterGrades.map(grade => (
             <button 
               key={grade} 
@@ -81,7 +81,7 @@ export default function CustomRatingInput({ initialScore, onRatingSubmit, disabl
             </button>
         ))}
       </div>
-      <div className="flex gap-1.5 sm:gap-2">
+      <div className="flex gap-1 sm:gap-2">
         {modifiers.map(modifier => {
           const isButtonDisabled = disabled ||
                                    selectedGrade === 'AB' ||

@@ -845,7 +845,7 @@ export default function MovieList({ calculationTimestamp, categoryFilter, scoreT
 
               <div className="mt-auto pt-1">
                 {readOnlyMode ? (
-                  <div className="p-3 bg-stone-50 border border-stone-200 rounded-2xl text-center">
+                  <div className="p-2 sm:p-3 bg-stone-50 border border-stone-200 rounded-2xl text-center">
                     <p className="text-stone-500 text-xs mb-2">Sign in to rate this movie</p>
                     <div className="opacity-50 pointer-events-none">
                       <CustomRatingInput
