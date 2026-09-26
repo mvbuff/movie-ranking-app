@@ -9,7 +9,7 @@ interface ToastProps {
 }
 
 export default function Toast({ message, type, onClose }: ToastProps) {
-  const baseClasses = 'fixed top-5 right-5 w-auto max-w-md p-4 rounded-lg shadow-lg text-white flex items-start justify-between animate-fade-in-down';
+  const baseClasses = 'fixed z-[100] top-20 left-4 right-4 sm:left-auto sm:right-5 sm:w-auto sm:max-w-md p-4 rounded-lg shadow-lg text-white flex items-start justify-between animate-fade-in-down';
   const typeClasses = {
     success: 'bg-green-500',
     error: 'bg-red-500',
