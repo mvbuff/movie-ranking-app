@@ -71,23 +71,26 @@ export default function AddReviewModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-backdrop"
+      className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-sm flex items-center justify-center p-4"
       data-modal-backdrop="true"
     >
       <div 
         ref={modalContentRef}
-        className="bg-white rounded-lg shadow-2xl w-full max-w-md animate-fade-in-up"
+        className="bg-white rounded-[1.75rem] shadow-lift w-full max-w-md max-h-[90vh] overflow-y-auto"
+        style={{ animation: 'scaleIn .25s cubic-bezier(.22,1,.36,1) both' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b bg-blue-50 rounded-t-lg">
-          <div className="flex items-center gap-2">
-            <MessageSquare size={20} className="text-blue-600" />
-            <h2 className="text-lg font-bold text-gray-800">Add Review</h2>
+        <div className="flex justify-between items-center p-5 border-b border-stone-100">
+          <div className="flex items-center gap-2.5">
+            <span className="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center">
+              <MessageSquare size={18} className="text-brand" />
+            </span>
+            <h2 className="font-display font-bold tracking-tight text-lg text-ink">Add Review</h2>
           </div>
           <button 
             onClick={onClose} 
-            className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+            className="rounded-full hover:bg-stone-100 p-2 text-stone-500 hover:text-stone-700 transition-colors"
             title="Close modal"
           >
             <X size={20} />
@@ -97,23 +100,27 @@ export default function AddReviewModal({
         {/* Content */}
         <div className="p-6">
           <div className="mb-4">
-            <h3 className="font-semibold text-gray-800 mb-2">{movieTitle}</h3>
-            <p className="text-sm text-gray-600">Share your thoughts about this movie</p>
+            <h3 className="font-display font-semibold tracking-tight text-ink mb-1">{movieTitle}</h3>
+            <p className="text-sm text-stone-500">Share your thoughts about this movie</p>
           </div>
 
           <div className="space-y-4">
             <div>
+              <label htmlFor="review-text" className="block text-sm font-semibold text-stone-600 mb-2">
+                Your Review
+              </label>
               <textarea
+                id="review-text"
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
                 placeholder="What did you think about this movie? Share your review..."
                 maxLength={200}
-                className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="input-modern w-full resize-none"
                 rows={4}
                 disabled={isSubmitting}
               />
               <div className="flex justify-between items-center mt-2">
-                <span className={`text-xs ${reviewText.length > 180 ? 'text-red-600' : 'text-gray-500'}`}>
+                <span className={`text-xs ${reviewText.length > 180 ? 'text-red-600' : 'text-stone-400'}`}>
                   {reviewText.length}/200 characters
                 </span>
               </div>
@@ -124,14 +131,14 @@ export default function AddReviewModal({
               <button
                 onClick={handleCancel}
                 disabled={isSubmitting}
-                className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-secondary flex-1"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!reviewText.trim() || isSubmitting}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
@@ -148,4 +155,4 @@ export default function AddReviewModal({
       </div>
     </div>
   );
-} 
+}

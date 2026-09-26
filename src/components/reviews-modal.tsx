@@ -228,26 +228,26 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
     const isCurrentUser = currentUserId === entry.userId;
 
     return (
-      <li key={entry.userId} className="border p-4 rounded-md bg-gray-50 space-y-3">
+      <li key={entry.userId} className="rounded-2xl bg-stone-50 border border-stone-100 p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h4 className="font-semibold text-gray-800">{userName}</h4>
+            <h4 className="font-semibold text-ink">{userName}</h4>
             {hasRating && (
-              <div className="flex items-center gap-1 bg-yellow-100 px-2 py-1 rounded-full">
-                <Star size={14} className="text-yellow-600" />
-                <span className="text-sm font-medium text-yellow-800">
+              <div className="flex items-center gap-1.5 bg-amber-100 px-2.5 py-1 rounded-full">
+                <Star size={14} className="fill-amber-400 text-amber-400" />
+                <span className="text-sm font-semibold text-amber-800">
                   {getRatingDisplay(entry.rating!.score)}
                 </span>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            {hasReview && <MessageSquare size={16} className="text-blue-500" />}
+          <div className="flex items-center gap-2 text-sm text-stone-500">
+            {hasReview && <MessageSquare size={16} className="text-brand" />}
             {hasReview && isCurrentUser && (
               <button
                 onClick={() => handleDeleteReview(entry.review!.id)}
                 disabled={deletingReview === entry.review!.id}
-                className="p-1 text-red-400 hover:text-red-600 disabled:opacity-50"
+                className="p-1.5 rounded-full text-red-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
                 title="Delete your review"
               >
                 {deletingReview === entry.review!.id ? (
@@ -262,27 +262,27 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
 
         {/* Display review if available */}
         {hasReview && (
-          <div className="bg-white p-3 rounded border-l-4 border-blue-400">
+          <div className="bg-white p-4 rounded-2xl border border-stone-100">
             <div className="flex items-start gap-2 mb-2">
-              <MessageSquare size={16} className="text-blue-500 mt-1 flex-shrink-0" />
+              <MessageSquare size={16} className="text-brand mt-1 flex-shrink-0" />
               <div className="flex-grow">
-                <p className="text-gray-800 italic">&quot;{entry.review!.text}&quot;</p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-ink/90 italic leading-relaxed">&quot;{entry.review!.text}&quot;</p>
+                <p className="text-xs text-stone-400 mt-1.5">
                   Reviewed on {new Date(entry.review!.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
             
             {/* Like section */}
-            <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-stone-100">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => handleLikeReview(entry.review!.id)}
                   disabled={likingReview === entry.review!.id}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm transition-colors ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-sm font-medium transition-colors ${
                     currentUserId && entry.review!.likes.users.some(user => user.id === currentUserId)
-                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-brand/10 text-brand hover:bg-brand/20'
+                      : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
                   } ${!currentUserId ? 'opacity-50 cursor-not-allowed' : ''}`}
                   title={currentUserId ? 'Like this review' : 'Sign in to like reviews'}
                 >
@@ -299,7 +299,7 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
                 
                 {/* Show names of users who liked */}
                 {entry.review!.likes.count > 0 && (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-stone-400">
                     Liked by {entry.review!.likes.users.map(user => user.name).join(', ')}
                   </span>
                 )}
@@ -310,14 +310,14 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
 
         {/* Rating date if available and no review block showed it */}
         {hasRating && (
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-stone-400">
             Rated on {entry.rating?.createdAt ? new Date(entry.rating.createdAt).toLocaleDateString() : '—'}
           </div>
         )}
 
         {/* Show message if user has neither review nor rating (shouldn't happen with current logic) */}
         {!hasReview && !hasRating && (
-          <div className="text-gray-500 text-sm">
+          <div className="text-stone-500 text-sm">
             No review or rating available
           </div>
         )}
@@ -327,56 +327,57 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-backdrop"
+      className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-sm flex items-center justify-center p-4"
       data-modal-backdrop="true"
     >
       <div 
         ref={modalContentRef}
-        className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[85vh] animate-fade-in-up"
+        className="bg-white rounded-[1.75rem] shadow-lift w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
+        style={{ animation: 'scaleIn .25s cubic-bezier(.22,1,.36,1) both' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-lg">
+        <div className="flex justify-between items-center p-5 border-b border-stone-100 flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">User Reviews & Ratings</h2>
-            <p className="text-sm text-gray-600">{movieTitle}</p>
+            <h2 className="font-display font-bold tracking-tight text-lg text-ink">User Reviews & Ratings</h2>
+            <p className="text-sm text-stone-500 mt-0.5">{movieTitle}</p>
             {movieInfo?.addedBy && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-stone-400 mt-1">
                 Added by {movieInfo.addedBy.name} on {new Date(movieInfo.createdAt).toLocaleDateString()}
               </p>
             )}
           </div>
           <button 
             onClick={onClose} 
-            className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+            className="rounded-full hover:bg-stone-100 p-2 text-stone-500 hover:text-stone-700 transition-colors"
             title="Close modal"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
         
-        <div className="p-6 overflow-y-auto max-h-[calc(85vh-140px)]">
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              <span className="ml-2 text-gray-600">Loading reviews and ratings...</span>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-stone-900"></div>
+              <span className="ml-2 text-stone-500">Loading reviews and ratings...</span>
             </div>
           ) : userEntries.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-gray-400 mb-2">
+              <div className="text-stone-300 mb-2">
                 <MessageSquare size={48} className="mx-auto mb-4" />
               </div>
-              <p className="text-gray-500">No reviews or ratings yet for this movie.</p>
-              <p className="text-sm text-gray-400 mt-2">Be the first to rate and review!</p>
+              <p className="text-stone-500">No reviews or ratings yet for this movie.</p>
+              <p className="text-sm text-stone-400 mt-2">Be the first to rate and review!</p>
             </div>
           ) : (
             <div>
-              <div className="mb-4 text-sm text-gray-600 flex items-center gap-4">
-                <span className="flex items-center gap-1">
-                  <MessageSquare size={14} className="text-blue-500" />
+              <div className="mb-4 text-sm text-stone-500 flex items-center gap-4">
+                <span className="flex items-center gap-1.5">
+                  <MessageSquare size={14} className="text-brand" />
                   Review
                 </span>
-                <span className="flex items-center gap-1">
-                  <Star size={14} className="text-yellow-500" />
+                <span className="flex items-center gap-1.5">
+                  <Star size={14} className="fill-amber-400 text-amber-400" />
                   Rating
                 </span>
                 <span className="ml-auto">
@@ -392,4 +393,4 @@ export default function ReviewsModal({ movieId, movieTitle, currentUserId, onClo
       </div>
     </div>
   );
-} 
+}

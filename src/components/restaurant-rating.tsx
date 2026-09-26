@@ -236,15 +236,15 @@ export default function RestaurantRatingComponent({
     const isNotAvailable = rating?.availability === 'NOT_AVAILABLE';
 
     return (
-      <div className={`border border-gray-200 rounded-lg p-4 ${color}`}>
+      <div className={`border border-stone-200 rounded-2xl p-4 sm:p-5 shadow-sm ${color}`}>
         <div className="flex items-center gap-2 mb-3">
           {icon}
-          <h4 className="font-medium text-gray-800">{label}</h4>
+          <h4 className="font-semibold text-ink">{label}</h4>
           {rating && (
-            <span className={`text-sm px-2 py-1 rounded ${
-              isNotAvailable 
-                ? 'bg-red-100 text-red-800' 
-                : 'bg-gray-100 text-gray-600'
+            <span className={`text-sm font-medium px-2.5 py-1 rounded-full ${
+              isNotAvailable
+                ? 'bg-red-100 text-red-800'
+                : 'bg-stone-100 text-stone-600'
             }`}>
               {isNotAvailable ? 'N/A' : getRatingDisplay(rating.score!)}
             </span>
@@ -266,7 +266,7 @@ export default function RestaurantRatingComponent({
                 <button
                   onClick={() => handleRatingSubmit(1, ratingType)}
                   disabled={isDisabled}
-                  className="text-sm px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
+                  className="text-sm font-medium px-4 py-1.5 bg-brand text-white rounded-full hover:bg-brand-dark disabled:opacity-50 transition-all"
                 >
                   Mark as Available
                 </button>
@@ -274,7 +274,7 @@ export default function RestaurantRatingComponent({
                 <button
                   onClick={() => handleNotAvailable(ratingType)}
                   disabled={isDisabled}
-                  className="text-sm px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:bg-gray-400"
+                  className="text-sm font-medium px-4 py-1.5 bg-white text-stone-600 border border-stone-300 rounded-full hover:bg-stone-50 disabled:opacity-50 transition-all"
                 >
                   Not Available
                 </button>
@@ -282,13 +282,13 @@ export default function RestaurantRatingComponent({
             </div>
           </div>
         ) : (
-          <div className="text-gray-500 text-sm italic">
+          <div className="text-stone-500 text-sm italic">
             Sign in to rate this restaurant
           </div>
         )}
         
         {isSubmitting[ratingType] && (
-          <div className="mt-2 text-sm text-blue-600">
+          <div className="mt-2 text-sm text-brand">
             Saving rating...
           </div>
         )}
@@ -300,8 +300,8 @@ export default function RestaurantRatingComponent({
   const vegOnly = (typeof window !== 'undefined') ? (document.querySelector(`[data-restaurant-id="${restaurantId}"]`) as HTMLElement | null)?.dataset.vegOnly === 'true' : false;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Rate this Restaurant</h3>
+    <div className="bg-white rounded-3xl border border-stone-200/70 shadow-soft p-6">
+      <h3 className="section-title text-lg mb-4">Rate this Restaurant</h3>
       
       <div className="space-y-4">
         <RatingSection
@@ -323,8 +323,8 @@ export default function RestaurantRatingComponent({
 
       {/* Summary */}
       {(ratings.VEG || ratings.NON_VEG) && (
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-          <h4 className="font-medium text-gray-800 mb-2">Your Ratings Summary:</h4>
+        <div className="mt-4 p-4 bg-stone-50 rounded-2xl border border-stone-100">
+          <h4 className="font-semibold text-ink mb-2">Your Ratings Summary:</h4>
           <div className="space-y-2 text-sm">
             {ratings.VEG && (
               <div className="flex items-center gap-2">

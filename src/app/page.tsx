@@ -12,7 +12,15 @@ import ActivityFeedPopup from '@/components/activity-feed-popup';
 import ContributionPopup from '@/components/contribution-popup';
 import { useUser } from '@/context/user-context';
 import { calculateUserAggregateScores } from '@/app/actions';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import {
+  Maximize2,
+  Minimize2,
+  Clapperboard,
+  UtensilsCrossed,
+  MessagesSquare,
+  BarChart3,
+  Lock,
+} from 'lucide-react';
 
 type Category = 'MOVIE' | 'SERIES' | 'DOCUMENTARY';
 type FilterCategory = Category | 'ALL' | 'WATCHLIST' | 'YET_TO_RATE';
@@ -72,59 +80,88 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen p-4 sm:p-8 flex items-center justify-center">
+      <main className="min-h-screen bg-paper p-4 sm:p-8 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand mx-auto mb-4"></div>
+          <p className="text-stone-500">Loading...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-8">
-      <div className="text-center mb-10">
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900">
+    <main className="min-h-screen bg-paper text-ink p-4 sm:p-8">
+      {/* Hero */}
+      <div className="relative text-center mb-10">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(234, 88, 12, 0.10), transparent 70%), radial-gradient(ellipse 35% 30% at 85% 20%, rgba(120, 113, 108, 0.16), transparent 70%)',
+          }}
+        />
+        <span className="chip animate-rise inline-flex items-center gap-1.5">
+          <Clapperboard size={14} />
+          Community rankings
+        </span>
+        <h1
+          className="animate-rise font-display mt-4 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-ink"
+          style={{ animationDelay: '80ms' }}
+        >
           Movie Ranking
         </h1>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
+        <p
+          className="animate-rise mt-4 max-w-2xl mx-auto text-lg text-stone-500"
+          style={{ animationDelay: '160ms' }}
+        >
           Your personalized movie and series leaderboard.
         </p>
-        <div className="mt-4 flex flex-wrap gap-3 justify-center">
-          <Link 
+        <div
+          className="animate-rise mt-6 flex flex-wrap gap-3 justify-center"
+          style={{ animationDelay: '240ms' }}
+        >
+          <Link
             href="/food"
-            className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            className="btn-primary inline-flex items-center gap-2"
           >
-            🍽️ Restaurant Ranking (Beta)
+            <UtensilsCrossed size={16} />
+            Restaurant Ranking (Beta)
           </Link>
-          <Link 
+          <Link
             href="/forum"
-            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+            className="btn-secondary inline-flex items-center gap-2"
           >
-            💬 Discussion Forum
+            <MessagesSquare size={16} />
+            Discussion Forum
           </Link>
           <button
             onClick={() => setShowContributionPopup(true)}
-            className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+            className="btn-secondary inline-flex items-center gap-2"
           >
-            📊 Contribution
+            <BarChart3 size={16} />
+            Contribution
           </button>
         </div>
         {!isAuthenticated && !isLoading && (
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-md mx-auto">
-            <p className="text-blue-800 mb-3">
-              You&apos;re viewing in read-only mode. 
+          <div
+            className="card animate-rise mt-8 p-6 max-w-md mx-auto"
+            style={{ animationDelay: '320ms' }}
+          >
+            <p className="text-stone-600 mb-4 flex items-center justify-center gap-2">
+              <Lock size={16} />
+              You&apos;re viewing in read-only mode.
             </p>
             <div className="flex gap-2 justify-center">
               <button
                 onClick={() => signIn()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
+                className="btn-primary text-sm"
               >
                 Sign In
               </button>
               <Link
                 href="/register"
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm font-medium"
+                className="btn-secondary text-sm"
               >
                 Sign Up
               </Link>
@@ -135,20 +172,20 @@ export default function Home() {
 
       {/* Mobile User Controls - Only visible on mobile */}
       {isAuthenticated && (
-        <div className="lg:hidden mb-6 p-4 bg-gray-50 rounded-lg shadow-sm border">
+        <div className="lg:hidden mb-6 card p-4">
           <div className="flex flex-col gap-4">
             <div className="flex-grow">
-              {currentUser && <p className="text-sm text-gray-500">Acting as: <span className="font-bold">{currentUser.name}</span></p>}
+              {currentUser && <p className="text-sm text-stone-500">Acting as: <span className="font-bold text-ink">{currentUser.name}</span></p>}
             </div>
             <div className="flex gap-2">
               {isAdmin && (
-                <Link href="/admin" className="flex-1 px-3 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 text-center">
+                <Link href="/admin" className="btn-secondary flex-1 text-sm text-center">
                   Admin Panel
                 </Link>
               )}
               <button
                 onClick={() => signOut()}
-                className="flex-1 px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 text-center"
+                className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors text-center"
               >
                 Logout
               </button>
@@ -157,7 +194,7 @@ export default function Home() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-rise" style={{ animationDelay: '360ms' }}>
         {/* Left Column - Controls & Filters */}
         <div className="lg:col-span-2 space-y-8">
           {isAuthenticated && (
@@ -192,10 +229,10 @@ export default function Home() {
           {!isMoviesFullWidth && (
             <div className="mt-12">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">Your Movie Rankings</h2>
+                <h2 className="section-title">Your Movie Rankings</h2>
                 <button
                   onClick={() => setIsMoviesFullWidth(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                  className="btn-primary inline-flex items-center gap-2 text-sm"
                   title="Expand movies to full width"
                 >
                   <Maximize2 size={16} />
@@ -219,20 +256,20 @@ export default function Home() {
           {isAuthenticated && (
             <>
               {/* Desktop User Controls - Hidden on mobile */}
-              <div className="hidden lg:block p-4 bg-gray-50 rounded-lg shadow-sm border">
+              <div className="hidden lg:block card p-4">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div className="flex-grow">
-                    {currentUser && <p className="text-sm text-gray-500">Acting as: <span className="font-bold">{currentUser.name}</span></p>}
+                    {currentUser && <p className="text-sm text-stone-500">Acting as: <span className="font-bold text-ink">{currentUser.name}</span></p>}
                   </div>
                   <div className="flex flex-col items-stretch gap-2 flex-shrink-0">
                     {isAdmin && (
-                      <Link href="/admin" className="px-3 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 w-full text-center">
+                      <Link href="/admin" className="btn-secondary text-sm w-full text-center">
                         Admin Panel
                       </Link>
                     )}
                     <button
                       onClick={() => signOut()}
-                      className="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 w-full text-center"
+                      className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-full hover:bg-red-700 transition-colors w-full text-center"
                     >
                       Logout
                     </button>
@@ -248,12 +285,12 @@ export default function Home() {
 
       {/* Full-Width Movie List - Show when in full-width mode */}
       {isMoviesFullWidth && (
-        <div className="mt-8">
+        <div className="mt-8 animate-rise">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Your Movie Rankings</h2>
+            <h2 className="section-title">Your Movie Rankings</h2>
             <button
               onClick={() => setIsMoviesFullWidth(false)}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm"
+              className="btn-secondary inline-flex items-center gap-2 text-sm"
               title="Minimize movies"
             >
               <Minimize2 size={16} />

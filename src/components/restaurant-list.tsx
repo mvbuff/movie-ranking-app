@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/context/user-context';
 import { useDebounce } from '@/hooks/useDebounce';
 
-import { MapPin, Star, MessageSquare, Leaf, Utensils, Trash2, User, Info, Share2, Image as ImageIcon, Eye } from 'lucide-react';
+import { MapPin, Star, MessageSquare, Leaf, Utensils, UtensilsCrossed, Trash2, User, Info, Share2, Image as ImageIcon, Eye } from 'lucide-react';
 import Image from 'next/image';
 import { getRatingDisplay } from '@/lib/rating-system';
 import { useToast } from '@/context/toast-context';
@@ -460,9 +460,15 @@ export default function RestaurantList({
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-        <span className="ml-2 text-gray-600">Loading restaurants...</span>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" aria-label="Loading restaurants">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-[1.75rem] border border-stone-200/70 p-3">
+            <div className="skeleton aspect-[3/2] rounded-[1.25rem]" />
+            <div className="skeleton h-4 rounded-full mt-4 w-3/4" />
+            <div className="skeleton h-3 rounded-full mt-2 w-1/2" />
+            <div className="skeleton h-8 rounded-full mt-4 w-full" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -477,10 +483,13 @@ export default function RestaurantList({
     }
     
     return (
-      <div className="text-center py-12">
-        <div className="text-gray-500 text-lg">{message}</div>
+      <div className="card bg-white rounded-[1.75rem] border border-stone-200/70 text-center py-14 px-6 animate-rise">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-stone-100">
+          <UtensilsCrossed size={24} className="text-stone-400" />
+        </div>
+        <p className="section-title font-display text-lg text-ink">{message}</p>
         {(debouncedSearchTerm || debouncedCuisineFilter || debouncedLocationFilter || dietaryFilter !== 'ALL') && (
-          <p className="text-gray-400 text-sm mt-2">
+          <p className="text-stone-500 text-sm mt-2">
             Try clearing some filters to see more results.
           </p>
         )}
@@ -490,10 +499,10 @@ export default function RestaurantList({
 
   return (
     <div className="space-y-6">
-      <div className="text-sm text-gray-600 mb-4">
+      <div className="text-sm text-stone-600 mb-4">
         Showing {sortedRestaurants.length} restaurant{sortedRestaurants.length !== 1 ? 's' : ''}
         {(debouncedSearchTerm || debouncedCuisineFilter || debouncedLocationFilter || dietaryFilter !== 'ALL') && (
-          <span className="text-blue-600"> (filtered)</span>
+          <span className="text-brand font-medium"> (filtered)</span>
         )}
         {debouncedSearchTerm && ` matching "${debouncedSearchTerm}"`}
         {debouncedCuisineFilter && ` • ${debouncedCuisineFilter} cuisine`}
@@ -502,9 +511,9 @@ export default function RestaurantList({
         {dietaryFilter === 'NON_VEG_ONLY' && ` • Non-Veg Available`}
       </div>
 
-      {/* Restaurant Grid - Smaller, more compact tiles */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-        {sortedRestaurants.map((restaurant) => {
+      {/* Restaurant Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {sortedRestaurants.map((restaurant, i) => {
           // Extract Google Photos from metadata
           const photos = restaurant.metadata?.photos || [];
           const firstPhoto = photos.length > 0 ? photos[0] : null;
@@ -513,23 +522,31 @@ export default function RestaurantList({
           const imageWithCacheBust = firstPhoto && refreshTimestamp 
             ? `${firstPhoto}${firstPhoto.includes('?') ? '&' : '?'}v=${refreshTimestamp}` 
             : firstPhoto;
+
+          // Floating rating pill: best available friend score, color-coded by grade band (scale 3-10)
+          const pillVegScore = restaurant.globalVegAvailability === 'NOT_AVAILABLE' ? null : restaurant.aggregateVegScore;
+          const pillNonVegScore = restaurant.globalNonVegAvailability === 'NOT_AVAILABLE' ? null : restaurant.aggregateNonVegScore;
+          const pillCandidates = [pillVegScore, pillNonVegScore].filter((s): s is number => s !== null);
+          const pillScore = pillCandidates.length > 0 ? Math.max(...pillCandidates) : null;
+          const pillColor = pillScore === null ? '' : pillScore >= 8 ? 'bg-emerald-500/95' : pillScore >= 5 ? 'bg-amber-500/95' : 'bg-stone-500/95';
           
           return (
             <div 
               key={restaurant.id} 
-              className="bg-white border rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+              className="card group bg-white rounded-[1.75rem] border border-stone-200/70 shadow-sm overflow-hidden hover:-translate-y-1 hover:shadow-lift transition-all duration-300 animate-rise flex flex-col"
+              style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
               data-restaurant-id={restaurant.id}
               data-veg-only={restaurant.metadata?.vegOnly ? 'true' : 'false'}
             >
-              {/* Restaurant Image - Much smaller */}
-              <div className="aspect-[3/2] relative bg-gradient-to-br from-green-100 to-orange-100">
+              {/* Restaurant Image */}
+              <div className="relative aspect-[3/2] overflow-hidden rounded-[1.25rem] m-3 mb-0 bg-gradient-to-br from-green-100 to-orange-100">
                 {/* Admin controls - top left corner (delete + veg-only) */}
                 <div className="absolute top-2 left-2 flex gap-2 z-10">
                   {isAdmin && !readOnlyMode && (
                     <button
                       onClick={() => handleDeleteRestaurant(restaurant.id, restaurant.name)}
                       disabled={deletingRestaurant === restaurant.id}
-                      className="p-2 rounded-full bg-red-600/90 text-white hover:bg-red-700/90 transition-all shadow-lg"
+                      className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full bg-red-600/90 text-white hover:bg-red-700/90 transition-all shadow-lg"
                       title="Delete restaurant (Admin only)"
                     >
                       {deletingRestaurant === restaurant.id ? (
@@ -561,7 +578,7 @@ export default function RestaurantList({
                           showToast('Failed to update veg-only', 'error');
                         }
                       }}
-                      className={`${restaurant.metadata?.vegOnly ? 'bg-green-600/90 hover:bg-green-700/90 text-white' : 'bg-gray-600/70 hover:bg-gray-700/70 text-white'} p-2 rounded-full transition-all shadow-lg`}
+                      className={`${restaurant.metadata?.vegOnly ? 'bg-green-600/90 hover:bg-green-700/90 text-white' : 'bg-stone-600/70 hover:bg-stone-700/70 text-white'} min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full transition-all shadow-lg`}
                       title={restaurant.metadata?.vegOnly ? 'Veg-only enabled (click to disable)' : 'Mark as veg-only'}
                     >
                       <Leaf size={16} />
@@ -592,7 +609,7 @@ export default function RestaurantList({
                         }
                       }}
                       disabled={togglingEatlist === restaurant.id}
-                      className={`p-2 rounded-full ${restaurant.isInEatlist ? 'bg-blue-600/90 hover:bg-blue-700/90 text-white' : 'bg-gray-600/70 hover:bg-gray-700/70 text-white'} transition-all shadow-lg`}
+                      className={`min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full ${restaurant.isInEatlist ? 'bg-blue-600/90 hover:bg-blue-700/90 text-white' : 'bg-stone-600/70 hover:bg-stone-700/70 text-white'} transition-all shadow-lg`}
                       title={restaurant.isInEatlist ? 'Remove from Eat List' : 'Add to Eat List'}
                     >
                       <Eye size={16} />
@@ -604,175 +621,190 @@ export default function RestaurantList({
                     src={imageWithCacheBust}
                     alt={restaurant.name}
                     fill
-                    className="object-cover"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
                     key={`${restaurant.id}-${refreshTimestamp || 'default'}`} // Force re-render on refresh
                     unoptimized={imageWithCacheBust.includes('v=')} // Disable Next.js optimization for cache-busted images
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <div className="text-center text-gray-600">
-                      <Utensils size={20} className="mx-auto mb-1" />
+                    <div className="text-center text-stone-500">
+                      <Utensils size={22} className="mx-auto mb-1" />
                       <div className="text-xs font-medium">{restaurant.cuisine || 'Restaurant'}</div>
                     </div>
                   </div>
                 )}
-              </div>
-
-            {/* Two-Column Layout */}
-            <div className="p-2 flex gap-2">
-              
-              {/* Left Section - Restaurant Details */}
-              <div className="flex-1 min-w-0">
-                {/* Restaurant Name & Location */}
-                <div className="mb-1">
-                  {/* Restaurant Name - Clickable if Google Maps URL exists */}
-                  {restaurant.googleMapsUrl ? (
-                    <a
-                      href={restaurant.googleMapsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold text-gray-900 hover:text-blue-600 text-sm leading-tight line-clamp-2 cursor-pointer transition-colors block"
-                      title={`View ${restaurant.name} on Google Maps`}
-                    >
-                      {restaurant.name}
-                    </a>
-                  ) : (
-                    <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 break-words">
-                      {restaurant.name}
-                    </h3>
-                  )}
-                  
-                  {/* Location Display */}
-                  {getDisplayAddress(restaurant) && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <MapPin size={8} className="text-gray-400 flex-shrink-0" />
-                      <span className="text-xs text-gray-500 truncate max-w-full">
-                        {getDisplayAddress(restaurant)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Added by */}
-                <div className="flex items-center gap-1 mb-2 text-xs text-blue-600 min-w-0">
-                  <User size={10} className="flex-shrink-0" />
-                  <span className="text-gray-600">by</span>
-                  <span className="truncate font-medium bg-blue-50 px-2 py-1 rounded">
-                    {restaurant.addedBy ? restaurant.addedBy.name : 'System'}
-                  </span>
-                </div>
-
-                {/* Cuisine */}
-                {restaurant.cuisine && (
-                  <div className="text-xs bg-gray-100 px-2 py-1 rounded mb-2 inline-block max-w-full truncate">
-                    {restaurant.cuisine}
+                {/* Floating friend-score pill */}
+                {pillScore !== null && (
+                  <div className={`absolute bottom-2 left-2 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-white backdrop-blur ${pillColor}`}>
+                    <Star size={12} className="fill-current" />
+                    <span>{pillScore.toFixed(1)}</span>
                   </div>
                 )}
-
-                {/* User Ratings - show NA globally if marked */}
-                <div className="space-y-1">
-                  {(
-                    restaurant.globalVegAvailability === 'NOT_AVAILABLE' ||
-                    restaurant.userVegRating ||
-                    restaurant.userVegAvailability === 'NOT_AVAILABLE'
-                  ) && (
-                    <div className="flex items-center gap-1 text-xs">
-                      <Leaf className="text-green-600" size={10} />
-                      <span className="text-green-700 text-xs">
-                        Veg: {
-                          restaurant.globalVegAvailability === 'NOT_AVAILABLE' || restaurant.userVegAvailability === 'NOT_AVAILABLE'
-                            ? 'N/A'
-                            : (restaurant.userVegRating ? getRatingDisplay(restaurant.userVegRating) : 'NR')
-                        }
-                      </span>
-                    </div>
-                  )}
-                  {(
-                    restaurant.globalNonVegAvailability === 'NOT_AVAILABLE' ||
-                    restaurant.userNonVegRating ||
-                    restaurant.userNonVegAvailability === 'NOT_AVAILABLE'
-                  ) && (
-                    <div className="flex items-center gap-1 text-xs">
-                      <Utensils className="text-red-600" size={10} />
-                      <span className="text-red-700 text-xs">
-                        Non-Veg: {
-                          restaurant.globalNonVegAvailability === 'NOT_AVAILABLE' || restaurant.userNonVegAvailability === 'NOT_AVAILABLE'
-                            ? 'N/A'
-                            : (restaurant.userNonVegRating ? getRatingDisplay(restaurant.userNonVegRating) : 'NR')
-                        }
-                      </span>
-                    </div>
-                  )}
-                </div>
               </div>
 
-              {/* Right Section - Actions and Stats */}
-              <div className="flex flex-col items-end justify-between gap-2 flex-shrink-0 w-20">
-                {/* Rating Button - Separate with Text */}
+            {/* Details */}
+            <div className="p-4 pt-3 flex flex-col gap-2.5 flex-1">
+              {/* Restaurant Name & Location */}
+              <div>
+                {/* Restaurant Name - Clickable if Google Maps URL exists */}
+                {restaurant.googleMapsUrl ? (
+                  <a
+                    href={restaurant.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-display font-semibold text-ink hover:text-brand text-[15px] leading-snug line-clamp-2 cursor-pointer transition-colors block"
+                    title={`View ${restaurant.name} on Google Maps`}
+                  >
+                    {restaurant.name}
+                  </a>
+                ) : (
+                  <h3 className="font-display font-semibold text-ink text-[15px] leading-snug line-clamp-2 break-words">
+                    {restaurant.name}
+                  </h3>
+                )}
+
+                {/* Location Display */}
+                {getDisplayAddress(restaurant) && (
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <MapPin size={12} className="text-stone-400 flex-shrink-0" />
+                    <span className="text-xs text-stone-500 truncate max-w-full">
+                      {getDisplayAddress(restaurant)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Meta chips: cuisine + added by */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {restaurant.cuisine && (
+                  <span className="chip inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-stone-600">
+                    <UtensilsCrossed size={12} className="flex-shrink-0" />
+                    <span className="truncate max-w-[9rem]">{restaurant.cuisine}</span>
+                  </span>
+                )}
+                <span className="chip inline-flex items-center gap-1 px-2.5 py-1 text-xs text-stone-500">
+                  <User size={12} className="flex-shrink-0" />
+                  <span>by</span>
+                  <span className="truncate max-w-[7rem] font-medium text-stone-600">
+                    {restaurant.addedBy ? restaurant.addedBy.name : 'System'}
+                  </span>
+                </span>
+              </div>
+
+              {/* User Ratings - show NA globally if marked */}
+              <div className="space-y-1.5">
+                {(
+                  restaurant.globalVegAvailability === 'NOT_AVAILABLE' ||
+                  restaurant.userVegRating ||
+                  restaurant.userVegAvailability === 'NOT_AVAILABLE'
+                ) && (
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Leaf className="text-green-600" size={12} />
+                    <span className="font-medium text-green-700">Veg:</span>
+                    <span className="text-stone-600">
+                      {
+                        restaurant.globalVegAvailability === 'NOT_AVAILABLE' || restaurant.userVegAvailability === 'NOT_AVAILABLE'
+                          ? 'N/A'
+                          : (restaurant.userVegRating ? getRatingDisplay(restaurant.userVegRating) : 'NR')
+                      }
+                    </span>
+                  </div>
+                )}
+                {(
+                  restaurant.globalNonVegAvailability === 'NOT_AVAILABLE' ||
+                  restaurant.userNonVegRating ||
+                  restaurant.userNonVegAvailability === 'NOT_AVAILABLE'
+                ) && (
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Utensils className="text-red-600" size={12} />
+                    <span className="font-medium text-red-700">Non-Veg:</span>
+                    <span className="text-stone-600">
+                      {
+                        restaurant.globalNonVegAvailability === 'NOT_AVAILABLE' || restaurant.userNonVegAvailability === 'NOT_AVAILABLE'
+                          ? 'N/A'
+                          : (restaurant.userNonVegRating ? getRatingDisplay(restaurant.userNonVegRating) : 'NR')
+                      }
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="mt-auto pt-1 space-y-2">
+                {/* Rating Button */}
                 {!readOnlyMode && currentUser && (
                   <button
                     onClick={() => setRatingModal({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
-                    className="px-2 py-1 text-xs bg-green-50 border border-green-200 text-green-700 rounded hover:bg-green-100 transition-colors w-full"
+                    className="btn-primary inline-flex w-full min-h-[40px] items-center justify-center gap-1.5 rounded-full text-sm font-semibold"
                     title="Rate restaurant"
                   >
+                    <Star size={14} />
                     Rate
                   </button>
                 )}
 
-                {/* Action buttons */}
-                <div className="flex gap-1 justify-center w-full">
-                  {/* Review Button */}
-                  {readOnlyMode ? (
-                    <div
-                      className="p-1 text-gray-400 cursor-not-allowed"
-                      title="Sign in to add reviews"
-                    >
-                      <MessageSquare size={16} />
+                {/* Counts + icon actions on one compact row */}
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-2 text-xs text-stone-500">
+                    <div className="flex items-center gap-1">
+                      <Star size={12} className="text-amber-400" />
+                      <span>{restaurant.ratingsCount}</span>
                     </div>
-                  ) : (
-                    <button 
-                      onClick={() => setAddReviewModal({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
-                      className="p-1 text-gray-400 hover:text-blue-600"
-                      title="Add review"
+                    <div className="flex items-center gap-1">
+                      <MessageSquare size={12} className="text-sky-500" />
+                      <span>{restaurant.reviewsCount}</span>
+                    </div>
+                  </div>
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1 flex-shrink-0 -mr-1">
+                    {readOnlyMode ? (
+                      <div
+                        className="p-1 sm:p-2 text-stone-300 cursor-not-allowed"
+                        title="Sign in to add reviews"
+                      >
+                        <MessageSquare className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setAddReviewModal({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
+                        className="p-1 sm:p-2 text-stone-400 hover:text-sky-600 hover:bg-stone-100 rounded-full transition-colors"
+                        title="Add review"
+                        aria-label="Add review"
+                      >
+                        <MessageSquare className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setActiveReviews({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
+                      className="p-1 sm:p-2 text-stone-400 hover:text-brand hover:bg-stone-100 rounded-full transition-colors"
+                      title="Show user reviews and ratings"
+                      aria-label="Show user reviews and ratings"
                     >
-                      <MessageSquare size={16} />
+                      <Info className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                     </button>
-                  )}
+                    <button
+                      onClick={() => shareRestaurant(restaurant)}
+                      className="p-1 sm:p-2 text-stone-400 hover:text-emerald-600 hover:bg-stone-100 rounded-full transition-colors"
+                      title="Copy restaurant details"
+                      aria-label="Copy restaurant details"
+                    >
+                      <Share2 className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                    </button>
+                  </div>
+                </div>
 
-                  {/* Info Button - Show Reviews and Ratings */}
-                  <button 
-                    onClick={() => setActiveReviews({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
-                    className="p-1 text-gray-400 hover:text-indigo-600"
-                    title="Show user reviews and ratings"
-                  >
-                    <Info size={16} />
-                  </button>
-
-                  {/* Share Button */}
-                  <button 
-                    onClick={() => shareRestaurant(restaurant)}
-                    className="p-1 text-gray-400 hover:text-green-600"
-                    title="Copy restaurant details"
-                  >
-                    <Share2 size={16} />
-                  </button>
-
-                  {/* Eatlist toggle removed from action row (moved to top overlay) */}
-
-                  {/* Admin Image Management */}
-                  {isAdmin && (
+                {/* Admin tools (admin only) */}
+                {isAdmin && (
+                  <div className="flex flex-wrap gap-1.5">
                     <button
                       onClick={() => setImageManager({ restaurantId: restaurant.id, restaurantName: restaurant.name })}
-                      className="p-1 text-gray-400 hover:text-purple-600"
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
                       title="Manage restaurant images (Admin only)"
                     >
-                      <ImageIcon size={16} />
+                      <ImageIcon size={14} />
+                      Images
                     </button>
-                  )}
-
-                  {/* Admin Veg-only toggle */}
-                  {isAdmin && (
                     <button
                       onClick={async () => {
                         const target = !restaurant.metadata?.vegOnly;
@@ -795,35 +827,22 @@ export default function RestaurantList({
                           showToast('Failed to update veg-only', 'error');
                         }
                       }}
-                      className={`p-1 ${restaurant.metadata?.vegOnly ? 'text-green-700 hover:text-green-800' : 'text-gray-400 hover:text-green-600'}`}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 min-h-[40px] text-xs font-medium hover:bg-stone-100 transition-colors ${restaurant.metadata?.vegOnly ? 'text-green-700' : 'text-stone-600'}`}
                       title={restaurant.metadata?.vegOnly ? 'Veg-only enabled (click to disable)' : 'Mark as veg-only'}
                     >
-                      <Leaf size={16} />
+                      <Leaf size={14} />
+                      Veg-only
                     </button>
-                  )}
-
-                  {/* Admin Delete duplicated in overlay; keeping action row clean */}
-                </div>
-                
-                {/* Rating and Review counts */}
-                <div className="flex items-center gap-2 text-xs text-gray-500 justify-center w-full">
-                  <div className="flex items-center gap-1">
-                    <Star size={10} className="text-yellow-500" />
-                    <span>{restaurant.ratingsCount}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <MessageSquare size={10} className="text-blue-500" />
-                    <span>{restaurant.reviewsCount}</span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
 
 
-            {/* Friend Scores Section - Compact */}
-            <div className="p-2 bg-gray-50 border-t">
-              <div className={`grid ${restaurant.metadata?.vegOnly ? 'grid-cols-1' : 'grid-cols-2'} gap-1`}>
+            {/* Friend Scores Section */}
+            <div className="px-4 pb-4">
+              <div className={`grid ${restaurant.metadata?.vegOnly ? 'grid-cols-1' : 'grid-cols-2'} gap-2 rounded-2xl bg-stone-50 border border-stone-100 p-2`}>
                 <Scorecard 
                   score={restaurant.globalVegAvailability === 'NOT_AVAILABLE' ? null : restaurant.aggregateVegScore} 
                   label="FRIEND VEG"
